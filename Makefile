@@ -1,4 +1,4 @@
-.PHONY: build test test-race test-sdk-ts test-sdk-py test-all crucible lint proxy clean docker demo demo-down release-binaries
+.PHONY: build test test-race test-sdk-ts test-sdk-py test-all crucible lint proxy clean docker demo demo-down release-binaries verify-boundary
 
 # ── Build ──────────────────────────────────────────────
 build:
@@ -88,6 +88,11 @@ release-binaries:
 	cd core && GOOS=darwin  GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ../bin/helm-darwin-arm64 ./cmd/helm/
 	cd bin && shasum -a 256 helm-* > SHA256SUMS.txt
 	@echo "✅ Release binaries + SHA256SUMS.txt"
+
+# ── Repo Boundary (OSS ↔ Commercial) ──────────────────
+verify-boundary:
+	bash tools/verify-boundary.sh
+	@echo "✅ All protected paths in sync"
 
 # ── Clean ──────────────────────────────────────────────
 clean:
