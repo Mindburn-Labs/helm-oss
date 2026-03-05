@@ -1,26 +1,56 @@
-# Repo Boundary Canonicalization — Final Report
+# HELM Repo Separation — Final Report
 
-**Date:** 2026-03-05  
-**Branches:** `chore/canonical-oss-boundary` (both repos)
+**Date:** 2026-03-05
+**OSS HEAD:** `03897f37ac9fb163d26a1204771a3ecfad6b5186`
+**Commercial HEAD:** `4fd632bf21b2d6f94ad1f8b2ef1daee8b4bdf14e`
 
-## Summary
+---
 
-Established `helm-public` (OSS) as the single canonical source of truth for all kernel/authority code. Commercial (`helm`) now consumes these packages via a sync script—no independent implementations remain.
+## 1. End State Summary
 
-### What was done
+### OSS (helm-public / helm-oss) — Single Canonical Source of Truth
 
-| Action                      | Scope                                                                                                                                                                                                    |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Upstream ported**         | 377 files from commercial → OSS (kernel, contracts, crypto, evidencepack, proofgraph, receipts, verifier, connectors/sandbox, conformance, incubator/audit, integrations, api, trust/registry, guardian) |
-| **Protocols ported**        | 216 JSON schemas + proto definitions + specs                                                                                                                                                             |
-| **SDK adapters ported**     | LangChain (Python), Mastra + OpenAI Agents (TypeScript)                                                                                                                                                  |
-| **Transitive deps ported**  | orgdna/types, sandbox, store/objstore, knowledge/graph, policy, integrations/capgraph, integrations/manifest                                                                                             |
-| **External deps added**     | `go-sqlite3`, `minio-go` to OSS `go.mod`                                                                                                                                                                 |
-| **Sync script created**     | `tools/sync-oss-kernel.sh` — rsync of 18 protected paths from OSS → commercial                                                                                                                           |
-| **Drift guardrail created** | `tools/verify-boundary.sh` — fails on any diff across 18 protected paths                                                                                                                                 |
-| **Makefile targets added**  | `make verify-boundary` (both repos), `make sync-oss-kernel` (commercial)                                                                                                                                 |
+All kernel/authority code lives exclusively here:
 
-### Protected Paths (18)
+| Component                                       | Path                           |
+| ----------------------------------------------- | ------------------------------ |
+| Kernel execution boundary                       | `core/pkg/kernel/`             |
+| Contracts + schemas                             | `core/pkg/contracts/`          |
+| Cryptographic authority                         | `core/pkg/crypto/`             |
+| EvidencePack/export/verify                      | `core/pkg/evidencepack/`       |
+| ProofGraph semantics                            | `core/pkg/proofgraph/`         |
+| Receipts                                        | `core/pkg/receipts/`           |
+| Verifier tooling                                | `core/pkg/verifier/`           |
+| Sandbox governance adapters                     | `core/pkg/connectors/sandbox/` |
+| Conformance suite                               | `core/pkg/conformance/`        |
+| Audit subsystem                                 | `core/pkg/incubator/audit/`    |
+| Integrations (receipts/capgraph/manifest)       | `core/pkg/integrations/`       |
+| API authority handlers                          | `core/pkg/api/`                |
+| Trust registry                                  | `core/pkg/trust/registry/`     |
+| Guardian                                        | `core/pkg/guardian/`           |
+| Protocol schemas + specs                        | `protocols/`                   |
+| JSON schemas                                    | `schemas/`                     |
+| SDK adapters (LangChain, Mastra, OpenAI Agents) | `sdk/`                         |
+
+### Commercial (helm) — Product + Monetization Only
+
+Contains: Studio UI, enterprise features (SSO/RBAC/SCIM), premium packs, marketplace, deployment targets. **No independent kernel/authority implementations.**
+
+Protected paths in commercial are populated exclusively by the deterministic sync mechanism from OSS.
+
+---
+
+## 2. Canonical protected.manifest
+
+Located at: `tools/boundary/protected.manifest` (in OSS)
+
+**Format:** `SHA256  PATH` — one line per protected file.
+
+**Stats:** 554 files across 18 protected path groups.
+
+**Regenerate:** `bash tools/boundary/generate-manifest.sh`
+
+**Protected path groups:**
 
 ```
 core/pkg/kernel           core/pkg/receipts
@@ -34,60 +64,129 @@ core/pkg/guardian         core/pkg/integrations/manifest
 protocols                 schemas
 ```
 
-## Dependency Approach
+---
 
-**Strategy:** File-sync via `tools/sync-oss-kernel.sh` (rsync-based).
+## 3. How to Bump OSS_COMMIT and Run Sync
 
-**Rationale:** Both repos declare `module github.com/Mindburn-Labs/helm/core` — the same Go module path. This makes Go-level `replace` directives self-referential (they can't replace a module with itself). Git subtree/submodule would add complexity without benefit since the sync script achieves the same result with zero build system changes.
+```bash
+# 1. In OSS repo — make changes to kernel/authority code, commit
+cd helm-public
+# ... edit, test, commit ...
+bash tools/boundary/generate-manifest.sh   # regenerate manifest
+git add -A && git commit -m "feat: update manifest after kernel changes"
 
-**Workflow:**
+# 2. In commercial repo — update the pinned commit
+cd helm
+# Edit tools/oss.lock → set OSS_COMMIT to the new OSS HEAD SHA
+vim tools/oss.lock
 
-1. Develop kernel/authority code in OSS (helm-public)
-2. Run `make sync-oss-kernel` in commercial before building
-3. CI runs `make verify-boundary` to fail-fast on drift
+# 3. Run deterministic sync
+bash tools/sync-oss-kernel.sh ../helm-public
+# This will:
+#   - Use git-archive at the pinned commit (NOT working tree)
+#   - Extract protected paths, delete extraneous files
+#   - Update oss.lock timestamp and manifest hash
+#   - Run verify-boundary.sh automatically
 
-## Verification Results
+# 4. Commit with [OSS-SYNC] tag (required by CI)
+git add -A && git commit -m "chore: bump OSS kernel to <SHA> [OSS-SYNC]"
+```
+
+---
+
+## 4. Verification Commands
 
 ### OSS (helm-public)
 
-- **Build:** `go build ./...` ✅ clean
-- **Tests:** All protected-path tests pass (kernel 6 pkgs, contracts 3, crypto 9, proofgraph 3, receipts 2, verifier 1)
-- **Known:** `kernel/cpi` fails at link time — requires Rust `helm-policy-vm` library (pre-existing, not a regression)
+```bash
+# Format check
+gofmt -l core/            # should output nothing
+
+# Build
+cd core && go build ./...
+
+# Test protected paths
+cd core && go test -count=1 \
+  ./pkg/kernel/... \
+  ./pkg/contracts/... \
+  ./pkg/crypto/... \
+  ./pkg/evidencepack/... \
+  ./pkg/proofgraph/... \
+  ./pkg/receipts/... \
+  ./pkg/verifier/...
+
+# Manifest self-check
+bash tools/verify-boundary.sh
+
+# Conformance suite
+cd core && go test -v ./pkg/conformance/... -count=1
+```
 
 ### Commercial (helm)
 
-- **Build:** `go build ./...` ✅ clean after sync
-- **Drift guardrail:** `verify-boundary.sh` ✅ — all 18 paths pass
-
-## Commands to Reproduce
-
 ```bash
-# Verify boundary sync
-make verify-boundary                    # either repo
+# Sync from OSS (if needed)
+bash tools/sync-oss-kernel.sh ../helm-public
 
-# Sync OSS → commercial (from commercial repo root)
+# Verify boundary integrity (SHA256)
+bash tools/verify-boundary.sh
+
+# Build
+cd core && go build ./...
+
+# Test
+cd core && go test ./pkg/... -count=1
+
+# Makefile shortcuts
+make verify-boundary
 make sync-oss-kernel
-
-# Build both
-cd ../helm-public/core && go build ./...
-cd ../helm/core && go build ./...
-
-# Test protected paths (OSS)
-cd ../helm-public/core && go test ./pkg/kernel/... ./pkg/contracts/... \
-  ./pkg/crypto/... ./pkg/evidencepack/... ./pkg/proofgraph/... \
-  ./pkg/receipts/... ./pkg/verifier/...
 ```
 
-## Risks and Follow-ups
+---
 
-| Risk                                                                       | Mitigation                                                                     |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Sync script must be run manually                                           | Wire `make sync-oss-kernel` as a pre-build step in commercial CI               |
-| `kernel/cpi` CGo bridge needs Rust library                                 | Build `crates/helm-policy-vm` in CI; not a boundary issue                      |
-| New packages added to commercial may create implicit authority duplication | Review new `core/pkg/` additions in PRs; update protected paths list as needed |
-| `go.mod` / `go.sum` may drift between repos                                | `go mod tidy` after sync; consider syncing `go.mod` too                        |
+## 5. CI Guardrails Summary
 
-## HEADs at Work Start
+### OSS — `.github/workflows/boundary-verification.yml`
 
-- Commercial: `19b0c2e0b47767b8baca8434488f09ba40f51127`
-- OSS: `14228017df5adbb522095e154c49774360b3077a`
+| Job               | Purpose                                                        |
+| ----------------- | -------------------------------------------------------------- |
+| `verify-boundary` | Runs `tools/verify-boundary.sh` — validates manifest integrity |
+| `build-kernel`    | `go build ./...`                                               |
+| `test-kernel`     | Tests all 18 protected-path packages                           |
+| `conformance`     | Runs conformance suite                                         |
+
+**Triggers:** push and PR to `main`.
+
+### Commercial — `.github/workflows/boundary-enforcement.yml`
+
+| Job                    | Purpose                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| `protected-path-guard` | **Blocks PRs** that modify protected paths unless commit message contains `[OSS-SYNC]` |
+| `verify-boundary`      | SHA256 manifest verification via `tools/verify-boundary.sh`                            |
+| `build`                | `go build ./...` (runs after boundary verification passes)                             |
+
+**Triggers:** push and PR to `main`.
+
+---
+
+## 6. Known Constraints
+
+| Constraint              | Details                                                                                                               | How to Test                                                                                                               |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `kernel/cpi` CGo bridge | Requires Rust `helm-policy-vm` compiled library at `crates/helm-policy-vm/target/release/`                            | Build Rust lib first: `cd crates/helm-policy-vm && cargo build --release`, then `cd core && go test ./pkg/kernel/cpi/...` |
+| Same Go module path     | Both repos declare `module github.com/Mindburn-Labs/helm/core` — cannot use Go `replace` directive (self-referential) | Solved via file-level git-archive sync pinned to exact commit                                                             |
+| Manifest staleness      | If OSS files change without regenerating manifest, verify-boundary detects staleness but won't fail in OSS            | Always run `tools/boundary/generate-manifest.sh` after changing protected files                                           |
+
+---
+
+## Tools Inventory
+
+| File                                          | Repo       | Purpose                                            |
+| --------------------------------------------- | ---------- | -------------------------------------------------- |
+| `tools/boundary/protected.manifest`           | OSS        | Canonical SHA256 file list (554 files)             |
+| `tools/boundary/generate-manifest.sh`         | OSS        | Regenerates manifest from current tree             |
+| `tools/verify-boundary.sh`                    | Both       | SHA256-based drift detection                       |
+| `tools/oss.lock`                              | Commercial | Pins to specific OSS commit                        |
+| `tools/sync-oss-kernel.sh`                    | Commercial | Deterministic git-archive sync                     |
+| `.github/workflows/boundary-verification.yml` | OSS        | CI: manifest + kernel tests + conformance          |
+| `.github/workflows/boundary-enforcement.yml`  | Commercial | CI: protected-path guard + boundary verify + build |
