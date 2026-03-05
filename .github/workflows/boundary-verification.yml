@@ -1,0 +1,70 @@
+name: Boundary Verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-boundary:
+    name: Verify Protected Paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Manifest Integrity
+        run: bash tools/verify-boundary.sh
+
+  build-kernel:
+    name: Build Kernel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Build
+        run: cd core && go build ./...
+
+  test-kernel:
+    name: Test Protected Paths
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Test Kernel
+        run: |
+          cd core && go test -count=1 \
+            ./pkg/kernel/... \
+            ./pkg/contracts/... \
+            ./pkg/crypto/... \
+            ./pkg/evidencepack/... \
+            ./pkg/proofgraph/... \
+            ./pkg/receipts/... \
+            ./pkg/verifier/... \
+            ./pkg/connectors/sandbox/... \
+            ./pkg/conformance/... \
+            ./pkg/api/... \
+            ./pkg/trust/registry/... \
+            ./pkg/guardian/...
+
+  conformance:
+    name: Conformance Suite
+    runs-on: ubuntu-latest
+    needs: [build-kernel]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Run Conformance
+        run: cd core && go test -v ./pkg/conformance/... -count=1
