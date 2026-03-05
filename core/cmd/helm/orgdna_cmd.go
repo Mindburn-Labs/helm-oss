@@ -10,6 +10,8 @@ import (
 	"os"
 )
 
+const orgDNASchemaPath = "schemas/orgdna.schema.json"
+
 // runOrgDNACmd implements `helm orgdna <validate|hash>`.
 func runOrgDNACmd(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
@@ -78,6 +80,7 @@ func runOrgDNAValidate(args []string, stdout, stderr io.Writer) int {
 	} else {
 		if len(issues) == 0 {
 			_, _ = fmt.Fprintf(stdout, "✅ Valid OrgDNA pack: %s/%s\n", pack.OrgID, pack.PackID)
+			_, _ = fmt.Fprintf(stdout, "   Schema file: %s\n", orgDNASchemaPath)
 			_, _ = fmt.Fprintf(stdout, "   Schema version: %s\n", pack.SchemaVersion)
 			_, _ = fmt.Fprintf(stdout, "   Policies: %d\n", len(pack.Policies))
 			if pack.RiskThresholds != nil {

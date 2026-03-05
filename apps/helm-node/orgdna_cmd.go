@@ -10,6 +10,8 @@ import (
 	"github.com/Mindburn-Labs/helm/core/pkg/canonicalize"
 )
 
+const orgDNASchemaPath = "schemas/orgdna.schema.json"
+
 // runOrgDNA implements `helm orgdna` per §3.
 func runOrgDNA(args []string, stdout, stderr io.Writer) int {
 	if len(args) < 1 {
@@ -32,7 +34,7 @@ func runOrgDNA(args []string, stdout, stderr io.Writer) int {
 func printOrgDNAUsage(w io.Writer) {
 	fmt.Fprintln(w, "Usage: helm-node orgdna <command> [arguments]")
 	fmt.Fprintln(w, "\nCommands:")
-	fmt.Fprintln(w, "  validate   Validate an OrgDNA file against the seed schema")
+	fmt.Fprintf(w, "  validate   Validate an OrgDNA file against %s\n", orgDNASchemaPath)
 	fmt.Fprintln(w, "  hash       Compute the canonical JCS hash of an OrgDNA file")
 }
 

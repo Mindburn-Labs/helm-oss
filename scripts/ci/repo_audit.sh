@@ -70,7 +70,7 @@ preflight_check() {
     echo -e "${BOLD}${CYAN}└─────────────────────────────────────────────────────────────┘${NC}"
 
     local required_tools=("go" "git" "python3")
-    local optional_tools=("govulncheck" "staticcheck" "golangci-lint" "shellcheck")
+    local optional_tools=("staticcheck" "golangci-lint" "shellcheck")
     local missing_required=()
     local missing_optional=()
 
@@ -139,24 +139,39 @@ audit_go_vet() {
 audit_govulncheck() {
     section_start "govulncheck" "Check for known vulnerabilities in dependencies (CVE database)"
     cd "$REPO_ROOT"
-    if ! command -v govulncheck &>/dev/null; then verdict SKIP "govulncheck not installed"; return; fi
-    local out exit_code=0
-    out=$(govulncheck ./... 2>&1) || exit_code=$?
-    if echo "$out" | grep -q "Vulnerability #"; then
-        local c; c=$(echo "$out" | grep -c "Vulnerability #" || echo 0)
-        echo "$out" | grep -A2 "Vulnerability #" | head -30
-        verdict FAIL "$c called vulnerabilities"
-        return
-    fi
-    if [[ "$exit_code" -ne 0 ]]; then
-        echo "$out" | head -20
-        verdict SKIP "govulncheck execution failed (exit $exit_code)"
-        return
-    fi
-    if echo "$out" | grep -q "No vulnerabilities found"; then
-        verdict PASS "No called vulnerabilities"
+    local toolchain="${GOTOOLCHAIN:-go1.25.7}"
+    local vuln_total=0
+    local exec_fail=0
+    local scanned=0
+
+    while IFS= read -r modfile; do
+        local moddir; moddir="$(dirname "$modfile")"
+        local out exit_code=0
+        out=$(cd "$moddir" && GOWORK=off GOTOOLCHAIN="$toolchain" go run golang.org/x/vuln/cmd/govulncheck@latest ./... 2>&1) || exit_code=$?
+        ((scanned++)) || true
+
+        if echo "$out" | grep -q "Vulnerability #"; then
+            local c; c=$(echo "$out" | grep -c "Vulnerability #" || echo 0)
+            vuln_total=$((vuln_total + c))
+            echo "  [${moddir#$REPO_ROOT/}]"
+            echo "$out" | grep -A2 "Vulnerability #" | head -30
+            continue
+        fi
+
+        if [[ "$exit_code" -ne 0 ]]; then
+            ((exec_fail++)) || true
+            echo "  [${moddir#$REPO_ROOT/}] govulncheck execution failed (exit $exit_code)"
+            echo "$out" | head -10
+        fi
+    done < <(find "$REPO_ROOT" -name "go.mod" -not -path "*/vendor/*" -not -path "*/node_modules/*" 2>/dev/null)
+
+    echo "  Modules scanned: $scanned"
+    if [[ "$vuln_total" -gt 0 ]]; then
+        verdict FAIL "$vuln_total called vulnerabilities"
+    elif [[ "$exec_fail" -gt 0 ]]; then
+        verdict FAIL "govulncheck execution failed in $exec_fail modules"
     else
-        verdict PASS "govulncheck clean"
+        verdict PASS "No called vulnerabilities"
     fi
 }
 
@@ -370,7 +385,13 @@ audit_env_drift() {
     done <<< "$code_vars"
     echo "  In code: $(echo "$code_vars" | wc -l | tr -d ' '), Documented: $(echo "$doc_vars" | wc -l | tr -d ' '), Undocumented: ${#undoc[@]}"
     [[ ${#undoc[@]} -gt 0 ]] && printf '    %s\n' "${undoc[@]}" | head -15
-    [[ ${#undoc[@]} -eq 0 ]] && verdict PASS "All documented" || [[ ${#undoc[@]} -le 3 ]] && verdict WARN "${#undoc[@]} undocumented" || verdict FAIL "${#undoc[@]} env vars missing from docs"
+    if [[ ${#undoc[@]} -eq 0 ]]; then
+        verdict PASS "All documented"
+    elif [[ ${#undoc[@]} -le 3 ]]; then
+        verdict WARN "${#undoc[@]} undocumented"
+    else
+        verdict FAIL "${#undoc[@]} env vars missing from docs"
+    fi
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -388,7 +409,13 @@ audit_schema_code_drift() {
         [[ -z "$refs" ]] && unreferenced+=("${f#$REPO_ROOT/}")
     done < <(find "$REPO_ROOT/schemas" -name "*.json" -type f 2>/dev/null)
     echo "  Total: $total, Unreferenced: ${#unreferenced[@]}"
-    [[ ${#unreferenced[@]} -eq 0 ]] && verdict PASS "All referenced" || [[ ${#unreferenced[@]} -le 5 ]] && verdict PASS "Schema drift tracked: ${#unreferenced[@]} unreferenced" || verdict FAIL "${#unreferenced[@]}/$total unreferenced schemas"
+    if [[ ${#unreferenced[@]} -eq 0 ]]; then
+        verdict PASS "All referenced"
+    elif [[ ${#unreferenced[@]} -le 5 ]]; then
+        verdict PASS "Schema drift tracked: ${#unreferenced[@]} unreferenced"
+    else
+        verdict FAIL "${#unreferenced[@]}/$total unreferenced schemas"
+    fi
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
