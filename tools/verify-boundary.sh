@@ -1,135 +1,180 @@
 #!/bin/bash
-# verify-boundary.sh — Verify that protected kernel/authority paths are in sync
-# between the OSS and commercial repos. Fails on any diff.
+# verify-boundary.sh — SHA256-verified boundary consistency check
 #
-# Usage: ./tools/verify-boundary.sh [OSS_ROOT] [COMMERCIAL_ROOT]
-# Defaults: OSS=../helm-public, COMMERCIAL=<script's repo root>
+# For COMMERCIAL repo: compares local protected paths against the manifest
+# For OSS repo: regenerates manifest and checks for uncommitted drift
+#
+# Exit 0: boundary verified
+# Exit 1: drift detected
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Detect which repo this script is running from
-if [ -d "$REPO_ROOT/commercial" ]; then
-  # Running from commercial
-  COMMERCIAL_ROOT="$REPO_ROOT"
-  OSS_ROOT="${1:-$(cd "$REPO_ROOT/../helm-public" 2>/dev/null && pwd || echo "")}"
-elif [ -d "$REPO_ROOT/core/pkg/kernel" ]; then
-  # Running from OSS
-  OSS_ROOT="$REPO_ROOT"
-  COMMERCIAL_ROOT="${1:-$(cd "$REPO_ROOT/../helm" 2>/dev/null && pwd || echo "")}"
-fi
-
-# Allow explicit overrides
-if [ $# -ge 2 ]; then
-  OSS_ROOT="$1"
-  COMMERCIAL_ROOT="$2"
-fi
-
-if [ -z "$OSS_ROOT" ] || [ ! -d "$OSS_ROOT/core/pkg/kernel" ]; then
-  echo "ERROR: Cannot find OSS repo. Pass path as argument."
-  echo "Usage: $0 [OSS_ROOT] [COMMERCIAL_ROOT]"
-  exit 1
-fi
-
-if [ -z "$COMMERCIAL_ROOT" ] || [ ! -d "$COMMERCIAL_ROOT/core/pkg/kernel" ]; then
-  echo "ERROR: Cannot find commercial repo. Pass path as argument."
-  echo "Usage: $0 [OSS_ROOT] [COMMERCIAL_ROOT]"
-  exit 1
-fi
-
 echo "═══════════════════════════════════════════════════════"
-echo "  HELM Repo Boundary Verification"
-echo "  OSS:        $OSS_ROOT"
-echo "  Commercial: $COMMERCIAL_ROOT"
+echo "  HELM Repo Boundary Verification (SHA256)"
 echo "═══════════════════════════════════════════════════════"
 echo ""
 
-# Protected paths — must be identical between repos
-PROTECTED_PATHS=(
-  "core/pkg/kernel"
-  "core/pkg/contracts"
-  "core/pkg/crypto"
-  "core/pkg/evidencepack"
-  "core/pkg/proofgraph"
-  "core/pkg/receipts"
-  "core/pkg/verifier"
-  "core/pkg/connectors/sandbox"
-  "core/pkg/conformance"
-  "core/pkg/incubator/audit"
-  "core/pkg/integrations/receipts"
-  "core/pkg/integrations/capgraph"
-  "core/pkg/integrations/manifest"
-  "core/pkg/api"
-  "core/pkg/trust/registry"
-  "core/pkg/guardian"
-  "protocols"
-  "schemas"
-)
+# ── Detect which repo we're in ───────────────────────────
+LOCK_FILE="$REPO_ROOT/tools/oss.lock"
+MANIFEST="$REPO_ROOT/tools/boundary/protected.manifest"
 
-PASS=0
-FAIL=0
-SKIP=0
+if [ -f "$LOCK_FILE" ]; then
+  MODE="commercial"
+elif [ -f "$MANIFEST" ]; then
+  MODE="oss"
+else
+  echo "ERROR: Cannot detect repo type."
+  echo "  Expected tools/oss.lock (commercial) or tools/boundary/protected.manifest (OSS)."
+  exit 1
+fi
 
-for path in "${PROTECTED_PATHS[@]}"; do
-  oss_path="$OSS_ROOT/$path"
-  comm_path="$COMMERCIAL_ROOT/$path"
+echo "  Repo: $MODE"
+echo "  Root: $REPO_ROOT"
 
-  if [ ! -d "$oss_path" ] && [ ! -d "$comm_path" ]; then
-    SKIP=$((SKIP + 1))
-    continue
+# ── Commercial verification ─────────────────────────────
+if [ "$MODE" = "commercial" ]; then
+  if [ ! -f "$MANIFEST" ]; then
+    echo "  ERROR: tools/boundary/protected.manifest not found."
+    echo "  Run 'tools/sync-oss-kernel.sh' first."
+    exit 1
   fi
 
-  if [ ! -d "$oss_path" ]; then
-    echo "  ✗ FAIL: $path — exists only in commercial (must be upstreamed to OSS)"
-    FAIL=$((FAIL + 1))
-    continue
-  fi
-
-  if [ ! -d "$comm_path" ]; then
-    echo "  ✗ FAIL: $path — exists only in OSS (run sync-oss-kernel.sh)"
-    FAIL=$((FAIL + 1))
-    continue
-  fi
-
-  # Compare, ignoring generated/binary files
-  DIFF_OUTPUT=$(diff -rq \
-    --exclude="*.pyc" \
-    --exclude="__pycache__" \
-    --exclude=".ruff_cache" \
-    --exclude="node_modules" \
-    --exclude="dist" \
-    --exclude="target" \
-    --exclude=".package-lock.json" \
-    "$oss_path" "$comm_path" 2>/dev/null || true)
-
-  if [ -z "$DIFF_OUTPUT" ]; then
-    echo "  ✓ PASS: $path"
-    PASS=$((PASS + 1))
-  else
-    echo "  ✗ FAIL: $path"
-    echo "$DIFF_OUTPUT" | head -10 | sed 's/^/      /'
-    DIFF_COUNT=$(echo "$DIFF_OUTPUT" | wc -l | tr -d ' ')
-    if [ "$DIFF_COUNT" -gt 10 ]; then
-      echo "      ... and $((DIFF_COUNT - 10)) more differences"
-    fi
-    FAIL=$((FAIL + 1))
-  fi
-done
-
-echo ""
-echo "═══════════════════════════════════════════════════════"
-echo "  Results: $PASS passed, $FAIL failed, $SKIP skipped"
-echo "═══════════════════════════════════════════════════════"
-
-if [ "$FAIL" -gt 0 ]; then
+  source "$LOCK_FILE" 2>/dev/null || true
+  echo "  Pinned OSS commit: ${OSS_COMMIT:-UNKNOWN}"
+  echo "  Manifest hash:     ${MANIFEST_HASH:-UNKNOWN}"
   echo ""
-  echo "ACTION REQUIRED: Run 'tools/sync-oss-kernel.sh' in commercial"
-  echo "  or upstream changes to OSS and re-sync."
-  exit 1
+
+  # Verify manifest hash matches lock
+  ACTUAL_MANIFEST_HASH=$(shasum -a 256 "$MANIFEST" | cut -d' ' -f1)
+  if [ "${MANIFEST_HASH:-}" != "$ACTUAL_MANIFEST_HASH" ]; then
+    echo "  ✗ FAIL: Manifest hash mismatch"
+    echo "    Expected: ${MANIFEST_HASH:-NONE}"
+    echo "    Actual:   $ACTUAL_MANIFEST_HASH"
+    echo "    Run 'tools/sync-oss-kernel.sh' to resync."
+    exit 1
+  fi
+  echo "  ✓ Manifest hash matches oss.lock"
+
+  # Verify each file from manifest
+  PASS=0
+  FAIL=0
+  MISSING=0
+
+  while IFS= read -r line; do
+    [[ "$line" =~ ^#.* ]] && continue
+    [[ -z "$line" ]] && continue
+
+    expected_hash=$(echo "$line" | awk '{print $1}')
+    filepath=$(echo "$line" | awk '{print $2}')
+
+    if [ ! -f "$REPO_ROOT/$filepath" ]; then
+      echo "  ✗ MISSING: $filepath"
+      MISSING=$((MISSING + 1))
+      continue
+    fi
+
+    actual_hash=$(shasum -a 256 "$REPO_ROOT/$filepath" | cut -d' ' -f1)
+    if [ "$expected_hash" != "$actual_hash" ]; then
+      echo "  ✗ MODIFIED: $filepath"
+      FAIL=$((FAIL + 1))
+    else
+      PASS=$((PASS + 1))
+    fi
+  done < "$MANIFEST"
+
+  # Check for extraneous files in protected paths
+  EXTRA=0
+  PROTECTED_DIRS=(
+    core/pkg/kernel core/pkg/contracts core/pkg/crypto
+    core/pkg/evidencepack core/pkg/proofgraph core/pkg/receipts
+    core/pkg/verifier core/pkg/connectors/sandbox core/pkg/conformance
+    core/pkg/incubator/audit core/pkg/integrations/receipts
+    core/pkg/integrations/capgraph core/pkg/integrations/manifest
+    core/pkg/api core/pkg/trust/registry core/pkg/guardian
+    protocols schemas
+  )
+
+  for dir in "${PROTECTED_DIRS[@]}"; do
+    if [ -d "$REPO_ROOT/$dir" ]; then
+      find "$REPO_ROOT/$dir" -type f | while read -r f; do
+        relpath="${f#$REPO_ROOT/}"
+        if ! grep -q "  $relpath$" "$MANIFEST"; then
+          echo "  ✗ EXTRA: $relpath (not in manifest)"
+          EXTRA=$((EXTRA + 1))
+        fi
+      done
+    fi
+  done
+
+  echo ""
+  echo "═══════════════════════════════════════════════════════"
+  echo "  Results: $PASS verified, $FAIL modified, $MISSING missing, $EXTRA extra"
+  echo "═══════════════════════════════════════════════════════"
+
+  TOTAL_ERRORS=$((FAIL + MISSING + EXTRA))
+  if [ "$TOTAL_ERRORS" -gt 0 ]; then
+    echo ""
+    echo "BOUNDARY VIOLATION: $TOTAL_ERRORS issues found."
+    echo "  Run 'tools/sync-oss-kernel.sh' to resync from OSS."
+    exit 1
+  fi
+
+  echo ""
+  echo "All $PASS protected files verified. ✓"
+  exit 0
 fi
 
-echo ""
-echo "All protected paths are in sync. ✓"
-exit 0
+# ── OSS verification ────────────────────────────────────
+if [ "$MODE" = "oss" ]; then
+  echo "  Checking manifest against current tree..."
+  echo ""
+
+  PASS=0
+  FAIL=0
+  STALE=0
+
+  while IFS= read -r line; do
+    [[ "$line" =~ ^#.* ]] && continue
+    [[ -z "$line" ]] && continue
+
+    expected_hash=$(echo "$line" | awk '{print $1}')
+    filepath=$(echo "$line" | awk '{print $2}')
+
+    if [ ! -f "$REPO_ROOT/$filepath" ]; then
+      echo "  ✗ DELETED: $filepath (in manifest but not on disk)"
+      FAIL=$((FAIL + 1))
+      continue
+    fi
+
+    actual_hash=$(shasum -a 256 "$REPO_ROOT/$filepath" | cut -d' ' -f1)
+    if [ "$expected_hash" != "$actual_hash" ]; then
+      STALE=$((STALE + 1))
+    else
+      PASS=$((PASS + 1))
+    fi
+  done < "$MANIFEST"
+
+  echo ""
+  echo "═══════════════════════════════════════════════════════"
+  echo "  Results: $PASS current, $STALE stale, $FAIL errors"
+  echo "═══════════════════════════════════════════════════════"
+
+  if [ "$FAIL" -gt 0 ]; then
+    echo ""
+    echo "ERROR: $FAIL files deleted or missing. Regenerate manifest."
+    exit 1
+  fi
+
+  if [ "$STALE" -gt 0 ]; then
+    echo ""
+    echo "NOTE: $STALE files changed since last manifest generation."
+    echo "  Run 'tools/boundary/generate-manifest.sh' to update."
+  fi
+
+  echo ""
+  echo "OSS boundary check passed. ✓"
+  exit 0
+fi
