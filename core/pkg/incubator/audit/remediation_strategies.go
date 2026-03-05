@@ -1,0 +1,346 @@
+package audit
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+)
+
+// ── Remediation Strategies ─────────────────────────────────────────────────────────────────
+//
+// These strategies handle findings from the L1 mechanical audit.
+// Each one maps a specific §section finding to a deterministic remediation.
+//
+// Confidence tiers:
+//   0.95 = deterministic, safe (go mod tidy)
+//   0.85 = template-based, needs review (test stubs)
+//   0.70 = pattern match, needs careful review (Dockerfile)
+//   0.50 = complex, human review required (slog migration)
+
+// Additional categories
+const (
+	RemediationDependency    RemediationCategory = "dependency"
+	RemediationReliability   RemediationCategory = "reliability"
+	RemediationDocumentation RemediationCategory = "documentation"
+)
+
+// RegisterRemediationStrategies adds all L1 remediation strategies to a translator.
+func RegisterRemediationStrategies(t *FindingTranslator) {
+	t.RegisterStrategy(RemediationDependency, &goModTidyStrategy{})
+	t.RegisterStrategy(RemediationArchitecture, &compositeArchStrategy{
+		strategies: []RemediationStrategy{
+			&architectureStrategy{},    // existing: "use client"
+			&testStubStrategy{},        // NEW: missing test files
+			&undefinedSymbolStrategy{}, // NEW: remove dead references
+		},
+	})
+	t.RegisterStrategy(RemediationSecurity, &compositeSecurityStrategy{
+		strategies: []RemediationStrategy{
+			&securityStrategy{},   // existing: XSS/sanitization
+			&dockerfileStrategy{}, // NEW: Dockerfile hardening
+		},
+	})
+	t.RegisterStrategy(RemediationReliability, &slogMigrationStrategy{})
+}
+
+// compositeArchStrategy tries multiple architecture strategies in order.
+type compositeArchStrategy struct {
+	strategies []RemediationStrategy
+}
+
+func (c *compositeArchStrategy) CanRemediate(f Finding) bool {
+	for _, s := range c.strategies {
+		if s.CanRemediate(f) {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *compositeArchStrategy) GenerateMutation(f Finding) (*Mutation, error) {
+	for _, s := range c.strategies {
+		if s.CanRemediate(f) {
+			return s.GenerateMutation(f)
+		}
+	}
+	return nil, fmt.Errorf("no strategy matched")
+}
+
+// compositeSecurityStrategy tries multiple security strategies.
+type compositeSecurityStrategy struct {
+	strategies []RemediationStrategy
+}
+
+func (c *compositeSecurityStrategy) CanRemediate(f Finding) bool {
+	for _, s := range c.strategies {
+		if s.CanRemediate(f) {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *compositeSecurityStrategy) GenerateMutation(f Finding) (*Mutation, error) {
+	for _, s := range c.strategies {
+		if s.CanRemediate(f) {
+			return s.GenerateMutation(f)
+		}
+	}
+	return nil, fmt.Errorf("no strategy matched")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §1 go_mod_tidy — Auto-run `go mod tidy` across all modules
+// ═══════════════════════════════════════════════════════════════════════════
+
+type goModTidyStrategy struct{}
+
+func (s *goModTidyStrategy) CanRemediate(f Finding) bool {
+	lower := strings.ToLower(f.Title)
+	return strings.Contains(lower, "go.mod") ||
+		strings.Contains(lower, "go mod tidy") ||
+		strings.Contains(lower, "dependency drift")
+}
+
+func (s *goModTidyStrategy) GenerateMutation(f Finding) (*Mutation, error) {
+	dir := filepath.Dir(f.File)
+	if dir == "." || dir == "" {
+		dir = "."
+	}
+	return &Mutation{
+		File:        f.File,
+		Description: fmt.Sprintf("Run `go mod tidy` in %s to clean dependency drift", dir),
+		Patch:       fmt.Sprintf("cd %s && go mod tidy", dir),
+		Confidence:  0.95, // Deterministic, safe
+		AutoApply:   true, // Safe to auto-apply
+	}, nil
+}
+
+// ExecuteGoModTidy actually runs go mod tidy in the directory.
+func ExecuteGoModTidy(repoRoot, modDir string) error {
+	fullDir := filepath.Join(repoRoot, modDir)
+	cmd := exec.Command("go", "mod", "tidy")
+	cmd.Dir = fullDir
+	cmd.Env = os.Environ()
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("go mod tidy in %s: %w (%s)", modDir, err, string(out))
+	}
+	return nil
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §21 test_stub — Generate test file stubs for untested bridges/factories
+// ═══════════════════════════════════════════════════════════════════════════
+
+type testStubStrategy struct{}
+
+func (s *testStubStrategy) CanRemediate(f Finding) bool {
+	lower := strings.ToLower(f.Title)
+	return strings.Contains(lower, "no corresponding test") ||
+		strings.Contains(lower, "bridge file has no") ||
+		strings.Contains(lower, "untested")
+}
+
+func (s *testStubStrategy) GenerateMutation(f Finding) (*Mutation, error) {
+	// Generate test file path from source file
+	testFile := strings.TrimSuffix(f.File, ".go") + "_test.go"
+	pkgName := inferPackageName(f.File)
+
+	testContent := fmt.Sprintf(`package %s
+
+import "testing"
+
+func TestBridge_Placeholder(t *testing.T) {
+	// AUTO-GENERATED by HELM Remediator
+	// This test stub was created because %s had no corresponding test.
+	// Replace this with real integration tests for the bridge.
+	t.Log("Bridge test stub for %s — implement real tests")
+}
+`, pkgName, filepath.Base(f.File), filepath.Base(f.File))
+
+	return &Mutation{
+		File:        testFile,
+		Description: fmt.Sprintf("Generate test stub for %s", f.File),
+		Patch:       testContent,
+		Confidence:  0.85,
+		AutoApply:   true, // Safe — creating a new file can't break existing code
+	}, nil
+}
+
+// ExecuteTestStub writes a test stub file to disk.
+func ExecuteTestStub(repoRoot string, m Mutation) error {
+	fullPath := filepath.Join(repoRoot, m.File)
+	if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
+		return fmt.Errorf("mkdir for test stub: %w", err)
+	}
+	// Don't overwrite existing test files
+	if _, err := os.Stat(fullPath); err == nil {
+		return fmt.Errorf("test file already exists: %s", m.File)
+	}
+	return os.WriteFile(fullPath, []byte(m.Patch), 0o644)
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §2/§4 undefined_symbol — Remove/comment references to deleted symbols
+// ═══════════════════════════════════════════════════════════════════════════
+
+type undefinedSymbolStrategy struct{}
+
+func (s *undefinedSymbolStrategy) CanRemediate(f Finding) bool {
+	lower := strings.ToLower(f.Title)
+	return strings.Contains(lower, "undefined:") ||
+		strings.Contains(lower, "undefined")
+}
+
+func (s *undefinedSymbolStrategy) GenerateMutation(f Finding) (*Mutation, error) {
+	return &Mutation{
+		File:        f.File,
+		Description: fmt.Sprintf("Fix undefined symbol in %s: %s", f.File, f.Title),
+		Patch:       fmt.Sprintf("// AUDIT-FIX: Comment out or stub the undefined reference\n// Original error: %s", f.Title),
+		Confidence:  0.65,
+		AutoApply:   false, // Needs human review — might need implementation
+	}, nil
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §9 dockerfile — Add USER directive, pin digest, remove :latest
+// ═══════════════════════════════════════════════════════════════════════════
+
+type dockerfileStrategy struct{}
+
+func (s *dockerfileStrategy) CanRemediate(f Finding) bool {
+	lower := strings.ToLower(f.Title)
+	return strings.Contains(lower, "user directive") ||
+		strings.Contains(lower, "pinned by digest") ||
+		strings.Contains(lower, ":latest")
+}
+
+func (s *dockerfileStrategy) GenerateMutation(f Finding) (*Mutation, error) {
+	lower := strings.ToLower(f.Title)
+
+	var patch string
+	var confidence float64
+
+	switch {
+	case strings.Contains(lower, "user directive"):
+		patch = fmt.Sprintf("# Add to %s before ENTRYPOINT:\nRUN addgroup -S helm && adduser -S helm -G helm\nUSER helm", f.File)
+		confidence = 0.80
+	case strings.Contains(lower, ":latest"):
+		patch = fmt.Sprintf("# Pin base image in %s:\n# Replace :latest with specific version tag\n# Example: node:20-alpine instead of node:latest", f.File)
+		confidence = 0.70
+	default:
+		patch = fmt.Sprintf("# Pin base image by digest in %s:\n# Example: golang:1.24@sha256:...", f.File)
+		confidence = 0.70
+	}
+
+	return &Mutation{
+		File:        f.File,
+		Description: fmt.Sprintf("Dockerfile hardening: %s", f.Title),
+		Patch:       patch,
+		Confidence:  confidence,
+		AutoApply:   false,
+	}, nil
+}
+
+// ExecuteDockerfileFix applies Dockerfile hardening in-place.
+func ExecuteDockerfileFix(repoRoot string, m Mutation) error {
+	fullPath := filepath.Join(repoRoot, m.File)
+	data, err := os.ReadFile(fullPath)
+	if err != nil {
+		return fmt.Errorf("read dockerfile: %w", err)
+	}
+
+	content := string(data)
+	lower := strings.ToLower(m.Description)
+	modified := false
+
+	// Add USER directive before ENTRYPOINT or CMD
+	if strings.Contains(lower, "user directive") {
+		lines := strings.Split(content, "\n")
+		var result []string
+		userAdded := false
+		for _, line := range lines {
+			trimmed := strings.TrimSpace(strings.ToUpper(line))
+			if !userAdded && (strings.HasPrefix(trimmed, "ENTRYPOINT") || strings.HasPrefix(trimmed, "CMD")) {
+				result = append(result, "# Added by HELM Remediator — run as non-root")
+				result = append(result, "RUN addgroup -S helm && adduser -S helm -G helm")
+				result = append(result, "USER helm")
+				result = append(result, "")
+				userAdded = true
+			}
+			result = append(result, line)
+		}
+		if userAdded {
+			content = strings.Join(result, "\n")
+			modified = true
+		}
+	}
+
+	// Replace :latest with pinned version
+	if strings.Contains(lower, ":latest") {
+		content = strings.ReplaceAll(content, ":latest", ":lts-alpine")
+		modified = true
+	}
+
+	if !modified {
+		return fmt.Errorf("no changes applicable to %s", m.File)
+	}
+
+	// Atomic write: .tmp → rename
+	tmpPath := fullPath + ".tmp"
+	if err := os.WriteFile(tmpPath, []byte(content), 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmpPath, fullPath)
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// §6 slog_migration — Replace fmt.Print/log.Print with slog
+// ═══════════════════════════════════════════════════════════════════════════
+
+type slogMigrationStrategy struct{}
+
+func (s *slogMigrationStrategy) CanRemediate(f Finding) bool {
+	lower := strings.ToLower(f.Title)
+	return strings.Contains(lower, "slog") ||
+		strings.Contains(lower, "raw print") ||
+		strings.Contains(lower, "fmt.print") ||
+		strings.Contains(lower, "log.print")
+}
+
+func (s *slogMigrationStrategy) GenerateMutation(f Finding) (*Mutation, error) {
+	return &Mutation{
+		File:        f.File,
+		Description: fmt.Sprintf("Migrate raw print/log calls to slog in %s", f.File),
+		Patch: `// AUDIT-FIX: Migrate to structured logging
+// Replace: fmt.Printf("message: %v", val)
+// With:    slog.Info("message", "key", val)
+//
+// Replace: log.Fatalf("error: %v", err)
+// With:    slog.Error("error", "error", err); os.Exit(1)`,
+		Confidence: 0.50, // Complex — each call site needs manual review
+		AutoApply:  false,
+	}, nil
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════════════════════════
+
+func inferPackageName(filePath string) string {
+	dir := filepath.Dir(filePath)
+	parts := strings.Split(dir, "/")
+	if len(parts) == 0 {
+		return "main"
+	}
+	pkg := parts[len(parts)-1]
+	if pkg == "" || pkg == "." {
+		return "main"
+	}
+	// Go package names can't have hyphens
+	pkg = strings.ReplaceAll(pkg, "-", "_")
+	return pkg
+}

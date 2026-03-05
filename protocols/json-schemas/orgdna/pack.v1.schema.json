@@ -1,0 +1,231 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://helm.peycheff.com/schemas/orgdna/pack.v1.schema.json",
+    "title": "OrgDNA Pack",
+    "description": "Defines an OrgDNA pack: identity, policies, tools, budgets, approvals, and jurisdictions",
+    "type": "object",
+    "required": [
+        "meta",
+        "identity",
+        "policies",
+        "tools"
+    ],
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": [
+                "pack_id",
+                "version",
+                "schema_version"
+            ],
+            "properties": {
+                "pack_id": {
+                    "type": "string",
+                    "description": "Unique pack identifier"
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Semantic version of this pack"
+                },
+                "schema_version": {
+                    "type": "string",
+                    "const": "1.0"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            }
+        },
+        "identity": {
+            "type": "object",
+            "required": [
+                "org_name"
+            ],
+            "properties": {
+                "org_name": {
+                    "type": "string"
+                },
+                "org_id": {
+                    "type": "string"
+                },
+                "domain": {
+                    "type": "string"
+                },
+                "tier": {
+                    "type": "string",
+                    "enum": [
+                        "starter",
+                        "pro",
+                        "enterprise"
+                    ]
+                }
+            }
+        },
+        "policies": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "policy_id",
+                    "type",
+                    "expression"
+                ],
+                "properties": {
+                    "policy_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "cel",
+                            "opa",
+                            "cedar"
+                        ]
+                    },
+                    "expression": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "severity": {
+                        "type": "string",
+                        "enum": [
+                            "blocking",
+                            "warning",
+                            "info"
+                        ]
+                    }
+                }
+            }
+        },
+        "tools": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "tool_id",
+                    "name",
+                    "capabilities"
+                ],
+                "properties": {
+                    "tool_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "capabilities": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "permissions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "replay_expectations": {
+                        "type": "object",
+                        "properties": {
+                            "deterministic": {
+                                "type": "boolean"
+                            },
+                            "idempotent": {
+                                "type": "boolean"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "budgets": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "budget_id",
+                    "limit"
+                ],
+                "properties": {
+                    "budget_id": {
+                        "type": "string"
+                    },
+                    "resource": {
+                        "type": "string"
+                    },
+                    "limit": {
+                        "type": "number"
+                    },
+                    "period": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "approvals": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "action",
+                    "required_approvers"
+                ],
+                "properties": {
+                    "action": {
+                        "type": "string"
+                    },
+                    "required_approvers": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "timeout_hours": {
+                        "type": "integer"
+                    },
+                    "escalation_policy": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "jurisdictions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "jurisdiction_id",
+                    "code"
+                ],
+                "properties": {
+                    "jurisdiction_id": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "regulations": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "data_residency": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

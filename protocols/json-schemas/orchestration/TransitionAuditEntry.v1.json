@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://helm.io/schemas/orchestration/TransitionAuditEntry.v1.json",
+  "title": "TransitionAuditEntry",
+  "description": "Records details about a state transition attempt for audit and compliance.",
+  "type": "object",
+  "required": ["id", "version", "created_at", "fsm_id", "from_state", "to_state", "event", "timestamp", "success"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this audit entry"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Entry creation timestamp"
+    },
+    "hash": {
+      "type": "string",
+      "description": "Content-addressed hash of the entry"
+    },
+    "fsm_id": {
+      "type": "string",
+      "description": "ID of the FSM instance"
+    },
+    "from_state": {
+      "type": "string",
+      "description": "State before transition"
+    },
+    "to_state": {
+      "type": "string",
+      "description": "State after transition (or attempted state)"
+    },
+    "event": {
+      "type": "string",
+      "description": "Event that triggered the transition"
+    },
+    "rule_applied": {
+      "type": "string",
+      "description": "Description of the transition rule applied"
+    },
+    "policy_ref": {
+      "type": "string",
+      "description": "Policy reference if policy-gated"
+    },
+    "guard_applied": {
+      "type": "string",
+      "description": "Guard function that was evaluated"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the transition occurred"
+    },
+    "success": {
+      "type": "boolean",
+      "description": "Whether the transition succeeded"
+    },
+    "error_message": {
+      "type": "string",
+      "description": "Error message if transition failed"
+    }
+  }
+}

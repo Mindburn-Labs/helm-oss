@@ -9,7 +9,8 @@ import (
 	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
 )
 
-// Signer interface for cryptographic signatures.
+// Signer defines the interface for cryptographic signing operations.
+// For verification, use the separate Verifier interface.
 type Signer interface {
 	Sign(data []byte) (string, error)
 	PublicKey() string
@@ -17,9 +18,6 @@ type Signer interface {
 	SignDecision(d *contracts.DecisionRecord) error
 	SignIntent(i *contracts.AuthorizedExecutionIntent) error
 	SignReceipt(r *contracts.Receipt) error
-	VerifyDecision(d *contracts.DecisionRecord) (bool, error)
-	VerifyIntent(i *contracts.AuthorizedExecutionIntent) (bool, error)
-	VerifyReceipt(r *contracts.Receipt) (bool, error)
 }
 
 // Ed25519Signer implementation.
@@ -87,7 +85,7 @@ func (s *Ed25519Signer) Verify(message []byte, signature []byte) bool {
 // SignDecision signs a DecisionRecord
 func (s *Ed25519Signer) SignDecision(d *contracts.DecisionRecord) error {
 	// Canonicalize for signing
-	payload := CanonicalizeDecision(d.ID, d.Verdict, d.Reason)
+	payload := CanonicalizeDecision(d.ID, d.Verdict, d.Reason, d.PhenotypeHash, d.PolicyContentHash, d.EffectDigest)
 	sig, err := s.Sign([]byte(payload))
 	if err != nil {
 		return err
@@ -124,7 +122,7 @@ func (s *Ed25519Signer) VerifyDecision(d *contracts.DecisionRecord) (bool, error
 	if d.Signature == "" {
 		return false, fmt.Errorf("missing signature")
 	}
-	payload := CanonicalizeDecision(d.ID, d.Verdict, d.Reason)
+	payload := CanonicalizeDecision(d.ID, d.Verdict, d.Reason, d.PhenotypeHash, d.PolicyContentHash, d.EffectDigest)
 	return Verify(s.PublicKey(), d.Signature, []byte(payload))
 }
 

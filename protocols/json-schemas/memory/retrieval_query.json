@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.ai/schemas/memory/retrieval_query.json",
+  "title": "RetrievalQuery",
+  "description": "Query description for memory retrieval",
+  "type": "object",
+  "properties": {
+    "query_text": { "type": "string" },
+    "top_k": { "type": "integer", "default": 5 },
+    "filters": { "type": "object" },
+    "min_score": { "type": "number" },
+    "policy_tags": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": ["query_text"]
+}

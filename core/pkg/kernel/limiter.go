@@ -48,7 +48,7 @@ func (tb *TokenBucket) Allow(cost int) bool {
 	elapsed := now.Sub(tb.lastRefill).Seconds()
 
 	// Refill
-	tb.tokens = tb.tokens + elapsed*tb.refillRate
+	tb.tokens += elapsed * tb.refillRate
 	if tb.tokens > tb.capacity {
 		tb.tokens = tb.capacity
 	}

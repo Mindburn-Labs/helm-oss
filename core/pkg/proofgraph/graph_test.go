@@ -129,3 +129,59 @@ func TestNode_JCSDeterminism(t *testing.T) {
 		t.Fatalf("independent nodes with same data produced different hashes: %s != %s", h1, h2)
 	}
 }
+
+func TestGraph_AppendSigned(t *testing.T) {
+	g := NewGraph()
+
+	// Append a regular node first
+	n1, err := g.Append(NodeTypeIntent, []byte(`{"intent":"deploy"}`), "user:1", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// AppendSigned: the node must be stored under the post-signature hash
+	n2, err := g.AppendSigned(NodeTypeAttestation, []byte(`{"decision":"PASS"}`), "sig-abc123", "user:1", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Signature must be set
+	if n2.Sig != "sig-abc123" {
+		t.Fatalf("sig = %q, want %q", n2.Sig, "sig-abc123")
+	}
+
+	// Node must be retrievable by the returned hash
+	got, ok := g.Get(n2.NodeHash)
+	if !ok {
+		t.Fatal("AppendSigned node not found by its NodeHash (stale map key)")
+	}
+	if got.Sig != "sig-abc123" {
+		t.Fatalf("retrieved node sig = %q, want %q", got.Sig, "sig-abc123")
+	}
+
+	// Hash must be self-consistent
+	if err := n2.Validate(); err != nil {
+		t.Fatalf("signed node fails validation: %v", err)
+	}
+
+	// Chain must be valid
+	if err := g.ValidateChain(n2.NodeHash); err != nil {
+		t.Fatalf("chain validation failed: %v", err)
+	}
+
+	// Parents must reference n1
+	if len(n2.Parents) != 1 || n2.Parents[0] != n1.NodeHash {
+		t.Errorf("parents = %v, want [%s]", n2.Parents, n1.NodeHash)
+	}
+
+	// Lamport must be monotonic
+	if n2.Lamport <= n1.Lamport {
+		t.Errorf("lamport %d not > %d", n2.Lamport, n1.Lamport)
+	}
+
+	// Heads must point to the signed node
+	heads := g.Heads()
+	if len(heads) != 1 || heads[0] != n2.NodeHash {
+		t.Errorf("heads = %v, want [%s]", heads, n2.NodeHash)
+	}
+}

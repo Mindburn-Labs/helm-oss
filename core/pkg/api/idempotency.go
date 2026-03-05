@@ -18,7 +18,7 @@ type cachedResponse struct {
 // IdempotencyStorer defines the interface for idempotency backends.
 type IdempotencyStorer interface {
 	Check(key string) (*cachedResponse, bool)
-	Set(key string, statusCode int, headers http.Header, body []byte)
+	Set(key string, statusCode int, headers http.Header, body []byte) error
 }
 
 // MemoryIdempotencyStore holds cached responses keyed by idempotency key (in-memory).
@@ -67,7 +67,7 @@ func (s *MemoryIdempotencyStore) Check(key string) (*cachedResponse, bool) {
 }
 
 // Set stores a response.
-func (s *MemoryIdempotencyStore) Set(key string, statusCode int, headers http.Header, body []byte) {
+func (s *MemoryIdempotencyStore) Set(key string, statusCode int, headers http.Header, body []byte) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.entries[key] = &cachedResponse{
@@ -76,6 +76,7 @@ func (s *MemoryIdempotencyStore) Set(key string, statusCode int, headers http.He
 		Body:       body,
 		CachedAt:   time.Now(),
 	}
+	return nil
 }
 
 // responseCapture wraps http.ResponseWriter to capture the response.
@@ -134,9 +135,13 @@ func IdempotencyMiddleware(store IdempotencyStorer) func(http.Handler) http.Hand
 			capture := &responseCapture{ResponseWriter: w, statusCode: http.StatusOK}
 			next.ServeHTTP(capture, r)
 
-			// Cache successful responses (2xx)
+			// Cache successful responses (2xx) — fail-closed: if cache write fails, return 500
 			if capture.statusCode >= 200 && capture.statusCode < 300 {
-				store.Set(key, capture.statusCode, w.Header().Clone(), capture.body.Bytes())
+				if err := store.Set(key, capture.statusCode, w.Header().Clone(), capture.body.Bytes()); err != nil {
+					// Idempotency persistence failure — client must retry
+					http.Error(w, "idempotency persistence failed", http.StatusInternalServerError)
+					return
+				}
 			}
 		})
 	}

@@ -278,7 +278,7 @@ func (tree *MerkleTree) GenerateProof(path string) (*InclusionProof, error) {
 			SiblingHash: levelNodes[siblingIdx],
 		})
 
-		currentIdx = currentIdx / 2
+		currentIdx /= 2
 	}
 
 	return proof, nil

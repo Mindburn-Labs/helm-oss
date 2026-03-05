@@ -51,7 +51,7 @@ func (h *TrustKeyHandler) HandleAddKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	event := registry.TrustEvent{
+	event := registry.LegacyTrustEvent{
 		EventType: "KEY_ADDED",
 		TenantID:  req.TenantID,
 		KeyID:     req.KeyID,
@@ -89,7 +89,7 @@ func (h *TrustKeyHandler) HandleRevokeKey(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	event := registry.TrustEvent{
+	event := registry.LegacyTrustEvent{
 		EventType: "KEY_REVOKED",
 		TenantID:  req.TenantID,
 		KeyID:     req.KeyID,

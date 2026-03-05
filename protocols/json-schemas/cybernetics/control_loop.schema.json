@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.org/schemas/cybernetics/control_loop.schema.json",
+  "title": "ControlLoop",
+  "description": "Per Section 4.2 - Negative feedback loops maintaining essential variables",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["loop_id", "name", "essential_variable_id", "sensor", "actuator", "cadence"],
+  "properties": {
+    "loop_id": {
+      "type": "string",
+      "description": "Unique identifier for this control loop"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name"
+    },
+    "description": {
+      "type": "string"
+    },
+    "essential_variable_id": {
+      "type": "string",
+      "description": "Reference to the EssentialVariable this loop regulates"
+    },
+    "sensor": {
+      "type": "object",
+      "description": "Sensor configuration for observing current state",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["ledger_query", "metrics_query", "external_poll", "event_driven"],
+          "description": "Type of sensor"
+        },
+        "query": {
+          "type": "string",
+          "description": "Query expression for ledger/metrics sensors"
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "Endpoint URL for external sensors"
+        },
+        "event_filter": {
+          "type": "string",
+          "description": "CEL filter for event-driven sensors"
+        }
+      }
+    },
+    "actuator": {
+      "type": "object",
+      "description": "Actuator configuration for corrective actions",
+      "required": ["type", "actions"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["effect_dispatch", "mode_transition", "alert", "module_invoke"],
+          "description": "Type of actuator"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["condition", "action_type"],
+            "properties": {
+              "condition": {
+                "type": "string",
+                "description": "CEL expression for when to trigger this action"
+              },
+              "action_type": {
+                "type": "string",
+                "description": "Type of action to take"
+              },
+              "action_payload": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Action-specific payload"
+              },
+              "priority": {
+                "type": "integer",
+                "description": "Priority for action ordering"
+              }
+            }
+          }
+        }
+      }
+    },
+    "controller": {
+      "type": "object",
+      "description": "Controller algorithm configuration",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["proportional", "pid", "bang_bang", "rule_based", "adaptive"],
+          "default": "rule_based",
+          "description": "Controller algorithm type"
+        },
+        "gain_p": {
+          "type": "number",
+          "description": "Proportional gain (for PID)"
+        },
+        "gain_i": {
+          "type": "number",
+          "description": "Integral gain (for PID)"
+        },
+        "gain_d": {
+          "type": "number",
+          "description": "Derivative gain (for PID)"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "condition": { "type": "string" },
+              "output": { "type": "string" }
+            }
+          },
+          "description": "Rule set for rule-based controller"
+        }
+      }
+    },
+    "cadence": {
+      "type": "object",
+      "description": "Timing configuration for loop execution",
+      "required": ["tick_interval_ms"],
+      "properties": {
+        "tick_interval_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "description": "Interval between loop ticks"
+        },
+        "max_ticks_per_minute": {
+          "type": "integer",
+          "description": "Rate limit for loop execution"
+        },
+        "jitter_tolerance_ms": {
+          "type": "integer",
+          "description": "Acceptable timing jitter"
+        }
+      }
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this loop is currently active"
+    },
+    "mode_constraints": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Mode IDs where this loop is active"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Other loop IDs this loop depends on"
+    }
+  }
+}

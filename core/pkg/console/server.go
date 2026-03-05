@@ -189,7 +189,7 @@ func Start(port int, ledger ledger.Ledger, reg registry.Registry, uiAdapter ui.U
 	mux.HandleFunc("/api/approvals", srv.handleApprovalsRouter)
 
 	// Phase 4: Cryptographic HITL Bridge — approval via Ed25519 signature verification
-	approveHandler := api.NewApproveHandler()
+	approveHandler := api.NewApproveHandler(nil)
 	mux.HandleFunc("/api/v1/kernel/approve", approveHandler.HandleApprove)
 
 	// Onboarding Endpoints (RB-13 / J2)

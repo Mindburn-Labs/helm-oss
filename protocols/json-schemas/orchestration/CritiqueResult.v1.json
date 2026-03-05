@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.sh/schemas/orchestration/CritiqueResult.v1.json",
+  "title": "CritiqueResult",
+  "description": "Validation result by an independent critic",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this critique"
+    },
+    "version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "target_id": {
+      "type": "string",
+      "description": "ID of the artifact being critiqued (PlanSpec or StepRun)"
+    },
+    "target_type": {
+      "type": "string",
+      "enum": ["PLAN", "STEP", "ARTIFACT"]
+    },
+    "validator_id": {
+      "type": "string",
+      "description": "Identity of the validating agent or human"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["PASS", "FAIL", "VETO", "WARN"]
+    },
+    "score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confidence score or rating"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Detailed explanation of the critique"
+    },
+    "required_fixes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Specific actions required to pass"
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ref_id": { "type": "string" },
+          "description": { "type": "string" },
+          "hash": { "type": "string" }
+        },
+        "required": ["ref_id", "hash"]
+      }
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "hash": {
+      "type": "string"
+    }
+  },
+  "required": ["id", "version", "target_id", "validator_id", "verdict", "reason", "hash"]
+}

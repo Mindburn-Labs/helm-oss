@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.ai/schemas/memory/source_bundle.json",
+  "title": "SourceBundle",
+  "description": "A content-addressed bundle of raw documents for memory ingestion",
+  "type": "object",
+  "properties": {
+    "bundle_id": {
+      "type": "string",
+      "description": "Unique identifier (UUID or Hash) for the bundle"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source_uri": { "type": "string" },
+          "mime_type": { "type": "string" },
+          "content_hash": { "type": "string" },
+          "metadata": { "type": "object" }
+        },
+        "required": ["source_uri", "mime_type", "content_hash"]
+      }
+    }
+  },
+  "required": ["bundle_id", "created_at", "items"]
+}

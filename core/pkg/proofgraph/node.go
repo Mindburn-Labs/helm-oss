@@ -42,7 +42,7 @@ type Node struct {
 // ComputeNodeHash computes the deterministic hash of the node (excluding NodeHash itself).
 // Uses JCS (RFC 8785) canonicalization via canonicalize.JCS() for cross-platform determinism.
 func (n *Node) ComputeNodeHash() string {
-	// Create a temporary structure for hashing that excludes NodeHash
+	// Create a temporary structure for hashing that excludes NodeHash and Timestamp for determinism
 	type NodeJCS struct {
 		Kind         NodeType        `json:"kind"`
 		Parents      []string        `json:"parents"`
@@ -51,7 +51,6 @@ func (n *Node) ComputeNodeHash() string {
 		PrincipalSeq uint64          `json:"principal_seq"`
 		Payload      json.RawMessage `json:"payload"`
 		Sig          string          `json:"sig"`
-		Timestamp    int64           `json:"ts_unix_ms,omitempty"`
 	}
 
 	temp := NodeJCS{
@@ -62,7 +61,6 @@ func (n *Node) ComputeNodeHash() string {
 		PrincipalSeq: n.PrincipalSeq,
 		Payload:      n.Payload,
 		Sig:          n.Sig,
-		Timestamp:    n.Timestamp,
 	}
 
 	// RFC 8785 (JCS): sorted keys, no HTML escaping, compact format, deterministic.

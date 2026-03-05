@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.org/schemas/orgdna/entity.schema.json",
+  "title": "Entity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "kind", "classification"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this entity"
+    },
+    "type": {
+      "type": "string",
+      "description": "The specific type of entity (e.g. User, Service)"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["Entity"],
+      "const": "Entity"
+    },
+    "classification": {
+      "type": "string",
+      "description": "Risk or data sensitivity classification"
+    },
+    "owner": {
+      "type": "string",
+      "description": "The responsible party or team"
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

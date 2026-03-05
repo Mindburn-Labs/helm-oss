@@ -218,7 +218,9 @@ func (s *PQCSigner) ExpiresAt() time.Time {
 func generateKeyID() string {
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
-		panic(fmt.Sprintf("failed to generate key ID: %v", err))
+		// Fallback: use time-based ID rather than panicking in a governance system
+		h := sha256.Sum256([]byte(fmt.Sprintf("fallback-%d", time.Now().UnixNano())))
+		return hex.EncodeToString(h[:])[:16]
 	}
 	return hex.EncodeToString(b)[:16]
 }

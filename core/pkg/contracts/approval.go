@@ -15,6 +15,15 @@ type ApprovalReceipt struct {
 	// IntentHash is the SHA-256 of the serialized AuthorizedExecutionIntent
 	IntentHash string `json:"intent_hash"`
 
+	// PlanHash is the hash of the execution plan
+	PlanHash string `json:"plan_hash"`
+
+	// PolicyHash is the hash of the enforced policy
+	PolicyHash string `json:"policy_hash"`
+
+	// Nonce is the unique execution nonce
+	Nonce string `json:"nonce"`
+
 	// ApproverID identifies the human operator
 	ApproverID string `json:"approver_id"`
 

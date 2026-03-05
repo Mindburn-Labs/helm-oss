@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.sh/schemas/orchestration/PlanSpec.v2.json",
+  "title": "PlanSpec",
+  "description": "Specification for an execution plan as a contract, with DAG structure for parallel execution and lineage tracking per Control Law I2.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this plan specification"
+    },
+    "version": {
+      "type": "string",
+      "const": "2.0.0"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the plan"
+    },
+    "description": {
+      "type": "string"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "JCS-canonical SHA-256 hash of the plan spec"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "lineage": {
+      "$ref": "LineageMarks.v1.json",
+      "description": "Provenance tracking per Control Law I2"
+    },
+    "dag": {
+      "type": "object",
+      "description": "Directed Acyclic Graph structure for step dependencies",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "description": "All steps as graph nodes",
+          "items": {
+            "$ref": "#/$defs/PlanStep"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "description": "Dependency edges between steps",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "description": "Source step ID (dependency)"
+              },
+              "to": {
+                "type": "string",
+                "description": "Target step ID (dependent)"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["requires", "soft_requires", "blocks"],
+                "description": "Edge type: requires=hard dependency, soft_requires=preferred order, blocks=mutex"
+              }
+            },
+            "required": ["from", "to", "type"]
+          }
+        },
+        "entry_points": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Step IDs with no incoming dependencies"
+        },
+        "exit_points": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Step IDs with no outgoing dependencies"
+        }
+      },
+      "required": ["nodes", "edges"]
+    },
+    "steps": {
+      "type": "array",
+      "description": "Legacy flat step list (deprecated, use dag.nodes)",
+      "items": {
+        "$ref": "#/$defs/PlanStep"
+      }
+    },
+    "parallelism": {
+      "type": "object",
+      "description": "Parallel execution constraints",
+      "properties": {
+        "max_concurrent": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "description": "Maximum concurrent step executions"
+        },
+        "strategy": {
+          "type": "string",
+          "enum": ["sequential", "parallel", "adaptive"],
+          "default": "sequential",
+          "description": "Execution strategy"
+        }
+      }
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rel": { "type": "string" },
+          "hash": { "type": "string" },
+          "uri": { "type": "string" }
+        },
+        "required": ["rel", "hash"]
+      }
+    },
+    "policy_constraints": {
+      "type": "object",
+      "description": "Policy requirements for plan execution",
+      "properties": {
+        "required_approvals": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Role IDs that must approve before execution"
+        },
+        "allowed_effect_types": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Whitelist of effect types permitted by this plan"
+        },
+        "max_retries": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 3
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum execution time for entire plan"
+        }
+      }
+    }
+  },
+  "required": ["id", "version", "dag", "hash"],
+  "$defs": {
+    "PlanStep": {
+      "type": "object",
+      "properties": {
+        "id": { 
+          "type": "string",
+          "description": "Unique step identifier within this plan"
+        },
+        "description": { "type": "string" },
+        "effect_type": { 
+          "type": "string",
+          "description": "Type of effect to execute (e.g., file_write, shell_exec)"
+        },
+        "params": { 
+          "type": "object",
+          "description": "Parameters for the effect"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Step IDs this step depends on (legacy, use dag.edges)"
+        },
+        "required_tools": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "assumptions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Conditions that must be met for this step to pass"
+        },
+        "checkpoint_before": {
+          "type": "boolean",
+          "default": false,
+          "description": "Create checkpoint before executing this step"
+        },
+        "checkpoint_after": {
+          "type": "boolean",
+          "default": false,
+          "description": "Create checkpoint after executing this step"
+        },
+        "rollback_on_failure": {
+          "type": "boolean",
+          "default": true,
+          "description": "Rollback to checkpoint if step fails"
+        }
+      },
+      "required": ["id", "effect_type", "acceptance_criteria"]
+    }
+  }
+}

@@ -1,0 +1,112 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "HELM Lab Mission Spec",
+    "description": "Defines a versioned mission for an agent run: topics, model tier, output schema, evidence requirements, and publication policy.",
+    "type": "object",
+    "required": [
+        "specId",
+        "version",
+        "agentId",
+        "modelTier",
+        "outputSchemaId",
+        "evidenceRequirements",
+        "publicationPolicy"
+    ],
+    "properties": {
+        "specId": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+-v[0-9]+$"
+        },
+        "version": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "agentId": {
+            "type": "string"
+        },
+        "modelTier": {
+            "type": "string",
+            "enum": [
+                "flash",
+                "pro"
+            ]
+        },
+        "systemPrompt": {
+            "type": "string"
+        },
+        "topics": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "recencyDays": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "targetUrls": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "format": "uri"
+            }
+        },
+        "outputSchemaId": {
+            "type": "string"
+        },
+        "evidenceRequirements": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "sources",
+                    "sourceHashes",
+                    "citations",
+                    "toolReceipts",
+                    "reproducibility"
+                ]
+            }
+        },
+        "publicationPolicy": {
+            "type": "object",
+            "required": [
+                "visibility"
+            ],
+            "properties": {
+                "visibility": {
+                    "type": "string",
+                    "enum": [
+                        "public",
+                        "internal"
+                    ]
+                },
+                "redactionRequired": {
+                    "type": "boolean"
+                },
+                "citationRequired": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "budgets": {
+            "type": "object",
+            "properties": {
+                "maxTokens": {
+                    "type": "integer"
+                },
+                "maxDurationMs": {
+                    "type": "integer"
+                },
+                "maxSteps": {
+                    "type": "integer"
+                }
+            }
+        },
+        "toolAllowlist": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        }
+    }
+}

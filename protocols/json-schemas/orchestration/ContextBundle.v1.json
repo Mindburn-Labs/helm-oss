@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.sh/schemas/orchestration/ContextBundle.v1.json",
+  "title": "ContextBundle",
+  "description": "A collection of retrieved context and memory for a specific orchestration phase",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Canonical identifier for this context bundle"
+    },
+    "version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "hash": {
+      "type": "string",
+      "description": "Content-addressed hash of the bundle (JCS canonicalization)"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "content": { "type": "string" },
+          "source": { "type": "string" },
+          "score": { "type": "number" },
+          "metadata": { "type": "object" }
+        },
+        "required": ["id", "content", "source"]
+      }
+    },
+    "memory_scope": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Authorized memory scopes for this context"
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rel": { "type": "string" },
+          "hash": { "type": "string" },
+          "uri": { "type": "string" }
+        },
+        "required": ["rel", "hash"]
+      }
+    }
+  },
+  "required": ["id", "version", "items", "hash"]
+}

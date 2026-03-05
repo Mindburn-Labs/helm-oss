@@ -63,7 +63,7 @@ type RedisLimiterStore struct {
 }
 
 // NewRedisLimiterStore creates a new store backed by Redis.
-func NewRedisLimiterStore(addr string, password string, db int) *RedisLimiterStore {
+func NewRedisLimiterStore(addr, password string, db int) *RedisLimiterStore {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: password, // no password set

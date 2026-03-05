@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.ai/schemas/memory/memory_build_manifest.json",
+  "title": "MemoryBuildManifest",
+  "description": "Immutable manifest of a memory build run",
+  "type": "object",
+  "properties": {
+    "build_id": { "type": "string" },
+    "pipeline_version": { "type": "string" },
+    "input_bundle_hash": { "type": "string" },
+    "parameters": { "type": "object" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "completed_at": { "type": "string", "format": "date-time" },
+    "output_graph_hash": { "type": "string" },
+    "status": { "type": "string", "enum": ["SUCCESS", "FAILED", "IN_PROGRESS"] }
+  },
+  "required": ["build_id", "pipeline_version", "input_bundle_hash"]
+}

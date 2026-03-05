@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://helm.io/schemas/orchestration/SignedEnvelope.v1.json",
+  "title": "SignedEnvelope",
+  "description": "Wraps an artifact with cryptographic signature per Control Law I1 (Commit Propagation). State changes must be actively propagated and reinforced through verifiable receipts.",
+  "type": "object",
+  "required": ["id", "version", "created_at", "payload", "payload_hash", "signature", "signer_id", "signer_pub_key", "scheme", "timestamp"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this envelope"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Envelope creation timestamp"
+    },
+    "hash": {
+      "type": "string",
+      "description": "Content-addressed hash of the envelope"
+    },
+    "payload": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "description": "Canonical JSON of the signed artifact (base64 encoded)"
+    },
+    "payload_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 hash of payload"
+    },
+    "signature": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "description": "Cryptographic signature (base64 encoded)"
+    },
+    "signer_id": {
+      "type": "string",
+      "description": "ID of the signing identity"
+    },
+    "signer_pub_key": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "description": "Public key used for verification (base64 encoded)"
+    },
+    "scheme": {
+      "type": "string",
+      "enum": ["ed25519", "hmac-sha256"],
+      "description": "Cryptographic scheme used for signing"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the artifact was signed"
+    }
+  }
+}

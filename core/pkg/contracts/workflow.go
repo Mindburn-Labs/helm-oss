@@ -4,16 +4,14 @@ import "time"
 
 // WorkflowDef defines a process.
 type WorkflowDef struct {
-	ID    string         `json:"id"`
-	Steps []WorkflowStep `json:"steps"`
-}
-
-// WorkflowDefinition is an alias for WorkflowDef.
-type WorkflowDefinition struct { // Alias
 	ID         string         `json:"id"`
-	WorkflowID string         `json:"workflow_id"`
+	WorkflowID string         `json:"workflow_id,omitempty"` // Optional correlation ID
 	Steps      []WorkflowStep `json:"steps"`
 }
+
+// WorkflowDefinition is a type alias retained for schema/doc compatibility.
+// New code should use WorkflowDef directly.
+type WorkflowDefinition = WorkflowDef
 
 // WorkflowStep represents a step in a workflow.
 type WorkflowStep struct {

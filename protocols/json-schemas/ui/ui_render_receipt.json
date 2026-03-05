@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.ai/schemas/ui/ui_render_receipt.json",
+  "title": "UIRenderReceipt",
+  "description": "Evidence of what was rendered to the operator",
+  "type": "object",
+  "properties": {
+    "render_id": { "type": "string" },
+    "spec_hash": { "type": "string" },
+    "rendered_at": { "type": "string", "format": "date-time" },
+    "context_hash": { "type": "string" }
+  },
+  "required": ["render_id", "spec_hash", "rendered_at"]
+}

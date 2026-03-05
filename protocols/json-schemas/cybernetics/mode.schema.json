@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.org/schemas/cybernetics/mode.schema.json",
+  "title": "Mode",
+  "description": "Per Section 4.3 - Operating modes with deterministic envelope constraints",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mode_id", "name", "entry_predicate", "envelope_constraints"],
+  "properties": {
+    "mode_id": {
+      "type": "string",
+      "description": "Unique identifier for this mode"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name"
+    },
+    "description": {
+      "type": "string"
+    },
+    "entry_predicate": {
+      "type": "string",
+      "description": "CEL expression that must evaluate to true to enter this mode"
+    },
+    "exit_predicate": {
+      "type": "string",
+      "description": "CEL expression that must evaluate to true to exit this mode"
+    },
+    "envelope_constraints": {
+      "type": "object",
+      "description": "Effect type and limit constraints while in this mode",
+      "properties": {
+        "allowed_effect_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["DATA_WRITE", "FUNDS_TRANSFER", "PERMISSION_CHANGE", "DEPLOY", "NOTIFY", "MODULE_INSTALL"]
+          },
+          "description": "Effect types permitted in this mode"
+        },
+        "denied_effect_types": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Effect types explicitly denied in this mode"
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "max_value": { "type": "number" },
+              "max_count": { "type": "integer" },
+              "window_seconds": { "type": "integer" }
+            }
+          },
+          "description": "Resource limits per effect type"
+        },
+        "require_human_approval": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Effect types requiring human approval in this mode"
+        }
+      }
+    },
+    "active_loops": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Control loop IDs that are active in this mode"
+    },
+    "suspended_loops": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Control loop IDs that are suspended in this mode"
+    },
+    "transitions": {
+      "type": "array",
+      "description": "Valid transitions from this mode",
+      "items": {
+        "type": "object",
+        "required": ["target_mode_id", "trigger"],
+        "properties": {
+          "target_mode_id": {
+            "type": "string",
+            "description": "Mode to transition to"
+          },
+          "trigger": {
+            "type": "string",
+            "enum": ["predicate", "manual", "timeout", "alarm"],
+            "description": "Type of transition trigger"
+          },
+          "predicate": {
+            "type": "string",
+            "description": "CEL expression for predicate-based triggers"
+          },
+          "timeout_ms": {
+            "type": "integer",
+            "description": "Timeout duration for timeout triggers"
+          },
+          "alarm_variable_id": {
+            "type": "string",
+            "description": "Essential variable ID for alarm triggers"
+          },
+          "priority": {
+            "type": "integer",
+            "default": 0,
+            "description": "Priority for tie-breaking when multiple transitions match"
+          },
+          "requires_approval": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether transition requires human approval"
+          }
+        }
+      }
+    },
+    "default_mode": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is the default/initial mode"
+    },
+    "emergency_mode": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is an emergency shutdown mode"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Additional mode-specific metadata"
+    }
+  }
+}

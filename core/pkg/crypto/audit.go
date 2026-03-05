@@ -33,7 +33,7 @@ type FileAuditLog struct {
 func NewFileAuditLog(path string) (*FileAuditLog, error) {
 	// Ensure file exists
 	//nolint:wrapcheck // caller provides context
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0600) //nolint:gosec // Path is configured safe
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR,0o600) //nolint:gosec // Path is configured safe
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (l *FileAuditLog) Append(actor, action string, payload interface{}) error {
 
 	// Append to file
 	//nolint:wrapcheck // caller provides context
-	f, err := os.OpenFile(l.filePath, os.O_APPEND|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(l.filePath, os.O_APPEND|os.O_WRONLY,0o600)
 	if err != nil {
 		return err
 	}

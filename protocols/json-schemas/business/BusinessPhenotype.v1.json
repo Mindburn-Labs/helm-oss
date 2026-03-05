@@ -1,0 +1,329 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "helm://schemas/business/BusinessPhenotype.v1.json",
+  "title": "BusinessPhenotype.v1",
+  "description": "Complete specification of a running business - from intent to deployed operations.",
+  "type": "object",
+  "required": ["phenotype_id", "version", "name", "business_model", "services"],
+  "properties": {
+    "phenotype_id": {
+      "type": "string",
+      "pattern": "^bp-[a-zA-Z0-9-]+$"
+    },
+    "version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "sandbox", "staged", "production", "deprecated"]
+    },
+    "business_model": {
+      "$ref": "#/$defs/BusinessModel"
+    },
+    "services": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Service" }
+    },
+    "workflows": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Workflow" }
+    },
+    "tool_bindings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ToolBinding" }
+    },
+    "domains": {
+      "$ref": "#/$defs/Domains"
+    },
+    "content": {
+      "$ref": "#/$defs/Content"
+    },
+    "analytics": {
+      "$ref": "#/$defs/Analytics"
+    },
+    "ledgers": {
+      "$ref": "#/$defs/Ledgers"
+    },
+    "jurisdiction": {
+      "$ref": "#/$defs/Jurisdiction"
+    },
+    "connectors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Connector" }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_at": { "type": "string", "format": "date-time" },
+        "created_by": { "type": "string" },
+        "last_modified": { "type": "string", "format": "date-time" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  "$defs": {
+    "BusinessModel": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["saas", "marketplace", "api", "ecommerce", "subscription", "usage_based", "hybrid"]
+        },
+        "revenue_streams": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string", "enum": ["subscription", "transaction", "usage", "licensing", "advertising"] },
+              "pricing_model": { "type": "string" }
+            }
+          }
+        },
+        "target_market": { "type": "string" },
+        "value_proposition": { "type": "string" }
+      }
+    },
+    "Service": {
+      "type": "object",
+      "required": ["service_id", "name", "type"],
+      "properties": {
+        "service_id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["api", "web", "worker", "cron", "function", "database", "cache", "queue"]
+        },
+        "pack_ref": { "type": "string" },
+        "config": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "scaling": {
+          "type": "object",
+          "properties": {
+            "min_instances": { "type": "integer", "minimum": 0 },
+            "max_instances": { "type": "integer", "minimum": 1 },
+            "auto_scale": { "type": "boolean" }
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "Workflow": {
+      "type": "object",
+      "required": ["workflow_id", "name", "steps"],
+      "properties": {
+        "workflow_id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "trigger": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["event", "schedule", "manual", "webhook"] },
+            "config": { "type": "object" }
+          }
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "step_id": { "type": "string" },
+              "action": { "type": "string" },
+              "service_ref": { "type": "string" },
+              "tool_ref": { "type": "string" },
+              "inputs": { "type": "object" },
+              "outputs": { "type": "object" },
+              "conditions": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "ToolBinding": {
+      "type": "object",
+      "required": ["tool_id", "name", "type"],
+      "properties": {
+        "tool_id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["mcp", "api", "internal", "external"] },
+        "endpoint": { "type": "string" },
+        "authentication": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["none", "api_key", "oauth", "jwt", "mtls"] },
+            "credential_ref": { "type": "string" }
+          }
+        },
+        "rate_limits": {
+          "type": "object",
+          "properties": {
+            "requests_per_minute": { "type": "integer" },
+            "requests_per_day": { "type": "integer" }
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "Domains": {
+      "type": "object",
+      "properties": {
+        "primary": { "type": "string", "format": "hostname" },
+        "aliases": { "type": "array", "items": { "type": "string", "format": "hostname" } },
+        "subdomains": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "subdomain": { "type": "string" },
+              "service_ref": { "type": "string" }
+            }
+          }
+        },
+        "ssl": {
+          "type": "object",
+          "properties": {
+            "provider": { "type": "string" },
+            "auto_renew": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "Content": {
+      "type": "object",
+      "properties": {
+        "storage": {
+          "type": "object",
+          "properties": {
+            "provider": { "type": "string" },
+            "bucket": { "type": "string" },
+            "cdn_enabled": { "type": "boolean" }
+          }
+        },
+        "media_processing": {
+          "type": "object",
+          "properties": {
+            "image_optimization": { "type": "boolean" },
+            "video_transcoding": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "Analytics": {
+      "type": "object",
+      "properties": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string", "enum": ["revenue", "product", "marketing", "custom"] },
+              "config": { "type": "object" }
+            }
+          }
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "event_name": { "type": "string" },
+              "properties": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    "Ledgers": {
+      "type": "object",
+      "properties": {
+        "accounting": {
+          "type": "object",
+          "properties": {
+            "provider": { "type": "string" },
+            "chart_of_accounts": { "type": "string" }
+          }
+        },
+        "billing": {
+          "type": "object",
+          "properties": {
+            "provider": { "type": "string" },
+            "currency": { "type": "string" },
+            "invoice_auto_send": { "type": "boolean" }
+          }
+        },
+        "audit_trail": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "retention_days": { "type": "integer" }
+          }
+        }
+      }
+    },
+    "Jurisdiction": {
+      "type": "object",
+      "description": "Legal and compliance requirements",
+      "properties": {
+        "operating_regions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "data_residency": {
+          "type": "string",
+          "description": "Primary region for data storage"
+        },
+        "compliance_frameworks": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["gdpr", "ccpa", "hipaa", "soc2", "pci_dss", "iso27001"] }
+        },
+        "required_certifications": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "age_verification_required": { "type": "boolean" },
+        "terms_of_service_url": { "type": "string", "format": "uri" },
+        "privacy_policy_url": { "type": "string", "format": "uri" }
+      }
+    },
+    "Connector": {
+      "type": "object",
+      "required": ["connector_id", "name", "type"],
+      "properties": {
+        "connector_id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["payment", "email", "sms", "crm", "erp", "analytics", "storage", "custom"] },
+        "provider": { "type": "string" },
+        "credential_ref": { "type": "string" },
+        "sandbox_mode": { "type": "boolean" },
+        "webhooks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "event": { "type": "string" },
+              "endpoint": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

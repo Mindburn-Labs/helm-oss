@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.ai/schemas/ui/ui_spec.json",
+  "title": "UISpec",
+  "description": "Declarative UI specification (A2UI/Generative)",
+  "type": "object",
+  "properties": {
+    "version": { "type": "string" },
+    "layout": { "type": "object" },
+    "components": { "type": "array", "items": { "$ref": "ui_component_call.json" } },
+    "theme": { "type": "string" }
+  },
+  "required": ["version", "components"]
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.org/schemas/knowledge/claim.schema.json",
+  "title": "Claim",
+  "description": "An assertion about a Subject made by a Source",
+  "type": "object",
+  "required": ["id", "subject", "predicate", "source_id", "state"],
+  "properties": {
+    "id": { "type": "string" },
+    "subject": { "type": "string" },
+    "predicate": { "type": "string" },
+    "object": { "description": "The value being claimed" },
+    "source_id": { "type": "string" },
+    "fact_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "The underlying facts supporting this claim"
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1.0 },
+    "state": {
+      "type": "string",
+      "enum": ["HYPOTHESIS", "OBSERVED", "VERIFIED", "ATTESTED", "CONFLICTED", "REVOKED"],
+      "description": "The lifecycle state of this claim"
+    },
+    "attestations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["verifier_id", "signature"],
+        "properties": {
+          "verifier_id": { "type": "string" },
+          "signature": { "type": "string" },
+          "attested_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}

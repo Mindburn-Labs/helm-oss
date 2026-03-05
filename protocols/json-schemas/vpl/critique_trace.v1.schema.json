@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.peycheff.com/schemas/vpl/critique_trace.v1.schema.json",
+  "title": "CritiqueTrace",
+  "description": "Structured per-step verification trace from the VPL self-critique loop. Machine-parseable, hashable, replayable.",
+  "type": "object",
+  "required": ["plan_id", "steps", "goal_check", "overall_verdict"],
+  "properties": {
+    "plan_id": {
+      "type": "string",
+      "description": "ID of the PlanCandidate being critiqued"
+    },
+    "steps": {
+      "type": "array",
+      "description": "Per-step verification results",
+      "items": {
+        "type": "object",
+        "required": ["i", "action", "preconditions", "state_before_hash", "effects_applied", "state_after_hash", "verdict"],
+        "properties": {
+          "i": {
+            "type": "integer",
+            "description": "Step index (1-based)"
+          },
+          "action": {
+            "type": "string",
+            "description": "Action ID from DomainSpec"
+          },
+          "args": {
+            "type": "object",
+            "description": "Action arguments",
+            "additionalProperties": true
+          },
+          "preconditions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["pred", "holds"],
+              "properties": {
+                "pred": { "type": "string" },
+                "holds": { "type": "boolean" }
+              }
+            }
+          },
+          "state_before_hash": { "type": "string" },
+          "effects_applied": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "state_after_hash": { "type": "string" },
+          "verdict": {
+            "type": "string",
+            "enum": ["PASS", "FAIL"]
+          },
+          "failure_reason": { "type": "string" }
+        }
+      }
+    },
+    "goal_check": {
+      "type": "object",
+      "required": ["holds"],
+      "properties": {
+        "holds": { "type": "boolean" },
+        "missing": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "overall_verdict": {
+      "type": "string",
+      "enum": ["CORRECT", "INCORRECT"]
+    }
+  }
+}

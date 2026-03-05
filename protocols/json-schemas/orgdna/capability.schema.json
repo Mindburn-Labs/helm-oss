@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.org/schemas/orgdna/capability.schema.json",
+  "title": "Capability",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "id", "effects"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier (URN) for this capability"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human readable name"
+    },
+    "description": {
+      "type": "string"
+    },
+    "effects": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of Effect Types this capability can emit"
+    },
+    "risk_class": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+      "default": "LOW"
+    },
+    "schema_fingerprint": {
+      "type": "string",
+      "description": "Hash of the input/output schema"
+    }
+  }
+}

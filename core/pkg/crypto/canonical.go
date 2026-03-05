@@ -39,8 +39,9 @@ const (
 )
 
 // CanonicalizeDecision creates a canonical string representation of a decision record for signing.
-func CanonicalizeDecision(id, verdict, reason string) string {
-	return fmt.Sprintf("%s%s%s%s%s", id, SigSeparator, verdict, SigSeparator, reason)
+// V2: binds all security-relevant fields including PhenotypeHash, PolicyContentHash, EffectDigest (DRIFT-7 fix).
+func CanonicalizeDecision(id, verdict, reason, phenotypeHash, policyContentHash, effectDigest string) string {
+	return fmt.Sprintf("%s%s%s%s%s%s%s%s%s%s%s", id, SigSeparator, verdict, SigSeparator, reason, SigSeparator, phenotypeHash, SigSeparator, policyContentHash, SigSeparator, effectDigest)
 }
 
 // CanonicalizeIntent creates a canonical string representation of an intent for signing.

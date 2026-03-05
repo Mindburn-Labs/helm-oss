@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "QualityPack",
+  "type": "object",
+  "required": ["metadata", "vectors", "summary"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["sha", "timestamp", "gate", "actor"],
+      "properties": {
+        "sha": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "gate": { "type": "string", "enum": ["A", "B", "C", "D"] },
+        "actor": { "type": "string" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["status", "score"],
+      "properties": {
+        "status": { "type": "string", "enum": ["PASS", "FAIL"] },
+        "score": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "vectors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "status", "determinism"],
+        "properties": {
+          "name": { "type": "string" },
+          "status": { "type": "string", "enum": ["PASS", "FAIL", "SKIP"] },
+          "duration_ms": { "type": "integer" },
+          "determinism": { "type": "string", "enum": ["hermetic", "network", "system"] },
+          "proof_hash": { "type": "string" },
+          "output_ref": { "type": "string" }
+        }
+      }
+    }
+  }
+}

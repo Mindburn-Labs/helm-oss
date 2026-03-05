@@ -79,13 +79,7 @@ func (o *Optimizer) CheckAndAttenuate(ctx context.Context, actorID string, store
 
 	// 3. Apply Decision
 	if targetMode != o.currentMode {
-		slog.Info(
-			"optimizer mode switch",
-			"from", o.currentMode,
-			"to", targetMode,
-			"actor_id", actorID,
-			"strategy", o.strategy,
-		)
+		slog.Info("optimizer: switching mode", "from", o.currentMode, "to", targetMode, "actor", actorID, "strategy", o.strategy)
 		o.currentMode = targetMode
 	}
 

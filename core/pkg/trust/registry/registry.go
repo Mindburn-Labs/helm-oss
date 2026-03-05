@@ -6,8 +6,8 @@ import (
 	"sync"
 )
 
-// TrustEvent represents a key lifecycle event in the trust registry.
-type TrustEvent struct {
+// LegacyTrustEvent represents a key lifecycle event in the trust registry.
+type LegacyTrustEvent struct {
 	EventType string            `json:"event_type"` // KEY_ADDED, KEY_REVOKED, KEY_ROTATED
 	TenantID  string            `json:"tenant_id"`
 	KeyID     string            `json:"key_id"`
@@ -19,7 +19,7 @@ type TrustEvent struct {
 // State is derived exclusively from TRUST_EVENT ProofGraph nodes.
 type TrustRegistry struct {
 	mu     sync.RWMutex
-	events []TrustEvent
+	events []LegacyTrustEvent
 	// Materialized view: tenant → key_id → public key (nil if revoked)
 	keys map[string]map[string]ed25519.PublicKey
 }
@@ -32,7 +32,7 @@ func NewTrustRegistry() *TrustRegistry {
 }
 
 // Apply processes a trust event, updating the materialized view.
-func (r *TrustRegistry) Apply(event TrustEvent) error {
+func (r *TrustRegistry) Apply(event LegacyTrustEvent) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

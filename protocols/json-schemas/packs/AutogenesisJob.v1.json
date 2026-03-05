@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "helm://schemas/packs/AutogenesisJob.v1.json",
+  "title": "AutogenesisJob.v1",
+  "description": "Definition for an automated pack generation job with constraints and safety boundaries.",
+  "type": "object",
+  "required": ["job_id", "name", "target_phenotype", "generation_prompt"],
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "pattern": "^job-[a-zA-Z0-9-]+$"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "target_phenotype": {
+      "type": "string",
+      "description": "ID of the BusinessPhenotype to enhance"
+    },
+    "generation_prompt": {
+      "type": "string",
+      "description": "High-level goal for autogenesis"
+    },
+    "constraints": {
+      "type": "object",
+      "properties": {
+        "max_blast_radius": {
+          "type": "string",
+          "enum": ["isolated", "service_only", "shared_db", "external"]
+        },
+        "budget_ceiling_usd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "allowed_tools": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "required_approvals": {
+          "type": "boolean"
+        }
+      }
+    },
+    "rollout_policy": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["canary", "blue_green", "immediate"]
+        },
+        "initial_percentage": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "step_duration_minutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "auto_rollback_error_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "generating", "validating", "ready_to_deploy", "deploying", "completed", "failed", "rolled_back"]
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "generated_pack_ref": { "type": "string" },
+        "validation_score": { "type": "integer" },
+        "deployment_id": { "type": "string" }
+      }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "completed_at": { "type": "string", "format": "date-time" }
+  }
+}

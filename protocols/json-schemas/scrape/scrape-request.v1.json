@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://helm.sh/schemas/scrape/scrape-request.v1.json",
+  "title": "ScrapeRequest",
+  "description": "Request to fetch and optionally parse a web page via the HELM scrape engine.",
+  "type": "object",
+  "required": ["url"],
+  "properties": {
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "The URL to fetch."
+    },
+    "method": {
+      "type": "string",
+      "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
+      "default": "GET",
+      "description": "HTTP method."
+    },
+    "headers": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Custom HTTP headers to include in the request."
+    },
+    "body": {
+      "type": "string",
+      "description": "Request body (base64-encoded for binary)."
+    },
+    "selector": {
+      "type": "object",
+      "properties": {
+        "css": { "type": "string", "description": "CSS selector to extract elements." },
+        "xpath": { "type": "string", "description": "XPath expression to extract elements." },
+        "auto": { "type": "boolean", "description": "Enable auto-selector generation." }
+      },
+      "description": "Optional selector configuration for element extraction."
+    },
+    "proxy": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string", "format": "uri", "description": "Proxy URL." },
+        "username": { "type": "string" },
+        "password": { "type": "string" }
+      },
+      "description": "Optional proxy configuration."
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Session ID for persistent cookies/state."
+    },
+    "tier": {
+      "type": "string",
+      "enum": ["http", "stealth", "dynamic"],
+      "default": "http",
+      "description": "Fetch tier determining the request engine."
+    },
+    "stealth_headers": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to generate realistic browser headers."
+    },
+    "max_retries": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "default": 3,
+      "description": "Maximum retry attempts on failure."
+    },
+    "retry_delay_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 1000,
+      "description": "Delay between retries in milliseconds."
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Request priority for spider scheduling (higher = processed first)."
+    }
+  },
+  "additionalProperties": false
+}

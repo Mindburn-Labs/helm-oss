@@ -18,11 +18,8 @@ from helm_sdk.types_gen import (
     ChatCompletionRequest,
     ChatMessage,
     ConformanceRequest,
-    ConformanceResult,
     Receipt,
-    Session,
     VerificationResult,
-    VersionInfo,
     REASON_CODES,
 )
 

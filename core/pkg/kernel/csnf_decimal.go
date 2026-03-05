@@ -220,7 +220,7 @@ func NewMoney(amountMinorUnits int64, currency string, period MoneyPeriod) (*CSN
 
 // MoneyFromDecimal creates a Money from a decimal string and currency.
 // Uses the currency's standard minor unit scale (e.g., 2 for USD, 0 for JPY).
-func MoneyFromDecimal(decimalAmount string, currency string, period MoneyPeriod) (*CSNFMoney, error) {
+func MoneyFromDecimal(decimalAmount, currency string, period MoneyPeriod) (*CSNFMoney, error) {
 	scale := CurrencyMinorUnits(currency)
 
 	d, err := ParseDecimal(decimalAmount)

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.ai/schemas/ui/ui_interaction.json",
+  "title": "UIInteraction",
+  "description": "An event representing an operator interaction with the UI",
+  "type": "object",
+  "properties": {
+    "interaction_id": { "type": "string" },
+    "session_id": { "type": "string" },
+    "component_id": { "type": "string" },
+    "action_type": { "type": "string" },
+    "payload": { "type": "object" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "previous_render_hash": { "type": "string" }
+  },
+  "required": ["interaction_id", "session_id", "component_id", "action_type", "timestamp"]
+}

@@ -2,7 +2,7 @@ package api
 
 import (
 	"database/sql"
-	"log/slog"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -54,7 +54,8 @@ func (s *PostgresIdempotencyStore) Check(key string) (*cachedResponse, bool) {
 }
 
 // Set stores an idempotency key and its response.
-func (s *PostgresIdempotencyStore) Set(key string, statusCode int, headers http.Header, body []byte) {
+// Fail-closed: returns error if persistence fails. Callers must handle this for protected actions.
+func (s *PostgresIdempotencyStore) Set(key string, statusCode int, headers http.Header, body []byte) error {
 	_, err := s.db.Exec(
 		`INSERT INTO idempotency_keys (key, status_code, headers, body, cached_at)
 		 VALUES ($1, $2, $3, $4, NOW())
@@ -62,9 +63,9 @@ func (s *PostgresIdempotencyStore) Set(key string, statusCode int, headers http.
 		key, statusCode, []byte("{}"), body,
 	)
 	if err != nil {
-		// Log but don't fail — idempotency is best-effort enrichment
-		slog.Warn("idempotency set failed", "key", key, "error", err)
+		return fmt.Errorf("idempotency: failed to persist key %s: %w", key, err)
 	}
+	return nil
 }
 
 // Cleanup removes expired idempotency keys older than the TTL.

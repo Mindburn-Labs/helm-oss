@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.sh/schemas/orchestration/Escalation.v1.json",
+  "title": "Escalation",
+  "description": "Signal for human intervention or replanning when automation fails or violates policy",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this escalation event"
+    },
+    "version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "trigger_event": {
+      "type": "string",
+      "description": "The event ID that triggered the escalation (e.g. max retries, policy denial)"
+    },
+    "source_phase": {
+      "type": "string",
+      "description": "The FSM phase where failure occurred"
+    },
+    "reason": {
+      "type": "string",
+      "enum": ["MAX_RETRIES", "POLICY_VIOLATION", "VETO", "AMBIGUITY", "SYSTEM_ERROR", "HUMAN_REQUEST"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed explanation of the problem"
+    },
+    "context_snapshot_hash": {
+      "type": "string",
+      "description": "Hash of the ContextBundle at the time of failure"
+    },
+    "failed_artifact_refs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Hashes of the artifacts involved in the failure"
+    },
+    "suggested_action": {
+      "type": "string",
+      "enum": ["REPLAN", "HUMAN_OVERRIDE", "TERMINATE", "CLARIFY"]
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "hash": {
+      "type": "string"
+    }
+  },
+  "required": ["id", "version", "trigger_event", "reason", "description", "hash"]
+}

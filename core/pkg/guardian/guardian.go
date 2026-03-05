@@ -14,6 +14,8 @@ import (
 	"github.com/Mindburn-Labs/helm/core/pkg/finance"
 	"github.com/Mindburn-Labs/helm/core/pkg/pdp"
 	"github.com/Mindburn-Labs/helm/core/pkg/prg"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Clock provides authority time for the Guardian.
@@ -32,16 +34,17 @@ func (wallClock) Now() time.Time { return time.Now() }
 
 // Guardian enforces the Proof Requirement Graph (PRG)
 type Guardian struct {
-	signer    crypto.Signer
-	prg       *prg.Graph
-	pe        *prg.PolicyEngine
-	registry  *pkg_artifact.Registry
-	clock     Clock
-	tracker   finance.Tracker
-	auditLog  *AuditLog
-	temporal  *TemporalGuardian
-	envFprint string                  // Boot-sequence fingerprint for DecisionRecords
-	pdp       pdp.PolicyDecisionPoint // Optional pluggable policy backend
+	signer            crypto.Signer
+	prg               *prg.Graph
+	pe                *prg.PolicyEngine
+	registry          *pkg_artifact.Registry
+	clock             Clock
+	tracker           finance.Tracker
+	auditLog          *AuditLog
+	temporal          *TemporalGuardian
+	envFprint         string                  // Boot-sequence fingerprint for DecisionRecords
+	pdp               pdp.PolicyDecisionPoint // Optional pluggable policy backend
+	complianceChecker ComplianceChecker       // Optional compliance pre-check
 }
 
 // NewGuardian creates a new Guardian instance.
@@ -94,6 +97,11 @@ func (g *Guardian) SetPolicyDecisionPoint(p pdp.PolicyDecisionPoint) {
 	g.pdp = p
 }
 
+// SetComplianceChecker injects a ComplianceChecker for pre-check evaluation.
+func (g *Guardian) SetComplianceChecker(c ComplianceChecker) {
+	g.complianceChecker = c
+}
+
 // SignDecision checks requirements and signs only if met
 func (g *Guardian) SignDecision(ctx context.Context, decision *contracts.DecisionRecord, effect *contracts.Effect, evidenceHashes []string, intervention *contracts.InterventionMetadata) error {
 	// 1. Gather Artifacts
@@ -134,8 +142,7 @@ func (g *Guardian) SignDecision(ctx context.Context, decision *contracts.Decisio
 	if g.tracker != nil {
 		// Attempt to resolve Budget ID from params
 		if budgetID, ok := effect.Params["budget_id"].(string); ok && budgetID != "" {
-			// Estimate cost (MVP: 1 Request)
-			// Planned enhancement: use a CostEstimator based on EffectType/Params.
+			// FUTURE: Replace flat cost with CostEstimator based on EffectType/Params
 			cost := finance.Cost{Requests: 1}
 
 			// Check and Consume
@@ -221,7 +228,13 @@ func (g *Guardian) IssueExecutionIntent(ctx context.Context, decision *contracts
 	}
 
 	// 2. Verify Decision Signature (using Kernel Key)
-	if valid, err := g.signer.VerifyDecision(decision); err != nil || !valid {
+	verifier, ok := g.signer.(interface {
+		VerifyDecision(d *contracts.DecisionRecord) (bool, error)
+	})
+	if !ok {
+		return nil, fmt.Errorf("signer does not implement VerifyDecision")
+	}
+	if valid, err := verifier.VerifyDecision(decision); err != nil || !valid {
 		return nil, fmt.Errorf("invalid decision signature: %w", err)
 	}
 
@@ -294,6 +307,15 @@ type DecisionRequest struct {
 // When a PDP is configured, policy evaluation is delegated to it and the result
 // is bound into the DecisionRecord for receipt chain verification.
 func (g *Guardian) EvaluateDecision(ctx context.Context, req DecisionRequest) (*contracts.DecisionRecord, error) {
+	ctx, span := otel.Tracer("helm.kernel").Start(ctx, "Guardian.EvaluateDecision")
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("action", req.Action),
+		attribute.String("principal", req.Principal),
+		attribute.String("resource", req.Resource),
+	)
+
 	// 1. Construct Effect from Request
 	effect := &contracts.Effect{
 		EffectID:   fmt.Sprintf("eff-%d", g.clock.Now().UnixNano()),

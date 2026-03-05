@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.sh/schemas/orchestration/VisibilityPolicy.v1.json",
+  "title": "VisibilityPolicy",
+  "description": "Rules governing who can see which artifacts and fields",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this policy"
+    },
+    "version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the policy"
+    },
+    "hash": {
+      "type": "string"
+    },
+    "default_visibility": {
+      "type": "string",
+      "enum": ["PUBLIC", "PRIVATE", "RESTRICTED", "INTERNAL"]
+    },
+    "role_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role_id": { "type": "string" },
+          "description": { "type": "string" },
+          "can_view_phases": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "can_view_artifacts": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "redactions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field_path": { "type": "string" },
+                "mask_type": { "type": "string", "enum": ["PARTIAL", "FULL", "HASH"] }
+              }
+            }
+          }
+        },
+        "required": ["role_id", "can_view_phases"]
+      }
+    },
+    "phase_rules": {
+      "type": "object",
+      "patternProperties": {
+        "^S[0-9]+$": {
+          "type": "object",
+          "properties": {
+            "visibility_level": { "type": "string" },
+            "audit_requirement": { "type": "string", "enum": ["LOG", "TRACE", "NONE"] }
+          }
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["id", "version", "default_visibility", "role_rules", "hash"]
+}

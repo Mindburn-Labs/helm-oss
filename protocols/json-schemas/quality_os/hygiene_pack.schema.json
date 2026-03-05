@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "HygienePack",
+  "type": "object",
+  "properties": {
+    "orphans": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "type"],
+        "properties": {
+          "path": { "type": "string" },
+          "type": { "type": "string", "enum": ["file", "function", "struct", "const"] },
+          "line": { "type": "integer" }
+        }
+      }
+    },
+    "drift": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source_file": { "type": "string" },
+          "doc_file": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "broken_links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "target", "status"],
+        "properties": {
+          "source": { "type": "string" },
+          "target": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      }
+    }
+  }
+}

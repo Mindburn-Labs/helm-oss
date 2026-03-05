@@ -248,7 +248,7 @@ func (t *PQCMerkleTree) GenerateProof(leafIndex int) (*PQCMerkleProof, error) {
 			})
 		}
 
-		idx = idx / 2
+		idx /= 2
 	}
 
 	return proof, nil

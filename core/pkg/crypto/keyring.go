@@ -97,7 +97,10 @@ func (k *KeyRing) VerifyDecision(d *contracts.DecisionRecord) (bool, error) {
 	}
 
 	//nolint:wrapcheck // internal delegation
-	return signer.VerifyDecision(d)
+	if v, ok := signer.(Verifier); ok {
+		return v.VerifyDecision(d)
+	}
+	return false, fmt.Errorf("key %s does not implement Verifier", keyID)
 }
 
 // Sign signs data with the first available key.
@@ -126,8 +129,10 @@ func (k *KeyRing) VerifyIntent(i *contracts.AuthorizedExecutionIntent) (bool, er
 	// Intent signature is just hex usually?
 	// We verify against all keys since we don't have KeyID in intent signature structure yet.
 	for _, s := range k.signers {
-		if ok, err := s.VerifyIntent(i); ok && err == nil {
-			return true, nil
+		if v, ok := s.(Verifier); ok {
+			if verified, err := v.VerifyIntent(i); verified && err == nil {
+				return true, nil
+			}
 		}
 	}
 	// Fallback/Fail
@@ -153,6 +158,11 @@ func (k *KeyRing) PublicKey() string {
 	// KeyRing doesn't have a single public key.
 	// We returns a marker to indicate this is a keyring.
 	return "keyring-aggregate"
+}
+
+// PublicKeyBytes returns nil for a KeyRing since it is an aggregate of multiple keys.
+func (k *KeyRing) PublicKeyBytes() []byte {
+	return nil
 }
 
 // SignIntent signs an intent with the first available key.
@@ -199,8 +209,10 @@ func (k *KeyRing) VerifyReceipt(r *contracts.Receipt) (bool, error) {
 	defer k.mu.RUnlock()
 	// Try all keys since receipt doesn't have key ID
 	for _, s := range k.signers {
-		if ok, err := s.VerifyReceipt(r); ok && err == nil {
-			return true, nil
+		if v, ok := s.(Verifier); ok {
+			if verified, err := v.VerifyReceipt(r); verified && err == nil {
+				return true, nil
+			}
 		}
 	}
 	return false, fmt.Errorf("no key verified the receipt")

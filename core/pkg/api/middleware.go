@@ -32,7 +32,7 @@ type visitor struct {
 // NewGlobalRateLimiter creates a new rate limiter.
 // rps: requests per second allowed.
 // burst: maximum burst size.
-func NewGlobalRateLimiter(rps int, burst int) *GlobalRateLimiter {
+func NewGlobalRateLimiter(rps, burst int) *GlobalRateLimiter {
 	rl := &GlobalRateLimiter{
 		visitors: make(map[string]*visitor),
 		config: rateLimitConfig{

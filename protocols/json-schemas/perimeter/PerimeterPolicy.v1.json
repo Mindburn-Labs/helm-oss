@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.peycheff.com/schemas/perimeter/PerimeterPolicy.v1.json",
+  "title": "PerimeterPolicy",
+  "description": "Defines autonomy perimeter constraints for packs and effects",
+  "type": "object",
+  "required": ["version", "policy_id", "name", "constraints"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "policy_id": {
+      "type": "string",
+      "pattern": "^perm-[a-z0-9-]+$",
+      "description": "Unique identifier for this perimeter policy"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 2048
+    },
+    "constraints": {
+      "type": "object",
+      "properties": {
+        "network": {
+          "$ref": "#/$defs/NetworkConstraints"
+        },
+        "tools": {
+          "$ref": "#/$defs/ToolConstraints"
+        },
+        "data": {
+          "$ref": "#/$defs/DataConstraints"
+        },
+        "temporal": {
+          "$ref": "#/$defs/TemporalConstraints"
+        }
+      }
+    },
+    "enforcement": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["enforce", "audit", "disabled"],
+          "default": "enforce"
+        },
+        "fail_action": {
+          "type": "string",
+          "enum": ["deny", "quarantine", "alert"],
+          "default": "deny"
+        },
+        "audit_all": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_by": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "NetworkConstraints": {
+      "type": "object",
+      "description": "Network egress constraints",
+      "properties": {
+        "allowed_hosts": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Allowlist of hostnames/IPs (supports wildcards)"
+        },
+        "denied_hosts": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Denylist of hostnames/IPs"
+        },
+        "allowed_ports": {
+          "type": "array",
+          "items": {"type": "integer", "minimum": 1, "maximum": 65535}
+        },
+        "max_requests_per_minute": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_bandwidth_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "require_tls": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "ToolConstraints": {
+      "type": "object",
+      "description": "Tool binding and execution constraints",
+      "properties": {
+        "allowed_tools": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Allowlist of tool identifiers"
+        },
+        "denied_tools": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Denylist of tool identifiers"
+        },
+        "require_attestation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Tools must be attested before execution"
+        },
+        "max_concurrent_calls": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "DataConstraints": {
+      "type": "object",
+      "description": "Data access and flow constraints",
+      "properties": {
+        "allowed_data_classes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["public", "internal", "confidential", "restricted"]
+          }
+        },
+        "denied_data_classes": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "max_context_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_response_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "redact_patterns": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Regex patterns to redact from output"
+        }
+      }
+    },
+    "TemporalConstraints": {
+      "type": "object",
+      "description": "Time-based constraints",
+      "properties": {
+        "allowed_hours": {
+          "type": "object",
+          "properties": {
+            "start": {"type": "string", "pattern": "^[0-2][0-9]:[0-5][0-9]$"},
+            "end": {"type": "string", "pattern": "^[0-2][0-9]:[0-5][0-9]$"},
+            "timezone": {"type": "string"}
+          }
+        },
+        "allowed_days": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+          }
+        },
+        "max_execution_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cooldown_seconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

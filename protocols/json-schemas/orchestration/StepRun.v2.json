@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.sh/schemas/orchestration/StepRun.v2.json",
+  "title": "StepRun",
+  "description": "Execution record for a single step with lineage tracking and counter-marks per Control Law I2.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this step run"
+    },
+    "version": {
+      "type": "string",
+      "const": "2.0.0"
+    },
+    "plan_id": {
+      "type": "string",
+      "description": "Reference to the PlanSpec"
+    },
+    "step_id": {
+      "type": "string",
+      "description": "Reference to the step within the PlanSpec"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["PENDING", "RUNNING", "COMPLETED", "FAILED", "VETOED", "SKIPPED", "ROLLED_BACK"]
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "JCS-canonical SHA-256 hash"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "lineage": {
+      "$ref": "LineageMarks.v1.json",
+      "description": "Provenance tracking per Control Law I2"
+    },
+    "counter_marks": {
+      "type": "array",
+      "description": "Antagonistic counter-marks applied to this step",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Counter-mark identifier"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["warning", "veto", "negation", "supersede"],
+            "description": "Type of counter-mark"
+          },
+          "source_id": {
+            "type": "string",
+            "description": "Identity that created the counter-mark"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Human-readable reason for the counter-mark"
+          },
+          "superseded_by": {
+            "type": "string",
+            "description": "Hash of artifact that supersedes this one (for type=supersede)"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "type", "source_id", "reason"]
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "description": "Values provided for this step execution"
+    },
+    "outputs": {
+      "type": "object",
+      "description": "Results produced by this step"
+    },
+    "effect_requests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "effect_id": { "type": "string" },
+          "type": { "type": "string" },
+          "params": { "type": "object" },
+          "status": { 
+            "type": "string",
+            "enum": ["pending", "approved", "rejected", "executed", "failed", "vetoed"]
+          },
+          "receipt_hash": { "type": "string" },
+          "evidence_pack_hash": {
+            "type": "string",
+            "description": "Hash of EvidencePack for executed effects"
+          }
+        },
+        "required": ["effect_id", "type", "status"]
+      }
+    },
+    "checkpoint_hash": {
+      "type": "string",
+      "description": "Hash of checkpoint created after this step"
+    },
+    "execution_metrics": {
+      "type": "object",
+      "description": "Performance and resource metrics",
+      "properties": {
+        "duration_ms": {
+          "type": "integer",
+          "description": "Execution duration in milliseconds"
+        },
+        "retry_count": {
+          "type": "integer",
+          "description": "Number of retries attempted"
+        },
+        "memory_used_bytes": {
+          "type": "integer"
+        },
+        "tokens_consumed": {
+          "type": "integer",
+          "description": "LLM tokens used (if applicable)"
+        }
+      }
+    },
+    "logs": {
+      "type": "string",
+      "description": "Execution logs or stdout/stderr summary"
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rel": { 
+            "type": "string",
+            "description": "Relationship type (input, output, dependency)"
+          },
+          "hash": { "type": "string" },
+          "type": { "type": "string" }
+        },
+        "required": ["rel", "hash", "type"]
+      }
+    },
+    "critique_results": {
+      "type": "array",
+      "description": "Critique/validation results for this step",
+      "items": {
+        "type": "object",
+        "properties": {
+          "validator_id": { "type": "string" },
+          "passed": { "type": "boolean" },
+          "vetoed": { "type": "boolean" },
+          "confidence": { 
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "issues": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["validator_id", "passed"]
+      }
+    }
+  },
+  "required": ["id", "version", "plan_id", "step_id", "status", "hash", "lineage"]
+}

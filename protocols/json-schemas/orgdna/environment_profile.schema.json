@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.sh/orgdna/environment_profile.schema.json",
+  "title": "EnvironmentProfile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "resources", "constraints", "signals"],
+  "properties": {
+    "profile_id": { "type": "string", "minLength": 1 },
+    "constraints": { "type": "object" },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["people", "cash", "compute", "time_horizon_days"],
+      "properties": {
+        "people": { "type": "integer", "minimum": 0 },
+        "cash": { "type": "number", "minimum": 0 },
+        "compute": { "type": "number", "minimum": 0 },
+        "time_horizon_days": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "signals": { "type": "object" }
+  }
+}

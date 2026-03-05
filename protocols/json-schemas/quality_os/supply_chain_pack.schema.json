@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SupplyChainPack",
+  "type": "object",
+  "required": ["sbom", "provenance", "signatures"],
+  "properties": {
+    "sbom": {
+      "type": "object",
+      "required": ["format", "content_ref"],
+      "properties": {
+        "format": { "type": "string", "enum": ["cyclonedx", "spdx"] },
+        "content_ref": { "type": "string" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["builder", "materials"],
+      "properties": {
+        "builder": { "type": "string" },
+        "materials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "uri": { "type": "string" },
+              "digest": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    "signatures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key_id", "signature"],
+        "properties": {
+          "key_id": { "type": "string" },
+          "signature": { "type": "string" }
+        }
+      }
+    }
+  }
+}

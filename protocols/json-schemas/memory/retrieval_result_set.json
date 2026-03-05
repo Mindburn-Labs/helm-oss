@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.ai/schemas/memory/retrieval_result_set.json",
+  "title": "RetrievalResultSet",
+  "description": "Ranked results with mandatory citations",
+  "type": "object",
+  "properties": {
+    "query_hash": { "type": "string" },
+    "graph_ref": { "type": "string" },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "content": { "type": "string" },
+          "score": { "type": "number" },
+          "citation": {
+             "type": "object",
+             "properties": {
+               "source_uri": { "type": "string" },
+               "chunk_id": { "type": "string" },
+               "bundle_hash": { "type": "string" }
+             },
+             "required": ["source_uri"]
+          }
+        },
+        "required": ["content", "citation"]
+      }
+    }
+  },
+  "required": ["query_hash", "graph_ref", "results"]
+}

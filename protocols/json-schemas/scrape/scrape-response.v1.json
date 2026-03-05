@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://helm.sh/schemas/scrape/scrape-response.v1.json",
+  "title": "ScrapeResponse",
+  "description": "Response from the HELM scrape engine after fetching and optionally parsing a web page.",
+  "type": "object",
+  "required": ["url", "status_code", "tier"],
+  "properties": {
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "The final URL after redirects."
+    },
+    "status_code": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 599,
+      "description": "HTTP status code."
+    },
+    "headers": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Response headers."
+    },
+    "body_text": {
+      "type": "string",
+      "description": "Response body as text."
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Request duration in milliseconds."
+    },
+    "tier": {
+      "type": "string",
+      "enum": ["http", "stealth", "dynamic"],
+      "description": "The fetch tier that was used."
+    },
+    "encoding": {
+      "type": "string",
+      "description": "Content-Encoding of the response."
+    },
+    "proxy_used": {
+      "type": "string",
+      "description": "The proxy URL used for this request, if any."
+    },
+    "elements": {
+      "type": "array",
+      "description": "Extracted elements (when a selector was provided).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tag": { "type": "string", "description": "HTML tag name." },
+          "text": { "type": "string", "description": "Inner text content." },
+          "html": { "type": "string", "description": "Outer HTML of the element." },
+          "attrs": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "Element attributes."
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

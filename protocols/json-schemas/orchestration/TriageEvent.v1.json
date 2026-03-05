@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://helm.io/schemas/orchestration/TriageEvent.v1.json",
+  "title": "TriageEvent",
+  "description": "Records triage state changes per Control Law I3 (System Triage). A system must have a reversible 'safe mode' triggered by critical failure metrics, followed by an active, monitored recovery process.",
+  "type": "object",
+  "required": ["id", "version", "created_at", "from_level", "to_level", "trigger", "metrics", "action"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this triage event"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Event timestamp"
+    },
+    "hash": {
+      "type": "string",
+      "description": "Content-addressed hash of this event"
+    },
+    "from_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3,
+      "description": "Previous triage level (0=NORMAL, 1=CAUTION, 2=WARNING, 3=CRITICAL)"
+    },
+    "to_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3,
+      "description": "New triage level (0=NORMAL, 1=CAUTION, 2=WARNING, 3=CRITICAL)"
+    },
+    "trigger": {
+      "type": "string",
+      "enum": ["stress_threshold_crossed", "stress_resolved", "manual_intervention"],
+      "description": "What triggered this level change"
+    },
+    "metrics": {
+      "type": "object",
+      "required": ["timestamp", "error_rate", "latency_p99", "queue_depth"],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "error_rate": {
+          "type": "number",
+          "description": "Errors per minute"
+        },
+        "latency_p99": {
+          "type": "number",
+          "description": "P99 latency in milliseconds"
+        },
+        "queue_depth": {
+          "type": "integer",
+          "description": "Pending work items"
+        },
+        "active_fsms": {
+          "type": "integer",
+          "description": "Number of active FSM instances"
+        },
+        "paused_fsms": {
+          "type": "integer",
+          "description": "Number of paused FSM instances"
+        },
+        "memory_usage_mb": {
+          "type": "number",
+          "description": "Memory usage in MB"
+        },
+        "cpu_usage_percent": {
+          "type": "number",
+          "description": "CPU usage percentage"
+        }
+      }
+    },
+    "affected_fsms": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of FSMs affected by this triage event"
+    },
+    "action": {
+      "type": "string",
+      "enum": ["normal_operation", "enhanced_monitoring", "pause_non_essential_work", "global_pause", "recovery_proceeding", "full_recovery_complete"],
+      "description": "Action taken in response to the level change"
+    }
+  }
+}

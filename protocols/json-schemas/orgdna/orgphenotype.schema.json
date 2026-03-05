@@ -1,0 +1,33 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://helm.org/schemas/orgdna/orgphenotype.schema.json",
+ "title": "OrgPhenotype",
+ "type": "object",
+ "required": [
+  "metadata",
+  "org_graph",
+  "function_map",
+  "process_catalog",
+  "kpi_model",
+  "policy_set",
+  "resource_allocations"
+ ],
+ "properties": {
+  "metadata": {
+   "type": "object",
+   "description": "Generation metadata (timestamp, vm_version)"
+  },
+  "org_graph": {
+   "type": "object",
+   "properties": {
+    "nodes": { "type": "array" },
+    "edges": { "type": "array" }
+   }
+  },
+  "function_map": { "type": "object" },
+  "process_catalog": { "type": "object" },
+  "kpi_model": { "type": "object" },
+  "policy_set": { "type": "object" },
+  "resource_allocations": { "type": "object" }
+ }
+}

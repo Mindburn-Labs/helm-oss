@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.ai/schemas/ui/ui_component_call.json",
+  "title": "UIComponentCall",
+  "description": "Definition of a static component render call",
+  "type": "object",
+  "properties": {
+    "component_name": { "type": "string" },
+    "props": { "type": "object" },
+    "id": { "type": "string" }
+  },
+  "required": ["component_name", "props", "id"]
+}

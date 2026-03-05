@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://helm.io/schemas/orchestration/PropagationReceipt.v1.json",
+  "title": "PropagationReceipt",
+  "description": "Evidence that an artifact was received and verified per Control Law I1 (Commit Propagation).",
+  "type": "object",
+  "required": ["id", "version", "created_at", "artifact_hash", "envelope_hash", "receiver_id", "verified_at", "acknowledged"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this receipt"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Receipt creation timestamp"
+    },
+    "hash": {
+      "type": "string",
+      "description": "Content-addressed hash of the receipt"
+    },
+    "artifact_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Hash of the propagated artifact"
+    },
+    "envelope_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Hash of the signed envelope"
+    },
+    "receiver_id": {
+      "type": "string",
+      "description": "ID of the receiving component"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the signature was verified"
+    },
+    "acknowledged": {
+      "type": "boolean",
+      "description": "Whether receiver acknowledged receipt"
+    },
+    "acknowledged_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the receipt was acknowledged"
+    },
+    "signature": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "description": "Receiver's signature on the receipt (base64 encoded)"
+    }
+  }
+}

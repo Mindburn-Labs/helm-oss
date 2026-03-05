@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.sh/schemas/orchestration/PlanSpec.v1.json",
+  "title": "PlanSpec",
+  "description": "Specification for an execution plan as a contract",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this plan specification"
+    },
+    "version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the plan"
+    },
+    "description": {
+      "type": "string"
+    },
+    "hash": {
+      "type": "string",
+      "description": "Content-addressed hash of the plan spec"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "effect_type": { "type": "string" },
+          "params": { "type": "object" },
+          "dependencies": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "required_tools": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "assumptions": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "acceptance_criteria": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Conditions that must be met for this step to pass"
+          }
+        },
+        "required": ["id", "effect_type", "acceptance_criteria"]
+      }
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rel": { "type": "string" },
+          "hash": { "type": "string" },
+          "uri": { "type": "string" }
+        },
+        "required": ["rel", "hash"]
+      }
+    }
+  },
+  "required": ["id", "version", "steps", "hash"]
+}

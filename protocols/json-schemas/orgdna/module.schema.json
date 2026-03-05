@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.org/schemas/orgdna/module.schema.json",
+  "title": "Module",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifest", "entities", "capabilities"],
+  "properties": {
+    "manifest": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "description": { "type": "string" },
+        "power_delta": {
+          "type": "object",
+          "description": "Declaration of new risks/capabilities introduced"
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": { "$ref": "entity.schema.json" }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": { "$ref": "capability.schema.json" }
+    },
+    "policies": {
+      "type": "array",
+      "description": "List of CEL policy contents",
+      "items": { "type": "string" }
+    },
+    "verifiers": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  }
+}

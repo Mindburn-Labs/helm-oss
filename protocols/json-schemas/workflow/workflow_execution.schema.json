@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.org/schemas/workflow/workflow_execution.schema.json",
+  "title": "WorkflowExecution",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["workflow_execution_id", "workflow_type", "status", "created_at"],
+  "properties": {
+    "workflow_execution_id": { "type": "string", "format": "uuid" },
+    "workflow_type": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["running", "completed", "failed"] },
+    "created_at": { "type": "string", "format": "date-time" }
+  }
+}

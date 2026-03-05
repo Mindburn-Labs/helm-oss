@@ -18,7 +18,7 @@ type SoftHSM struct {
 }
 
 func NewSoftHSM(keyDir string) (*SoftHSM, error) {
-	if err := os.MkdirAll(keyDir, 0700); err != nil {
+	if err := os.MkdirAll(keyDir,0o700); err != nil {
 		return nil, fmt.Errorf("failed to create key dir: %w", err)
 	}
 	return &SoftHSM{
@@ -52,14 +52,14 @@ func (h *SoftHSM) GetPQCSigner(keyLabel string) (*pqc.PQCSigner, error) {
 
 		// Save Ed25519
 		kp := signer.KeyPairFromSigner(pqc.AlgorithmEd25519)
-		if err := os.WriteFile(edKeyPath, kp.PrivateKey, 0600); err != nil {
+		if err := os.WriteFile(edKeyPath, kp.PrivateKey,0o600); err != nil {
 			return nil, fmt.Errorf("failed to save ed25519 key: %w", err)
 		}
 
 		// Save ML-KEM
 		mlKP := signer.KeyPairFromSigner(pqc.AlgorithmMLKEM768)
 		if mlKP != nil {
-			if err := os.WriteFile(mlkemKeyPath, mlKP.PrivateKey, 0600); err != nil {
+			if err := os.WriteFile(mlkemKeyPath, mlKP.PrivateKey,0o600); err != nil {
 				return nil, fmt.Errorf("failed to save mlkem key: %w", err)
 			}
 		}

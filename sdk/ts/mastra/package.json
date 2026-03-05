@@ -1,0 +1,33 @@
+{
+  "name": "@mindburn/helm-mastra",
+  "version": "0.1.0",
+  "description": "HELM governance adapter for Mastra agent framework — sandbox-aware",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "vitest",
+    "lint": "biome lint ."
+  },
+  "dependencies": {
+    "@mindburn/helm-sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "@mastra/core": ">=0.1.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.1",
+    "typescript": "^5.4.0",
+    "vitest": "^4.0.18"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mindburn-Labs/helm",
+    "directory": "sdk/ts/mastra"
+  },
+  "keywords": ["helm", "mastra", "daytona", "governance", "sandbox"]
+}

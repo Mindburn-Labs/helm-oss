@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.sh/schemas/orchestration/ApprovalArtifact.v1.json",
+  "title": "ApprovalArtifact",
+  "description": "Explicit human or machine authorization for critical actions",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this approval"
+    },
+    "version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "approver_id": {
+      "type": "string",
+      "description": "Identity of the approver (e.g. user ID, role, or machine key)"
+    },
+    "target_hash": {
+      "type": "string",
+      "description": "Hash of the artifact being approved (e.g. a PlanSpec hash)"
+    },
+    "target_type": {
+      "type": "string",
+      "enum": ["PLAN", "OBLIGATION", "EFFECT", "INTENT", "CHECKPOINT"]
+    },
+    "scope": {
+      "type": "string",
+      "description": "Limitations of this approval (e.g. 'execute once', 'valid for 1h')"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["APPROVE", "DENY", "CONDITIONAL"]
+    },
+    "conditions": {
+      "type": "string",
+      "description": "If conditional, what must be met"
+    },
+    "signature": {
+      "type": "string",
+      "description": "Cryptographic signature of the approval content"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "hash": {
+      "type": "string"
+    }
+  },
+  "required": ["id", "version", "approver_id", "target_hash", "verdict", "timestamp", "hash"]
+}

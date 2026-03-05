@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.org/schemas/knowledge/fact_graph.schema.json",
+  "title": "OrgFactGraph",
+  "description": "The complete graph of organizational knowledge at a point in time",
+  "type": "object",
+  "required": ["metadata", "facts", "claims", "conflicts"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["generated_at", "run_id"],
+      "properties": {
+        "generated_at": { "type": "string", "format": "date-time" },
+        "run_id": { "type": "string" },
+        "ttl": { "type": "string", "description": "ISO 8601 duration" }
+      }
+    },
+    "facts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/fact" }
+    },
+    "claims": {
+      "type": "array",
+      "items": { "$ref": "./claim.schema.json" }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/conflict" }
+    }
+  },
+  "$defs": {
+    "fact": {
+      "type": "object",
+      "required": ["id", "snapshot_id", "subject", "predicate", "value"],
+      "properties": {
+        "id": { "type": "string" },
+        "snapshot_id": { "type": "string" },
+        "subject": { "type": "string" },
+        "predicate": { "type": "string" },
+        "value": { "description": "The atomic value observed" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1.0 },
+        "observed_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "required": ["id", "subject", "fact_ids", "severity"],
+      "properties": {
+        "id": { "type": "string" },
+        "subject": { "type": "string" },
+        "fact_ids": { "type": "array", "items": { "type": "string" } },
+        "description": { "type": "string" },
+        "severity": { "type": "string", "enum": ["CRITICAL", "WARNING", "INFO"] },
+        "resolution": { "type": "string" }
+      }
+    }
+  }
+}

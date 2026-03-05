@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.org/schemas/knowledge/snapshot.schema.json",
+  "title": "Snapshot",
+  "description": "A frozen capture of data from an external source",
+  "type": "object",
+  "required": ["id", "source_id", "captured_at", "raw_hash"],
+  "properties": {
+    "id": { "type": "string" },
+    "source_id": { "type": "string" },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "raw_hash": { "type": "string" },
+    "tool_call": {
+      "type": "object",
+      "required": ["tool_name", "tool_args"],
+      "properties": {
+        "tool_name": { "type": "string" },
+        "tool_args": { "type": "object" },
+        "result_ref": { "type": "string", "description": "Artifact reference to full result" }
+      }
+    },
+    "metadata": { "type": "object" }
+  }
+}

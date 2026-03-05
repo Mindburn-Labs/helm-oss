@@ -71,7 +71,7 @@ func TestVerifyBundle_HashMismatch(t *testing.T) {
 	dir := t.TempDir()
 
 	// Write a file
-	os.WriteFile(filepath.Join(dir, "receipt.json"), []byte(`{"id":"r1"}`), 0644)
+	os.WriteFile(filepath.Join(dir, "receipt.json"), []byte(`{"id":"r1"}`),0o644)
 
 	// Create manifest with wrong hash
 	manifest := map[string]any{
@@ -108,7 +108,7 @@ func TestVerifyBundle_ValidWithHashes(t *testing.T) {
 
 	// Write a file and compute correct hash
 	content := []byte(`{"id":"r1","type":"receipt"}`)
-	os.WriteFile(filepath.Join(dir, "receipt.json"), content, 0644)
+	os.WriteFile(filepath.Join(dir, "receipt.json"), content,0o644)
 	hash := sha256Hex(content)
 
 	manifest := map[string]any{
@@ -163,7 +163,7 @@ func writeJSON(t *testing.T, path string, v any) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(path, data, 0644); err != nil {
+	if err := os.WriteFile(path, data,0o644); err != nil {
 		t.Fatal(err)
 	}
 }

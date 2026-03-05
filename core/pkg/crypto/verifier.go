@@ -37,7 +37,7 @@ func (v *Ed25519Verifier) VerifyDecision(d *contracts.DecisionRecord) (bool, err
 	if d.Signature == "" {
 		return false, fmt.Errorf("missing signature")
 	}
-	payload := CanonicalizeDecision(d.ID, d.Verdict, d.Reason)
+	payload := CanonicalizeDecision(d.ID, d.Verdict, d.Reason, d.PhenotypeHash, d.PolicyContentHash, d.EffectDigest)
 	sig, err := hex.DecodeString(d.Signature)
 	if err != nil {
 		return false, err

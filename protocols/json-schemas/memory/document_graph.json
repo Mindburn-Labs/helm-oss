@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.ai/schemas/memory/document_graph.json",
+  "title": "DocumentGraph",
+  "description": "Derived artifact produced by the memory pipeline",
+  "type": "object",
+  "properties": {
+    "graph_hash": { "type": "string" },
+    "version": { "type": "string" },
+    "build_manifest_ref": { "type": "string" },
+    "node_count": { "type": "integer" },
+    "edge_count": { "type": "integer" },
+    "nodes": { "type": "array" }
+  },
+  "required": ["graph_hash", "version", "build_manifest_ref"]
+}

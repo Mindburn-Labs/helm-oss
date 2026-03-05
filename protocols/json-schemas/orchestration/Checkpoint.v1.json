@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.sh/schemas/orchestration/Checkpoint.v1.json",
+  "title": "Checkpoint",
+  "description": "State persistence for FSM pause/resume/rollback",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this checkpoint"
+    },
+    "version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "fsm_id": {
+      "type": "string",
+      "description": "ID of the orchestration FSM run"
+    },
+    "phase": {
+      "type": "string",
+      "description": "FSM state at the time of checkpoint (e.g. S18)"
+    },
+    "step_status": {
+      "type": "string",
+      "enum": ["IDLE", "ACTIVE", "PAUSED", "ERROR"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "artifact_pointers": {
+      "type": "object",
+      "description": "Map of logical keys to artifact hashes for restoration",
+      "properties": {
+        "intent_ref": { "type": "string" },
+        "context_ref": { "type": "string" },
+        "plan_ref": { "type": "string" },
+        "step_runs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "latest_output": { "type": "string" }
+      },
+      "required": ["intent_ref"]
+    },
+    "integrity_hash": {
+      "type": "string",
+      "description": "Merkle root or composite hash of all referenced artifacts"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Arbitrary metadata for debugging/UI"
+    },
+    "signature": {
+      "type": "string",
+      "description": "Audit signature for this state snapshot"
+    },
+    "hash": {
+      "type": "string"
+    }
+  },
+  "required": ["id", "version", "fsm_id", "phase", "artifact_pointers", "integrity_hash", "hash"]
+}

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.org/schemas/morphogenesis/confluence_strategy.schema.json",
+  "title": "ConfluenceStrategy",
+  "description": "Per Section 5 - Morphogenesis confluence strategy declaration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["strategy_id", "name", "node_identity", "conflict_resolution"],
+  "properties": {
+    "strategy_id": {
+      "type": "string",
+      "enum": ["A", "B", "C"],
+      "description": "Strategy identifier (B is default)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable strategy name"
+    },
+    "description": {
+      "type": "string"
+    },
+    "node_identity": {
+      "type": "object",
+      "description": "How genome nodes are identified",
+      "required": ["method"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["positional", "content_addressed", "named"],
+          "description": "Node identity method"
+        },
+        "hash_algorithm": {
+          "type": "string",
+          "enum": ["sha256", "blake3"],
+          "default": "sha256",
+          "description": "Hash algorithm for content-addressed identity"
+        },
+        "include_children": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include child hashes in node identity"
+        }
+      }
+    },
+    "conflict_resolution": {
+      "type": "object",
+      "description": "How conflicts are resolved",
+      "required": ["rule"],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "enum": ["last_write_wins", "first_write_wins", "merge", "reject"],
+          "description": "Conflict resolution rule"
+        },
+        "merge_strategy": {
+          "type": "string",
+          "enum": ["union", "intersection", "custom"],
+          "description": "How to merge conflicting values"
+        },
+        "deterministic_ordering": {
+          "type": "boolean",
+          "default": true,
+          "description": "Ensure deterministic ordering of operations"
+        },
+        "sort_key": {
+          "type": "string",
+          "description": "Field to use for stable sorting"
+        }
+      }
+    },
+    "application_order": {
+      "type": "object",
+      "description": "Order in which mutations are applied",
+      "properties": {
+        "order_by": {
+          "type": "string",
+          "enum": ["sequence_number", "content_hash", "timestamp"],
+          "default": "sequence_number"
+        },
+        "tie_breaker": {
+          "type": "string",
+          "enum": ["content_hash", "source_id"],
+          "default": "content_hash"
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "description": "Confluence verification requirements",
+      "properties": {
+        "require_confluence_proof": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require proof that order doesn't affect outcome"
+        },
+        "max_reorderings_to_test": {
+          "type": "integer",
+          "default": 100,
+          "description": "Maximum permutations to test for confluence"
+        }
+      }
+    }
+  }
+}

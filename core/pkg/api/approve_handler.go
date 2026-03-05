@@ -17,13 +17,30 @@ import (
 type ApproveHandler struct {
 	// pendingApprovals maps intent_hash → ApprovalRequest
 	pendingApprovals map[string]*contracts.ApprovalRequest
+	// allowedKeys is the set of authorized Ed25519 public keys (hex-encoded)
+	allowedKeys map[string]struct{}
+	// clock provides the current time (injected for deterministic testing)
+	clock func() time.Time
 }
 
-// NewApproveHandler creates a new approval handler.
-func NewApproveHandler() *ApproveHandler {
+// NewApproveHandler creates a new approval handler with an authorized key list.
+// Uses time.Now as the default clock; override with WithClock for testing.
+func NewApproveHandler(allowedKeys []string) *ApproveHandler {
+	allowed := make(map[string]struct{})
+	for _, k := range allowedKeys {
+		allowed[k] = struct{}{}
+	}
 	return &ApproveHandler{
 		pendingApprovals: make(map[string]*contracts.ApprovalRequest),
+		allowedKeys:      allowed,
+		clock:            time.Now,
 	}
+}
+
+// WithClock overrides the time source for deterministic testing.
+func (h *ApproveHandler) WithClock(clock func() time.Time) *ApproveHandler {
+	h.clock = clock
+	return h
 }
 
 // RegisterPendingApproval adds an intent to the pending approval queue.
@@ -71,7 +88,7 @@ func (h *ApproveHandler) HandleApprove(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check expiry
-	if time.Now().After(pending.ExpiresAt) {
+	if h.clock().After(pending.ExpiresAt) {
 		pending.Status = contracts.ApprovalExpired
 		http.Error(w, "approval request has expired", http.StatusGone)
 		return
@@ -91,15 +108,36 @@ func (h *ApproveHandler) HandleApprove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify Ed25519 signature over the intent hash
+	// Ensure the public key is authorized (KID check)
+	if len(h.allowedKeys) > 0 { // If empty, we fail closed by default but here we check existence
+		if _, authorized := h.allowedKeys[receipt.PublicKey]; !authorized {
+			http.Error(w, "public key not found in authorized approver registry", http.StatusForbidden)
+			return
+		}
+	} else {
+		// If the list is completely empty, nobody is authorized.
+		http.Error(w, "no authorized approver registry configured", http.StatusForbidden)
+		return
+	}
+
+	// Verify Ed25519 signature over the bound context:
+	// plan_hash + policy_hash + intent_hash + nonce
 	pubKey := ed25519.PublicKey(pubKeyBytes)
-	if !ed25519.Verify(pubKey, []byte(receipt.IntentHash), sigBytes) {
+
+	// Create the canonical domain-separated message
+	message := fmt.Sprintf("HELM/Approval/v1:%s:%s:%s:%s",
+		receipt.PlanHash,
+		receipt.PolicyHash,
+		receipt.IntentHash,
+		receipt.Nonce)
+
+	if !ed25519.Verify(pubKey, []byte(message), sigBytes) {
 		http.Error(w, "signature verification failed — approval rejected", http.StatusForbidden)
 		return
 	}
 
 	// Signature valid — approve the intent
-	receipt.Timestamp = time.Now()
+	receipt.Timestamp = h.clock()
 	pending.Status = contracts.ApprovalApproved
 	pending.Receipt = &receipt
 

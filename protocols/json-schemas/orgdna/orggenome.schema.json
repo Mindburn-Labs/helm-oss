@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.helm.sh/orgdna/orggenome.schema.json",
+  "title": "OrgGenome",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["meta", "morphogenesis", "regulation", "phenotype_contract"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["genome_id", "name", "created_at"],
+      "properties": {
+        "genome_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "created_at": { "type": "string", "format": "date-time" },
+        "license": { "type": "string" }
+      }
+    },
+    "environment": { "$ref": "environment_profile.schema.json" },
+    "identity": { "type": "object" },
+    "viability": { "type": "object" },
+    "architecture": { "type": "object" },
+    "primitives": { "type": "object" },
+    "modules": { "type": "array", "items": { "type": "object" } },
+    "morphogenesis": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "when", "generate"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "when": { "type": "string", "minLength": 1 },
+          "generate": { "type": "object" }
+        }
+      }
+    },
+    "regulation": { "type": "object" },
+    "phenotype_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["must_produce", "determinism"],
+      "properties": {
+        "must_produce": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "determinism": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requires_random_seed"],
+          "properties": {
+            "requires_random_seed": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.org/schemas/finance/budget.schema.json",
+  "title": "Budget",
+  "description": "A constraint on resource consumption over a time window",
+  "type": "object",
+  "required": ["id", "resource_type", "limit", "window", "reset_policy"],
+  "properties": {
+    "id": { "type": "string" },
+    "resource_type": { "type": "string", "description": "e.g. 'USD', 'tokens', 'api_calls'" },
+    "limit": { "type": "integer", "minimum": 0 },
+    "window": {
+      "type": "string",
+      "enum": ["DAILY", "WEEKLY", "MONTHLY", "TOTAL", "SESSION"]
+    },
+    "consumed": { "type": "integer", "default": 0 },
+    "reset_policy": {
+      "type": "string",
+      "enum": ["MANUAL", "AUTOMATIC"]
+    },
+    "owner_id": { "type": "string" }
+  }
+}

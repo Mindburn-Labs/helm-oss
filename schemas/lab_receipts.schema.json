@@ -1,0 +1,55 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "HELM Lab Tool Receipt",
+    "description": "Deterministic receipt emitted for every tool call in a HELM-governed agent run.",
+    "type": "object",
+    "required": [
+        "toolId",
+        "timestamp",
+        "inputHash",
+        "outputHash",
+        "allowed",
+        "durationMs"
+    ],
+    "properties": {
+        "toolId": {
+            "type": "string"
+        },
+        "timestamp": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "inputHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "description": "SHA-256 of JSON-serialized input"
+        },
+        "outputHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "description": "SHA-256 of JSON-serialized output"
+        },
+        "allowed": {
+            "type": "boolean"
+        },
+        "reasonCode": {
+            "type": "string",
+            "enum": [
+                "ALLOWED",
+                "DENIED_NOT_IN_ALLOWLIST",
+                "DENIED_BUDGET_EXCEEDED",
+                "DENIED_POLICY",
+                "ERROR"
+            ]
+        },
+        "durationMs": {
+            "type": "integer"
+        },
+        "input": {
+            "description": "Optional: full input (redacted in public runs)"
+        },
+        "output": {
+            "description": "Optional: full output (redacted in public runs)"
+        }
+    }
+}

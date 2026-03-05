@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.ai/schemas/commercial/org_structure.schema.json",
+  "title": "Organization Structure",
+  "description": "Defines the static structure of an organization including departments, roles, and cost centers.",
+  "type": "object",
+  "properties": {
+    "departments": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Department" }
+    },
+    "roles": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Role" }
+    }
+  },
+  "$defs": {
+    "Department": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "parent_id": { "type": "string" },
+        "cost_centers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/CostCenter" }
+        }
+      },
+      "required": ["id", "name"]
+    },
+    "CostCenter": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "budget_id": { "type": "string", "description": "Link to a Finance Budget ID" }
+      },
+      "required": ["id", "code"]
+    },
+    "Role": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "responsibilities": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["id", "title"]
+    }
+  }
+}

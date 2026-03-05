@@ -39,17 +39,26 @@ func (g *Graph) Append(kind NodeType, payload []byte, principal string, seq uint
 }
 
 // AppendSigned adds a signed node to the graph.
+// It performs the full append-and-sign within a single lock scope to avoid
+// TOCTOU races and ensures the map key + heads are updated to the final hash.
 func (g *Graph) AppendSigned(kind NodeType, payload []byte, signature, principal string, seq uint64) (*Node, error) {
-	node, err := g.Append(kind, payload, principal, seq)
-	if err != nil {
-		return nil, err
-	}
-
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
+	g.lamport++
+
+	node := NewNode(kind, g.heads, payload, g.lamport, principal, seq)
+
+	// Apply signature and recompute hash before storing.
+	oldHash := node.NodeHash
 	node.Sig = signature
-	node.NodeHash = node.ComputeNodeHash() // Recompute with signature
+	node.NodeHash = node.ComputeNodeHash()
+
+	// Store under final (post-signature) hash only.
+	_ = oldHash // pre-signature hash is never persisted
+	g.nodes[node.NodeHash] = node
+	g.heads = []string{node.NodeHash}
+
 	return node, nil
 }
 

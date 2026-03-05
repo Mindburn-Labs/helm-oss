@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.org/schemas/planning/plan_bundle.v1.schema.json",
+  "title": "PlanBundle.v1",
+  "description": "Compiled plan from IntentTicket: GenomeDeltaPlan + ModulePlan + EffectPlan. Per Section 0.1 of the semantic constitution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["bundle_id", "intent_ticket_id", "created_at", "genome_delta_plan", "module_plan", "effect_plan"],
+  "properties": {
+    "bundle_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this plan bundle"
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "intent_ticket_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Reference to the source IntentTicket"
+    },
+    "intent_ticket_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of the IntentTicket for integrity verification"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "compiler_version": {
+      "type": "string",
+      "description": "Version of the intent compiler that produced this bundle"
+    },
+    "genome_delta_plan": {
+      "type": "object",
+      "description": "Changes to apply to the OrgGenome",
+      "required": ["deltas"],
+      "properties": {
+        "base_genome_hash": {
+          "type": "string",
+          "description": "Hash of the genome this delta applies to (null for new orgs)"
+        },
+        "deltas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["operation", "path"],
+            "properties": {
+              "operation": {
+                "type": "string",
+                "enum": ["add", "remove", "replace", "move"]
+              },
+              "path": {
+                "type": "string",
+                "description": "JSON Pointer to the genome location"
+              },
+              "value": {
+                "description": "Value for add/replace operations"
+              },
+              "from": {
+                "type": "string",
+                "description": "Source path for move operations"
+              },
+              "rationale": {
+                "type": "string",
+                "description": "Why this delta is needed"
+              }
+            }
+          }
+        },
+        "expected_result_hash": {
+          "type": "string",
+          "description": "Expected hash after applying deltas (for verification)"
+        }
+      }
+    },
+    "module_plan": {
+      "type": "object",
+      "description": "Modules/packs to install or configure",
+      "required": ["modules"],
+      "properties": {
+        "modules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["module_id", "action"],
+            "properties": {
+              "module_id": { "type": "string" },
+              "pack_id": { "type": "string" },
+              "pack_version": { "type": "string" },
+              "action": {
+                "type": "string",
+                "enum": ["install", "upgrade", "configure", "remove"]
+              },
+              "configuration": {
+                "type": "object",
+                "description": "Module-specific configuration"
+              },
+              "capabilities_provided": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "dependencies": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        },
+        "resolution_order": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Deterministic order for module installation"
+        }
+      }
+    },
+    "effect_plan": {
+      "type": "object",
+      "description": "Ordered sequence of effects to execute",
+      "required": ["effects"],
+      "properties": {
+        "effects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["effect_id", "effect_type", "phase"],
+            "properties": {
+              "effect_id": { "type": "string", "format": "uuid" },
+              "effect_type": {
+                "type": "string",
+                "description": "From the EffectType taxonomy"
+              },
+              "phase": {
+                "type": "string",
+                "enum": ["setup", "launch", "operate", "teardown"]
+              },
+              "depends_on": {
+                "type": "array",
+                "items": { "type": "string", "format": "uuid" },
+                "description": "Effect IDs that must complete first"
+              },
+              "tool_binding": {
+                "type": "object",
+                "properties": {
+                  "tool_id": { "type": "string" },
+                  "tool_fingerprint": { "type": "string" }
+                }
+              },
+              "payload": {
+                "type": "object",
+                "description": "Effect-specific payload"
+              },
+              "expected_receipt_class": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Evidence classes expected in the receipt"
+              },
+              "rollback_effect_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Effect to execute if this one fails"
+              }
+            }
+          }
+        },
+        "execution_order": {
+          "type": "array",
+          "items": { "type": "string", "format": "uuid" },
+          "description": "Deterministic total order of effect execution"
+        },
+        "sovereignty_checkpoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "before_effect_id": { "type": "string", "format": "uuid" },
+              "checkpoint_type": { "type": "string" },
+              "approval_required": { "type": "boolean" },
+              "timeout_action": {
+                "type": "string",
+                "enum": ["wait", "abort", "escalate"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "validation_result": {
+      "type": "object",
+      "description": "Results of plan validation",
+      "properties": {
+        "is_valid": { "type": "boolean" },
+        "forbidden_ops_detected": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "profile_violations": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "limit_breaches": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "content_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of the canonical JSON representation"
+    }
+  }
+}

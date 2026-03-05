@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.peycheff.com/schemas/vpl/domain_spec.v1.schema.json",
+  "title": "DomainSpec",
+  "description": "Defines the action space, predicates, and effects for a VPL planning domain.",
+  "type": "object",
+  "required": ["id", "version", "name", "actions"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique domain identifier"
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable domain name"
+    },
+    "description": {
+      "type": "string"
+    },
+    "actions": {
+      "type": "array",
+      "description": "Action contracts defining the domain's action space",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "preconditions", "effects", "side_effect_class"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "preconditions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["key", "operator"],
+              "properties": {
+                "key": { "type": "string" },
+                "operator": {
+                  "type": "string",
+                  "enum": ["eq", "neq", "exists", "not_exists"]
+                },
+                "value": {}
+              }
+            }
+          },
+          "effects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["key"],
+              "properties": {
+                "key": { "type": "string" },
+                "value": {},
+                "delete": { "type": "boolean" }
+              }
+            }
+          },
+          "side_effect_class": {
+            "type": "string",
+            "enum": ["none", "read", "write", "external-io"]
+          },
+          "required_gates": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "max_cost": {
+            "type": "object",
+            "properties": {
+              "max_tokens": { "type": "integer" },
+              "max_duration": { "type": "string" },
+              "max_tool_calls": { "type": "integer" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

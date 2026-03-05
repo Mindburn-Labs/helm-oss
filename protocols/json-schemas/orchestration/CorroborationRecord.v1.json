@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://helm.io/schemas/orchestration/CorroborationRecord.v1.json",
+  "title": "CorroborationRecord",
+  "description": "Records multi-source validation per Control Law I4 (Corroboration Gate). Before consolidation, an experience must be validated via multi-source corroboration or user approval.",
+  "type": "object",
+  "required": ["id", "version", "created_at", "target_hash", "target_type", "validators", "verdict", "confidence"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this corroboration record"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema version"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Record timestamp"
+    },
+    "hash": {
+      "type": "string",
+      "description": "Content-addressed hash of this record"
+    },
+    "target_hash": {
+      "type": "string",
+      "description": "Hash of the artifact being corroborated"
+    },
+    "target_type": {
+      "type": "string",
+      "description": "Type of artifact being corroborated (e.g., 'Experience', 'Knowledge', 'Decision')"
+    },
+    "validators": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["validator_id", "validator_type", "verdict", "confidence"],
+        "properties": {
+          "validator_id": {
+            "type": "string",
+            "description": "Identifier of the validator"
+          },
+          "validator_type": {
+            "type": "string",
+            "enum": ["agent", "user", "system", "external"],
+            "description": "Type of validator"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": ["CORROBORATE", "REJECT", "ABSTAIN"],
+            "description": "Validator's verdict"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "description": "Validator's confidence in their verdict"
+          },
+          "evidence_ref": {
+            "type": "string",
+            "description": "Reference to supporting evidence artifact"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "minItems": 1,
+      "description": "List of validators and their verdicts"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["CORROBORATED", "REJECTED", "INSUFFICIENT", "PENDING"],
+      "description": "Aggregate verdict from all validators"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Aggregate confidence score"
+    },
+    "quorum_required": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of corroborating validators required"
+    },
+    "quorum_achieved": {
+      "type": "boolean",
+      "description": "Whether quorum was achieved"
+    },
+    "user_approval": {
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string"
+        },
+        "approved": {
+          "type": "boolean"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "signature": {
+          "type": "string"
+        }
+      },
+      "description": "Optional user approval that overrides validator quorum"
+    },
+    "consolidation_allowed": {
+      "type": "boolean",
+      "description": "Whether this artifact can be promoted to long-term memory"
+    }
+  }
+}

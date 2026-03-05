@@ -1,0 +1,30 @@
+{
+  "$id": "helm://schemas/prompt_template/v1.json",
+  "type": "object",
+  "required": ["template_id", "version", "content_hash", "model_constraints"],
+  "properties": {
+    "template_id": { "type": "string" },
+    "version": { "type": "string" },
+    "content": { "type": "string" },
+    "content_hash": { "type": "string" },
+    "input_schema": { "type": "object" },
+    "model_constraints": {
+      "type": "object",
+      "properties": {
+        "min_context_window": { "type": "integer" },
+        "allowed_models": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "golden_samples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["input", "expected_output_hash"],
+        "properties": {
+          "input": { "type": "object" },
+          "expected_output_hash": { "type": "string" }
+        }
+      }
+    }
+  }
+}

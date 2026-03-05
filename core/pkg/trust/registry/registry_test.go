@@ -11,7 +11,7 @@ func TestTrustRegistry_AddAndResolve(t *testing.T) {
 	_, privKey, _ := ed25519.GenerateKey(nil)
 	pubKey := privKey.Public().(ed25519.PublicKey)
 
-	err := r.Apply(TrustEvent{
+	err := r.Apply(LegacyTrustEvent{
 		EventType: "KEY_ADDED",
 		TenantID:  "tenant-1",
 		KeyID:     "k-1",
@@ -37,8 +37,8 @@ func TestTrustRegistry_RevokeKey(t *testing.T) {
 	_, privKey, _ := ed25519.GenerateKey(nil)
 	pubKey := privKey.Public().(ed25519.PublicKey)
 
-	_ = r.Apply(TrustEvent{EventType: "KEY_ADDED", TenantID: "t1", KeyID: "k1", PublicKey: pubKey, Lamport: 1})
-	_ = r.Apply(TrustEvent{EventType: "KEY_REVOKED", TenantID: "t1", KeyID: "k1", Lamport: 2})
+	_ = r.Apply(LegacyTrustEvent{EventType: "KEY_ADDED", TenantID: "t1", KeyID: "k1", PublicKey: pubKey, Lamport: 1})
+	_ = r.Apply(LegacyTrustEvent{EventType: "KEY_REVOKED", TenantID: "t1", KeyID: "k1", Lamport: 2})
 
 	if r.IsAuthorized("t1", "k1") {
 		t.Error("key should be revoked")
@@ -56,8 +56,8 @@ func TestTrustRegistry_PointInTimeResolution(t *testing.T) {
 	_, privKey, _ := ed25519.GenerateKey(nil)
 	pubKey := privKey.Public().(ed25519.PublicKey)
 
-	_ = r.Apply(TrustEvent{EventType: "KEY_ADDED", TenantID: "t1", KeyID: "k1", PublicKey: pubKey, Lamport: 1})
-	_ = r.Apply(TrustEvent{EventType: "KEY_REVOKED", TenantID: "t1", KeyID: "k1", Lamport: 5})
+	_ = r.Apply(LegacyTrustEvent{EventType: "KEY_ADDED", TenantID: "t1", KeyID: "k1", PublicKey: pubKey, Lamport: 1})
+	_ = r.Apply(LegacyTrustEvent{EventType: "KEY_REVOKED", TenantID: "t1", KeyID: "k1", Lamport: 5})
 
 	// At Lamport 3, key should still exist
 	keys, _ := r.ResolveAuthorizedKeys("t1", 3)
@@ -81,8 +81,8 @@ func TestTrustRegistry_KeyRotation(t *testing.T) {
 	_, privKey2, _ := ed25519.GenerateKey(nil)
 	pubKey2 := privKey2.Public().(ed25519.PublicKey)
 
-	_ = r.Apply(TrustEvent{EventType: "KEY_ADDED", TenantID: "t1", KeyID: "k1", PublicKey: pubKey1, Lamport: 1})
-	_ = r.Apply(TrustEvent{EventType: "KEY_ROTATED", TenantID: "t1", KeyID: "k1", PublicKey: pubKey2, Lamport: 3})
+	_ = r.Apply(LegacyTrustEvent{EventType: "KEY_ADDED", TenantID: "t1", KeyID: "k1", PublicKey: pubKey1, Lamport: 1})
+	_ = r.Apply(LegacyTrustEvent{EventType: "KEY_ROTATED", TenantID: "t1", KeyID: "k1", PublicKey: pubKey2, Lamport: 3})
 
 	if !r.IsAuthorized("t1", "k1") {
 		t.Error("rotated key should still be authorized")
@@ -95,7 +95,7 @@ func TestTrustRegistry_KeyRotation(t *testing.T) {
 
 func TestTrustRegistry_UnknownEventType(t *testing.T) {
 	r := NewTrustRegistry()
-	err := r.Apply(TrustEvent{EventType: "UNKNOWN", TenantID: "t1", KeyID: "k1"})
+	err := r.Apply(LegacyTrustEvent{EventType: "UNKNOWN", TenantID: "t1", KeyID: "k1"})
 	if err == nil {
 		t.Error("expected error for unknown event type")
 	}
