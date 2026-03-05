@@ -1,6 +1,6 @@
 # HELM Protected Manifest
-# Generated: 2026-03-05T15:50:47Z
-# Commit: 924b6e0c1077bde2a9b96d0d4bb09240d94c1bb1
+# Generated: 2026-03-05T15:50:57Z
+# Commit: 00dba04b266ee30c4969a3a66875dc14821832b7
 # Format: SHA256  PATH
 #
 bdd040c426682b3317c34df637419254e881c41649914074ec50b0802763dbfa  core/pkg/kernel/addenda_crossruntime_test.go
