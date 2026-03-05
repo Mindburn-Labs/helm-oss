@@ -1,6 +1,6 @@
 # HELM Protected Manifest
-# Generated: 2026-03-05T15:07:31Z
-# Commit: c0e4dc110b2a8b7ddbbcfa1b3cd776efc2f96901
+# Generated: 2026-03-05T15:50:47Z
+# Commit: 924b6e0c1077bde2a9b96d0d4bb09240d94c1bb1
 # Format: SHA256  PATH
 #
 bdd040c426682b3317c34df637419254e881c41649914074ec50b0802763dbfa  core/pkg/kernel/addenda_crossruntime_test.go
@@ -553,6 +553,8 @@ bb7362eb5130500f5751ea9dc761ce762cc8ad4bdcdcb1d9aa11e847dc44e88e  protocols/spec
 c64f6ab6e62d47460908d412efaf38c0a628065a6417c4e0f38e03778ed25c8f  protocols/specs/decision-record/decision_record.v1.schema.json
 eaf47ea80329b55ea5a4c4f6e24c94e71d02c9331f804a91e614d296febad91f  protocols/specs/effects/taxonomy.md
 de0c086ae6fc3f8eaadeabc5cbea9bd3574ed06299e31c191ac149f23e2a97b8  protocols/specs/observations/observation_artifact.v1.schema.json
+9dbd840c530377071eb14b9716097dbe528b26a8466d9f97f7a73f845406c2e8  protocols/specs/rfc/receipt-format-v1.md
+2771a00c9cea779e57a8a64fd7968918d6502eba10fdcd71d1a8a596e2800db8  protocols/specs/tla/HelmKernel.tla
 7f15ead74b2bc715f7db215d5576526a8a190a76f9fcd99c39af96197e39058a  protocols/specs/tool-manifest/tool_manifest.v1.schema.json
 d9aaf7c6977d61856af1d94211434f314a192bf528b2722d1d0c623fea9a115a  schemas/lab_mission.schema.json
 d63d18ac91f1cf353f251d4ed7d0bee3a230efb9e0a87ed268e1a711b94da7b5  schemas/lab_receipts.schema.json
