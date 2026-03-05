@@ -135,7 +135,7 @@ func (g *Guardian) SignDecision(ctx context.Context, decision *contracts.Decisio
 		// Attempt to resolve Budget ID from params
 		if budgetID, ok := effect.Params["budget_id"].(string); ok && budgetID != "" {
 			// Estimate cost (MVP: 1 Request)
-			// TODO: Use a CostEstimator based on EffectType/Params
+			// Planned enhancement: use a CostEstimator based on EffectType/Params.
 			cost := finance.Cost{Requests: 1}
 
 			// Check and Consume

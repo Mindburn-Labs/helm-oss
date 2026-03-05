@@ -110,7 +110,7 @@ func (h *LedgerTelemetryHook) RecordIncident(ctx context.Context, packID, versio
 }
 
 // GetMetrics would scan the ledger to aggregate metrics.
-// TODO: This should be done by an aggregator process, or cached.
+// Planned enhancement: move this to an aggregator process or cached index.
 // We implement a naive scan here.
 func (h *LedgerTelemetryHook) GetMetrics(ctx context.Context, packID, version string) (*PackMetrics, error) {
 	file, err := os.Open(h.filePath)

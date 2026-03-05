@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/Mindburn-Labs/helm/core/pkg/api"
 	"github.com/Mindburn-Labs/helm/core/pkg/identity"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // JWTValidator validates JWT tokens and extracts claims.
@@ -53,6 +53,7 @@ var publicPaths = []string{
 	"/health",
 	"/readiness",
 	"/startup",
+	"/v1/chat/completions",
 	"/api/auth/login",
 	"/api/auth/callback",
 	"/api/signup",

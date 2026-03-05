@@ -209,7 +209,7 @@ func ComputeTraceHash(entries []CELDPTraceEntry) string {
 	// Hash the concatenation of step+expression+result_hash
 	var builder strings.Builder
 	for _, entry := range entries {
-		builder.WriteString(fmt.Sprintf("%d:%s:%s;", entry.Step, entry.Expression, entry.ResultHash))
+		_, _ = fmt.Fprintf(&builder, "%d:%s:%s;", entry.Step, entry.Expression, entry.ResultHash)
 	}
 
 	hash := sha256.Sum256([]byte(builder.String()))

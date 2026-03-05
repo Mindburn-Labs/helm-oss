@@ -96,9 +96,10 @@ func runDoctorCmd(stdout, stderr io.Writer) int {
 	fmt.Fprintln(stdout, "───────────")
 	for _, r := range results {
 		icon := "✅"
-		if r.Status == "warn" {
+		switch r.Status {
+		case "warn":
 			icon = "⚠️ "
-		} else if r.Status == "fail" {
+		case "fail":
 			icon = "❌"
 		}
 		fmt.Fprintf(stdout, "  %s  %-20s %s%s%s\n", icon, r.Name, ColorGray, r.Detail, ColorReset)

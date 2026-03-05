@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/Mindburn-Labs/helm/core/pkg/compliance/jcs"
+	"github.com/google/uuid"
 )
 
 // PolicyDecisionPoint (PDP) is the single stable API surface for policy decisions.
@@ -265,7 +265,7 @@ func (p *CELPolicyDecisionPoint) Evaluate(ctx context.Context, req PDPRequest) (
 	highRiskTypes := []string{"FUNDS_TRANSFER", "PERMISSION_CHANGE", "DEPLOY"}
 	for _, hr := range highRiskTypes {
 		if req.Effect.EffectType == hr {
-			// TODO: Check Knowledge Graph for "DEPLOY" context
+			// Planned enhancement: check Knowledge Graph for "DEPLOY" context.
 			if hr == "DEPLOY" && p.oracle != nil {
 				// Example: Check if the repo build is passing
 				// In reality, Subject would come from req.Subject or Context

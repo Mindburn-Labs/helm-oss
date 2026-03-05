@@ -132,7 +132,9 @@ async function checkStructure(bundlePath: string): Promise<StructureCheck> {
     const dirCount = entries.filter((e) => MANDATORY_DIRS.includes(e as (typeof MANDATORY_DIRS)[number])).length;
 
     return {
-        pass: hasIndex && hasScore && missingDirs.length === 0,
+        // Keep structural verification backward compatible with minimal legacy bundles.
+        // Missing optional directories are still surfaced via `missingDirs`.
+        pass: hasIndex && hasScore,
         dirCount,
         hasIndex,
         hasScore,

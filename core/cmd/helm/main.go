@@ -433,7 +433,14 @@ func runServer() {
 
 	// 2.5 PRG & Guardian
 	ruleGraph := prg.NewGraph()
-	// Add default rules if needed
+	// Bootstrap a minimal allow rule so governed chat inference is usable out of the box.
+	// Production deployments should replace this with a loaded policy bundle.
+	if err := ruleGraph.AddRule("LLM_INFERENCE", prg.RequirementSet{
+		ID:    "bootstrap-llm-inference",
+		Logic: prg.AND,
+	}); err != nil {
+		log.Fatalf("Failed to add bootstrap PRG rule: %v", err)
+	}
 
 	// Guardian
 	guard := guardian.NewGuardian(signer, ruleGraph, artRegistry)
@@ -473,27 +480,28 @@ func runServer() {
 	// 4. Console
 	uiAdapt := ui_pkg.NewAGUIAdapter(artStore)
 
-	go func() {
-		port := 8080
-		// Start Console Server
-		// Updated signature: removed Evaluator args
-		if err := console.Start(port, lgr, reg, uiAdapt, receiptStore, meter, "/app/ui", packVerifier, jwtValidator, nil); err != nil {
-			logger.Error("Console server failed", "error", err)
-			return
-		}
-	}()
-
 	// 5. Bridge
 	// NewKernelBridge(l ledger.Ledger, e executor.Executor, c mcp.Catalog, g *guardian.Guardian, verifier crypto.Verifier, lim kernel.LimiterStore)
 	_ = agent.NewKernelBridge(lgr, safeExec, catalog, guard, verifier, nil) // Limiter nil
 
 	// Register Subsystem Routes (from services.go)
+	var extraRoutes func(*http.ServeMux)
 	if services != nil {
-		// Inject Guardian?
 		services.Guardian = guard
-		// RegisterSubsystemRoutes(nil, services) // Helper refactored?
-		// We'll skip registering detailed subsystem routes for now or re-add the helper function
+		extraRoutes = func(mux *http.ServeMux) {
+			RegisterSubsystemRoutes(mux, services)
+		}
 	}
+
+	go func() {
+		port := 8080
+		// Start Console Server
+		// Updated signature: removed Evaluator args
+		if err := console.Start(port, lgr, reg, uiAdapt, receiptStore, meter, "/app/ui", packVerifier, jwtValidator, extraRoutes); err != nil {
+			logger.Error("Console server failed", "error", err)
+			return
+		}
+	}()
 
 	// Health Server
 	healthMux := http.NewServeMux()

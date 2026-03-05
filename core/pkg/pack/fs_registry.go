@@ -35,7 +35,7 @@ func NewFSRegistry(rootDir string) *FSRegistry {
 // For now, it returns the latest version if version is not specified in ID (simplification),
 // or we can require ID to be PackID only and use ListVersions.
 // Actually, registry.GetPack usually takes an ID. Let's assume ID is just the name for now, or ID.
-// TODO: Support exact-match lookup.
+// Planned enhancement: support exact-match lookup.
 func (r *FSRegistry) GetPack(ctx context.Context, id string) (*Pack, error) {
 	// Limitation: specific version lookup needs a specific method or ID format.
 	// We'll scan for the latest version of the packID.

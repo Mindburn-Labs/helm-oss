@@ -58,6 +58,11 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	case "pack":
 		handlePack(args[2:])
 		return 0
+	case "server", "serve":
+		startServer()
+		return 0
+	case "health":
+		return runHealthCmd(stdout)
 	case "synthesize":
 		return runOrgSynthesize(args[2:], stdout)
 	case "export":
@@ -315,4 +320,22 @@ func runServer() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 	log.Println("[helm] shutting down")
+}
+
+func runHealthCmd(out io.Writer) int {
+	healthPort := getenvDefault("HEALTH_PORT", "8081")
+	resp, err := http.Get("http://localhost:" + healthPort + "/health")
+	if err != nil {
+		_, _ = fmt.Fprintf(out, "Health check failed: %v\n", err)
+		return 1
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		_, _ = fmt.Fprintf(out, "Health check failed: status %d\n", resp.StatusCode)
+		return 1
+	}
+
+	_, _ = fmt.Fprintln(out, "Health check OK")
+	return 0
 }

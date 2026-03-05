@@ -36,7 +36,7 @@ func (a *Assembler) Assemble(ctx context.Context, activeObligationID string) (st
 	if activeObligationID != "" {
 		obl, err := a.ledger.Get(ctx, activeObligationID)
 		if err == nil {
-			sb.WriteString(fmt.Sprintf("ACTIVE OBLIGATION: %s\n", obl.Intent))
+			_, _ = fmt.Fprintf(&sb, "ACTIVE OBLIGATION: %s\n", obl.Intent)
 
 			// RAG: Find relevant past obligations/decisions
 			if a.embedder != nil && a.memory != nil {
@@ -56,14 +56,14 @@ func (a *Assembler) Assemble(ctx context.Context, activeObligationID string) (st
 					} else if len(results) > 0 {
 						sb.WriteString("\nRELEVANT EXPERIENCE:\n")
 						for _, r := range results {
-							sb.WriteString(fmt.Sprintf("- %s\n", r.Text))
+							_, _ = fmt.Fprintf(&sb, "- %s\n", r.Text)
 						}
 					}
 				}
 			}
 
-			sb.WriteString(fmt.Sprintf("\nID: %s\n", obl.ID))
-			sb.WriteString(fmt.Sprintf("Status: %s\n\n", obl.State))
+			_, _ = fmt.Fprintf(&sb, "\nID: %s\n", obl.ID)
+			_, _ = fmt.Fprintf(&sb, "Status: %s\n\n", obl.State)
 		}
 	}
 

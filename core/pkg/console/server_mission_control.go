@@ -253,7 +253,7 @@ func (s *Server) handlePolicySimulateAPI(w http.ResponseWriter, r *http.Request)
 	decision, err := s.policyEngine.Evaluate(r.Context(), req.PolicyID, accessReq)
 	trace := []string{}
 	verdict := "DENY"
-	reason := "Policy evaluation failed"
+	reason := ""
 
 	if err != nil {
 		trace = append(trace, "error: "+err.Error())

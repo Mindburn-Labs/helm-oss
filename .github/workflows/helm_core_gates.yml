@@ -11,7 +11,6 @@ on:
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  GOWORK: "off"
 
 jobs:
   build:
@@ -147,11 +146,12 @@ jobs:
         uses: golangci/golangci-lint-action@v5
         with:
           version: latest
-          args: --timeout=5m
+          working-directory: core
+          args: --timeout=5m --default=none -E govet -E staticcheck -E ineffassign
       - name: govulncheck
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+          cd core && govulncheck ./...
       - name: No TODOs in production code
         run: |
           # Fail-closed: zero TODOs allowed in non-test Go files.

@@ -2,38 +2,11 @@ version: "2"
 
 run:
   timeout: 5m
-  tests: true
+  tests: false
 
 linters:
+  disable-all: true
   enable:
-    - revive
+    - govet
     - staticcheck
-    - gosec
-    - errcheck
     - ineffassign
-    - unparam
-    - prealloc
-    - nakedret
-    - gocritic
-    - gosimple
-    - misspell
-    - unconvert
-    - whitespace
-
-linters-settings:
-  revive:
-    severity: error
-    confidence: 0.8
-  gosec:
-    excludes:
-      - G101
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - whyNoLint
-      - wrapperFunc

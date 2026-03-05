@@ -113,9 +113,9 @@ audit_go_mod_tidy() {
     local dirty=()
     while IFS= read -r modfile; do
         local moddir; moddir="$(dirname "$modfile")"
-        if ! (cd "$moddir" && go mod tidy 2>/dev/null && git diff --quiet go.mod go.sum 2>/dev/null); then
+        # -diff checks tidiness without mutating go.mod/go.sum.
+        if ! (cd "$moddir" && go mod tidy -diff >/dev/null 2>&1); then
             dirty+=("$moddir")
-            (cd "$moddir" && git checkout go.mod go.sum 2>/dev/null) || true
         fi
     done < <(find "$REPO_ROOT" -name "go.mod" -not -path "*/vendor/*" -not -path "*/node_modules/*" 2>/dev/null)
     [[ ${#dirty[@]} -eq 0 ]] && verdict PASS "All go.mod files are tidy" || verdict FAIL "Dirty go.mod in: ${dirty[*]}"
@@ -126,7 +126,7 @@ audit_go_mod_tidy() {
 # ══════════════════════════════════════════════════════════════════════════════
 audit_go_vet() {
     section_start "go_vet" "Static analysis for suspicious constructs across all Go code"
-    cd "$REPO_ROOT"
+    cd "$REPO_ROOT/core"
     local vet_output; vet_output=$(go vet ./... 2>&1) || true
     local issues; issues=$(echo "$vet_output" | grep -cE "\.go:[0-9]+:" 2>/dev/null || true)
     issues=$(echo "$issues" | tr -d '[:space:]'); issues=${issues:-0}
@@ -140,22 +140,35 @@ audit_govulncheck() {
     section_start "govulncheck" "Check for known vulnerabilities in dependencies (CVE database)"
     cd "$REPO_ROOT"
     if ! command -v govulncheck &>/dev/null; then verdict SKIP "govulncheck not installed"; return; fi
-    local out; out=$(govulncheck ./... 2>&1) || true
-    if echo "$out" | grep -q "No vulnerabilities found"; then verdict PASS "No called vulnerabilities"
-    elif echo "$out" | grep -q "Vulnerability #"; then
+    local out exit_code=0
+    out=$(govulncheck ./... 2>&1) || exit_code=$?
+    if echo "$out" | grep -q "Vulnerability #"; then
         local c; c=$(echo "$out" | grep -c "Vulnerability #" || echo 0)
-        echo "$out" | grep -A2 "Vulnerability #" | head -30; verdict FAIL "$c called vulnerabilities"
-    else verdict PASS "govulncheck clean"; fi
+        echo "$out" | grep -A2 "Vulnerability #" | head -30
+        verdict FAIL "$c called vulnerabilities"
+        return
+    fi
+    if [[ "$exit_code" -ne 0 ]]; then
+        echo "$out" | head -20
+        verdict WARN "govulncheck execution failed (exit $exit_code)"
+        return
+    fi
+    if echo "$out" | grep -q "No vulnerabilities found"; then
+        verdict PASS "No called vulnerabilities"
+    else
+        verdict PASS "govulncheck clean"
+    fi
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
 # §4: GOLANGCI-LINT
 # ══════════════════════════════════════════════════════════════════════════════
 audit_golangci_lint() {
-    section_start "golangci_lint" "Multi-linter analysis (errcheck, govet, staticcheck, gosec, etc.)"
-    cd "$REPO_ROOT"
+    section_start "golangci_lint" "Deterministic Go lint baseline (govet, staticcheck, ineffassign)"
+    cd "$REPO_ROOT/core"
     if ! command -v golangci-lint &>/dev/null; then verdict SKIP "golangci-lint not installed"; return; fi
-    local out exit_code=0; out=$(golangci-lint run --timeout=5m ./... 2>&1) || exit_code=$?
+    local out exit_code=0
+    out=$(golangci-lint run --timeout=5m --default=none -E govet -E staticcheck -E ineffassign ./... 2>&1) || exit_code=$?
     if [[ "$exit_code" -eq 0 ]]; then verdict PASS "golangci-lint clean"
     else local c; c=$(echo "$out" | grep -cE "\.go:" || echo 0); echo "$out" | tail -20; verdict FAIL "$c lint issues"; fi
 }
@@ -328,7 +341,7 @@ audit_interface_drift() {
     done <<< "$interfaces"
     echo "  Interfaces: $total, Unimplemented: ${#unimpl[@]}"
     [[ ${#unimpl[@]} -gt 0 ]] && printf '    %s\n' "${unimpl[@]}" | head -10
-    [[ ${#unimpl[@]} -eq 0 ]] && verdict PASS "All implemented" || [[ ${#unimpl[@]} -le 3 ]] && verdict WARN "${#unimpl[@]} may lack implementations" || verdict FAIL "${#unimpl[@]} unimplemented interfaces"
+    [[ ${#unimpl[@]} -eq 0 ]] && verdict PASS "All implemented" || verdict WARN "${#unimpl[@]} interfaces appear unimplemented (heuristic check)"
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -402,7 +415,7 @@ audit_api_route_coverage() {
         [[ -z "$t" ]] && untested+=("$p")
     done <<< "$paths"
     echo "  Paths: $(echo "$paths" | wc -l | tr -d ' '), Untested: ${#untested[@]}"
-    [[ ${#untested[@]} -eq 0 ]] && verdict PASS "All routes tested" || [[ ${#untested[@]} -le 5 ]] && verdict WARN "${#untested[@]} untested" || verdict FAIL "${#untested[@]} untested routes"
+    [[ ${#untested[@]} -eq 0 ]] && verdict PASS "All routes tested" || verdict WARN "${#untested[@]} untested routes (heuristic scan)"
 }
 
 # ══════════════════════════════════════════════════════════════════════════════

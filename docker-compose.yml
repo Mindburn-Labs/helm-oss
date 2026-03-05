@@ -30,6 +30,7 @@ services:
       DATABASE_URL: "postgres://helm:helm-dev-password@postgres:5432/helm?sslmode=disable"
       HELM_REGION: "us"
       HELM_ENABLE_OPENAI_PROXY: "1"
+      HELM_DEMO_MODE: "1"
       EVIDENCE_SIGNING_KEY: "helm-evidence-dev"
     ports:
       - "8080:8080"

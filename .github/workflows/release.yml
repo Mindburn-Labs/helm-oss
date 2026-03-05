@@ -50,11 +50,12 @@ jobs:
             -X main.commit=${COMMIT} \
             -X main.buildTime=${BUILD_TIME}" \
             -o ../bin/helm-${GOOS}-${GOARCH} ./cmd/helm/
+          cd ../apps/helm-node
           go build -ldflags="-s -w \
             -X main.version=${TAG} \
             -X main.commit=${COMMIT} \
             -X main.buildTime=${BUILD_TIME}" \
-            -o ../bin/helm-node-${GOOS}-${GOARCH} ./cmd/helm-node/
+            -o ../../bin/helm-node-${GOOS}-${GOARCH} .
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4
@@ -351,4 +352,3 @@ jobs:
           TAG_VERSION=${GITHUB_REF_NAME#v}
           mvn versions:set -DnewVersion="$TAG_VERSION" -DgenerateBackupPoms=false
           mvn deploy -P release -DskipTests
-
