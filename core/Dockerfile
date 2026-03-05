@@ -19,4 +19,6 @@ COPY --from=builder /helm-node /usr/local/bin/helm-node
 
 EXPOSE 8080 9090
 
+USER nonroot:nonroot
+
 ENTRYPOINT ["helm-node"]
