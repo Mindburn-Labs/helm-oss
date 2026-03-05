@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/Mindburn-Labs/helm/core/pkg/kernel"
@@ -12,11 +12,11 @@ import (
 
 func initLimiterStoreFromEnv() kernel.LimiterStore {
 	if redisAddr := os.Getenv("REDIS_ADDR"); redisAddr != "" {
-		log.Printf("[kernel] rate limiter: redis at %s", redisAddr)
+		slog.Info("kernel rate limiter configured", "backend", "redis", "addr", redisAddr)
 		return kernel.NewRedisLimiterStore(redisAddr, "", 0)
 	}
 
-	log.Printf("[kernel] rate limiter: in-memory")
+	slog.Info("kernel rate limiter configured", "backend", "in-memory")
 	return kernel.NewInMemoryLimiterStore()
 }
 
@@ -25,7 +25,7 @@ func initEmbedderAndModels(openAIKey string) (store.Embedder, llm.Client, llm.Cl
 		return nil, nil, nil, fmt.Errorf("fail-closed: OPENAI_API_KEY not set")
 	}
 
-	log.Printf("[kernel] embedder: openai")
+	slog.Info("kernel embedder configured", "provider", "openai")
 	embedder := store.NewOpenAIEmbedder(openAIKey)
 
 	// Fast = GPT-4o-mini (default)

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -99,11 +98,11 @@ func printUsage(w io.Writer) {
 }
 
 func handleCoverage(args []string) {
-	log.Println("[helm] coverage factory: ready")
+	slog.Info("helm coverage factory ready")
 }
 
 func handlePack(args []string) {
-	log.Println("[helm] pack manager: ready")
+	slog.Info("helm pack manager ready")
 }
 
 func initPDP() pdp.PolicyDecisionPoint {
@@ -126,14 +125,14 @@ func initPDP() pdp.PolicyDecisionPoint {
 	case "helm", "":
 		return nil // Default to native CEL
 	default:
-		log.Printf("[WARN] unknown policy backend: %s, falling back to CEL", backend)
+		slog.Warn("unknown policy backend, falling back to CEL", "backend", backend)
 		return nil
 	}
 }
 
 //nolint:gocognit,gocyclo
 func runServer() {
-	log.Println("[helm] kernel starting")
+	slog.Info("helm kernel starting")
 	ctx := context.Background()
 	logger := slog.Default()
 
@@ -143,29 +142,34 @@ func runServer() {
 	// 0.2 Connect to Database (Infrastructure)
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Fatal("DATABASE_URL is required")
+		slog.Error("DATABASE_URL is required")
+		os.Exit(1)
 	}
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
-		log.Fatalf("Failed to connect to DB: %v", err)
+		slog.Error("failed to connect to DB", "error", err)
+		os.Exit(1)
 	}
 	if err := db.PingContext(ctx); err != nil {
-		log.Fatalf("DB Ping failed: %v", err)
+		slog.Error("DB ping failed", "error", err)
+		os.Exit(1)
 	}
-	log.Println("[helm] postgres: connected")
+	slog.Info("helm postgres connected")
 
 	// 1. Initialize Kernel Layers
 	// Initialize Identity KeySet
 	keySet, err := identity.NewInMemoryKeySet()
 	if err != nil {
-		log.Fatalf("Failed to init KeySet: %v", err)
+		slog.Error("failed to init keyset", "error", err)
+		os.Exit(1)
 	}
 	jwtValidator := auth.NewJWTValidator(keySet)
 
 	// Use Postgres Ledger
 	lgr := ledger.NewPostgresLedger(db)
 	if err := lgr.Init(ctx); err != nil {
-		log.Fatalf("Failed to init ledger: %v", err)
+		slog.Error("failed to init ledger", "error", err)
+		os.Exit(1)
 	}
 
 	// Legacy Signer for Guardian/Executor
@@ -176,27 +180,31 @@ func runServer() {
 	// Use an ephemeral signer.
 	signer, err := crypto.NewEd25519Signer("ephemeral-os-key")
 	if err != nil {
-		log.Fatalf("Failed to init signer: %v", err)
+		slog.Error("failed to init signer", "error", err)
+		os.Exit(1)
 	}
 	verifier, _ := crypto.NewEd25519Verifier(signer.PublicKeyBytes())
 
 	receiptStore := store.NewPostgresReceiptStore(db)
 	if err := receiptStore.Init(ctx); err != nil {
-		log.Fatalf("Failed to init receipt store: %v", err)
+		slog.Error("failed to init receipt store", "error", err)
+		os.Exit(1)
 	}
 
 	meter := metering.NewPostgresMeter(db)
 	if err := meter.Init(ctx); err != nil {
-		log.Fatalf("Failed to init metering: %v", err)
+		slog.Error("failed to init metering", "error", err)
+		os.Exit(1)
 	}
-	log.Println("[helm] metering: ready")
+	slog.Info("helm metering ready")
 
 	// 2. Registry
 	reg := registry.NewPostgresRegistry(db)
 	if err := reg.Init(ctx); err != nil {
-		log.Fatalf("Failed to init registry: %v", err)
+		slog.Error("failed to init registry", "error", err)
+		os.Exit(1)
 	}
-	log.Println("[helm] registry: ready")
+	slog.Info("helm registry ready")
 
 	// Adapter for Pack Verifier
 	regAdapter := console.NewRegistryAdapter(reg)
@@ -209,7 +217,7 @@ func runServer() {
 	// === SUBSYSTEM WIRING ===
 	services, svcErr := NewServices(ctx, db, artStore, meter, logger)
 	if svcErr != nil {
-		log.Printf("Services init (non-fatal, degraded mode): %v", svcErr)
+		slog.Warn("services init degraded mode", "error", svcErr)
 	}
 
 	// 2.5 PRG & Guardian
@@ -223,9 +231,9 @@ func runServer() {
 	pdpBackend := initPDP()
 	if pdpBackend != nil {
 		guard.SetPolicyDecisionPoint(pdpBackend)
-		log.Printf("[helm] policy backend: %s (version: %s)", pdpBackend.Backend(), os.Getenv("HELM_POLICY_VERSION"))
+		slog.Info("helm policy backend configured", "backend", pdpBackend.Backend(), "version", os.Getenv("HELM_POLICY_VERSION"))
 	} else {
-		log.Println("[helm] policy backend: native (CEL)")
+		slog.Info("helm policy backend configured", "backend", "native-cel")
 	}
 
 	// 3. Executor
@@ -282,7 +290,7 @@ func runServer() {
 
 			// 2. Register Demo Routes if enabled
 			if os.Getenv("HELM_DEMO_MODE") == "1" {
-				log.Println("[helm] demo mode: ENABLED")
+				slog.Info("helm demo mode enabled")
 				RegisterDemoRoutes(mux, demoGraph, receiptStore, guard, services.Evidence, signer)
 			}
 		}
@@ -305,21 +313,21 @@ func runServer() {
 	})
 
 	go func() {
-		log.Printf("[helm] health server: :8081")
+		slog.Info("helm health server listening", "addr", ":8081")
 		//nolint:gosec // Intentionally listening on all interfaces
 		if err := http.ListenAndServe(":8081", healthMux); err != nil {
-			log.Printf("[helm] health server error: %v", err)
+			slog.Error("helm health server error", "error", err)
 		}
 	}()
 
-	log.Println("[helm] ready: http://localhost:8080")
-	log.Println("[helm] press ctrl+c to stop")
+	slog.Info("helm ready", "url", "http://localhost:8080")
+	slog.Info("helm shutdown hint", "message", "press ctrl+c to stop")
 
 	// Wait for shutdown signal
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
-	log.Println("[helm] shutting down")
+	slog.Info("helm shutting down")
 }
 
 func runHealthCmd(out io.Writer) int {

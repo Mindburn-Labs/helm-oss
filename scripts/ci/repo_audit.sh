@@ -15,6 +15,7 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 EVIDENCE_DIR="$REPO_ROOT/data/evidence/repo_audit"
+BASELINES_DIR="$REPO_ROOT/scripts/ci/baselines"
 TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 GIT_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo "unknown")"
 
@@ -57,6 +58,21 @@ verdict() {
     cat > "$EVIDENCE_DIR/${CURRENT_SECTION}.json" <<EOF
 {"section":"$CURRENT_SECTION","status":"$status","detail":"$detail","timestamp":"$TIMESTAMP","git_sha":"$GIT_SHA"}
 EOF
+}
+
+in_array() {
+    local needle="$1"; shift || true
+    local item
+    for item in "$@"; do
+        [[ "$item" == "$needle" ]] && return 0
+    done
+    return 1
+}
+
+load_allowlist() {
+    local file="$1"
+    [[ -f "$file" ]] || return 1
+    grep -vE '^[[:space:]]*(#|$)' "$file" | sort -u
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -194,33 +210,95 @@ audit_golangci_lint() {
 audit_coverage_gate() {
     section_start "coverage_gate" "Enforce minimum test coverage per package (30% floor)"
     cd "$REPO_ROOT"
-    local MIN=30 below=() zero=()
-    local out; out=$(go test -short -cover ./core/... 2>&1) || true
+    local MIN=30 below=() below_pkgs=()
+    local tested_pkgs=0
+    local out; out=$(go test -short -cover -count=1 ./core/pkg/... 2>&1) || true
     while IFS= read -r line; do
         if echo "$line" | grep -q "coverage:"; then
             local pkg cov; pkg=$(echo "$line" | awk '{print $2}')
             cov=$(echo "$line" | grep -oE '[0-9]+\.[0-9]+%' | head -1 | sed 's/%//')
+            [[ -z "$cov" ]] && continue
+            ((tested_pkgs++)) || true
             local ci; ci=$(echo "$cov" | awk '{print int($1)}')
-            [[ "$ci" -eq 0 ]] && zero+=("$pkg") || [[ "$ci" -lt "$MIN" ]] && below+=("$pkg (${cov}%)")
-        elif echo "$line" | grep -q "\[no test files\]"; then
-            zero+=("$(echo "$line" | awk '{print $2}')")
+            if [[ "$ci" -lt "$MIN" ]]; then
+                below+=("$pkg (${cov}%)")
+                below_pkgs+=("$pkg")
+            fi
         fi
     done <<< "$out"
-    echo "  Zero-coverage: ${#zero[@]}, Below ${MIN}%: ${#below[@]}"
-    local total=$(( ${#zero[@]} + ${#below[@]} ))
-    [[ "$total" -eq 0 ]] && verdict PASS "All packages meet ${MIN}% floor" || verdict PASS "Coverage debt tracked: $total packages below ${MIN}%"
+
+    local allow_file="$BASELINES_DIR/no_test_packages.allowlist"
+    local coverage_allow_file="$BASELINES_DIR/coverage_floor_exceptions.allowlist"
+    [[ -f "$allow_file" ]] || { verdict FAIL "Missing baseline file: ${allow_file#$REPO_ROOT/}"; return; }
+    [[ -f "$coverage_allow_file" ]] || { verdict FAIL "Missing baseline file: ${coverage_allow_file#$REPO_ROOT/}"; return; }
+
+    local no_test_pkgs=()
+    while IFS= read -r pkg; do
+        [[ -z "$pkg" ]] && continue
+        local rel="${pkg#github.com/Mindburn-Labs/helm/}"
+        local dir="$REPO_ROOT/$rel"
+        find "$dir" -maxdepth 1 -name "*_test.go" -type f 2>/dev/null | grep -q . || no_test_pkgs+=("$rel")
+    done < <(go list ./core/pkg/... 2>/dev/null)
+
+    local allowed_no_test=()
+    while IFS= read -r line; do
+        [[ -n "$line" ]] && allowed_no_test+=("$line")
+    done < <(load_allowlist "$allow_file" || true)
+
+    local allowed_low_cov=()
+    while IFS= read -r line; do
+        [[ -n "$line" ]] && allowed_low_cov+=("$line")
+    done < <(load_allowlist "$coverage_allow_file" || true)
+
+    local unexpected_no_test=()
+    local pkg
+    for pkg in "${no_test_pkgs[@]}"; do
+        in_array "$pkg" "${allowed_no_test[@]}" || unexpected_no_test+=("$pkg")
+    done
+
+    local unexpected_below=()
+    for pkg in "${below_pkgs[@]}"; do
+        in_array "$pkg" "${allowed_low_cov[@]}" || unexpected_below+=("$pkg")
+    done
+
+    local resolved_baseline=0
+    for pkg in "${allowed_no_test[@]}"; do
+        in_array "$pkg" "${no_test_pkgs[@]}" || ((resolved_baseline++)) || true
+    done
+    local resolved_low_cov=0
+    for pkg in "${allowed_low_cov[@]}"; do
+        in_array "$pkg" "${below_pkgs[@]}" || ((resolved_low_cov++)) || true
+    done
+
+    echo "  Tested packages: $tested_pkgs, Below ${MIN}%: ${#below[@]}"
+    echo "  No-test packages: ${#no_test_pkgs[@]}, Unexpected: ${#unexpected_no_test[@]}, Baseline resolved: $resolved_baseline"
+    echo "  Low-coverage baseline: ${#allowed_low_cov[@]}, Unexpected below floor: ${#unexpected_below[@]}, Baseline resolved: $resolved_low_cov"
+
+    if [[ ${#unexpected_no_test[@]} -gt 0 ]]; then
+        printf '    %s\n' "${unexpected_no_test[@]}" | head -15
+        verdict FAIL "${#unexpected_no_test[@]} unallowlisted packages without tests"
+    elif [[ ${#unexpected_below[@]} -gt 0 ]]; then
+        printf '    %s\n' "${unexpected_below[@]}" | head -15
+        verdict FAIL "${#unexpected_below[@]} unallowlisted packages below ${MIN}% coverage"
+    elif [[ ${#below[@]} -gt 0 ]]; then
+        printf '    %s\n' "${below[@]}" | head -15
+        verdict PASS "Coverage floor stable with approved exceptions"
+    else
+        verdict PASS "Coverage floor met; no unexpected test gaps"
+    fi
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
 # §6: STRUCTURED LOGGING
 # ══════════════════════════════════════════════════════════════════════════════
 audit_structured_logging() {
-    section_start "structured_logging" "Ban raw fmt.Print*/log.Print* in production Go code (use slog)"
+    section_start "structured_logging" "Ban direct fmt.Print* and legacy log.* in runtime Go code"
     cd "$REPO_ROOT"
-    local v; v=$(grep -rnE '(fmt\.Print|fmt\.Fprint|log\.Print|log\.Fatal|log\.Panic)' \
-        --include="*.go" core/ apps/ 2>/dev/null | grep -v "_test.go" | grep -v "// nolint" | grep -v "//nolint" || true)
-    local c; c=$(echo "$v" | grep -c "\.go:" 2>/dev/null || echo 0)
-    [[ "$c" -eq 0 ]] && verdict PASS "No raw print/log calls" || { echo "$v" | head -10; verdict PASS "Structured logging debt tracked: $c raw calls"; }
+    local v; v=$(grep -rnE '(fmt\.Print(f|ln)?\(|log\.(Print(f|ln)?|Fatal(f|ln)?|Panic(f|ln)?)\()' \
+        --include="*.go" core/pkg/ apps/helm-node/ 2>/dev/null | grep -v "_test.go" | grep -v "// nolint" | grep -v "//nolint" || true)
+    local c; c=$(printf '%s' "$v" | grep -c "\.go:" 2>/dev/null || true)
+    c=${c:-0}
+    [[ "$c" -eq 0 ]] && verdict PASS "No direct print/log calls in runtime code" || { echo "$v" | head -20; verdict FAIL "$c direct print/log calls detected"; }
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -266,7 +344,7 @@ audit_dockerfile() {
         grep -q '^USER ' "$df" 2>/dev/null || { echo "    ⚠️  No USER directive"; ((issues++)) || true; }
         grep -qE '^ADD https?://' "$df" 2>/dev/null && { echo "    ⚠️  ADD with URL"; ((issues++)) || true; }
     done < <(find "$REPO_ROOT" -name "Dockerfile*" -not -path "*/node_modules/*" -not -path "*/.git/*" 2>/dev/null)
-    [[ "$issues" -eq 0 ]] && verdict PASS "Dockerfiles clean" || verdict WARN "$issues issues"
+    [[ "$issues" -eq 0 ]] && verdict PASS "Dockerfiles clean" || verdict FAIL "$issues issues"
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -300,7 +378,7 @@ audit_doc_links() {
         done < <(grep -oE '\[([^]]*)\]\(([^)]+)\)' "$mdfile" 2>/dev/null | sed -E 's/.*\]\(([^)]+)\).*/\1/' | grep -vE '^(https?://|mailto:|#)' || true)
     done < <(find "$REPO_ROOT/docs" -name "*.md" -type f 2>/dev/null | head -200)
     echo "  Links checked: $checked"
-    [[ "$broken" -eq 0 ]] && verdict PASS "All doc links resolve" || verdict WARN "$broken broken links"
+    [[ "$broken" -eq 0 ]] && verdict PASS "All doc links resolve" || verdict FAIL "$broken broken links"
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -335,13 +413,7 @@ audit_orphan_packages() {
     done <<< "$all_pkgs"
     echo "  Total: $(echo "$all_pkgs" | wc -l | tr -d ' '), Orphans: ${#orphans[@]}"
     [[ ${#orphans[@]} -gt 0 ]] && printf '    %s\n' "${orphans[@]}" | head -15
-    if [[ ${#orphans[@]} -eq 0 ]]; then
-        verdict PASS "No orphans"
-    elif [[ ${#orphans[@]} -le 5 ]]; then
-        verdict PASS "Orphan package debt tracked: ${#orphans[@]}"
-    else
-        verdict FAIL "${#orphans[@]} orphan packages"
-    fi
+    [[ ${#orphans[@]} -eq 0 ]] && verdict PASS "No orphans" || verdict FAIL "${#orphans[@]} orphan packages"
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -350,19 +422,48 @@ audit_orphan_packages() {
 audit_interface_drift() {
     section_start "interface_impl_drift" "Detect interfaces with no implementation"
     cd "$REPO_ROOT"
+    local allow_file="$BASELINES_DIR/interface_drift.allowlist"
+    [[ -f "$allow_file" ]] || { verdict FAIL "Missing baseline file: ${allow_file#$REPO_ROOT/}"; return; }
+
     local interfaces; interfaces=$(grep -rnE '^type [A-Z][A-Za-z0-9]+ interface \{' --include="*.go" core/ 2>/dev/null | grep -v "_test.go" || true)
     local total; total=$(echo "$interfaces" | grep -c "interface" 2>/dev/null || echo 0)
-    local unimpl=()
+    local unimpl=() unimpl_keys=()
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
         local name; name=$(echo "$line" | grep -oE 'type [A-Z][A-Za-z0-9]+' | awk '{print $2}')
         [[ -z "$name" || "$name" =~ ^(Stringer|Error|Reader|Writer|Closer|Handler)$ ]] && continue
         local refs; refs=$(grep -rlF "$name" --include="*.go" core/ 2>/dev/null | grep -v "_test.go" | wc -l | tr -d ' ')
-        [[ "$refs" -le 1 ]] && unimpl+=("${name} ($(echo "$line" | cut -d: -f1))")
+        if [[ "$refs" -le 1 ]]; then
+            local file; file=$(echo "$line" | cut -d: -f1)
+            unimpl+=("${name} (${file})")
+            unimpl_keys+=("${name}|${file}")
+        fi
     done <<< "$interfaces"
-    echo "  Interfaces: $total, Unimplemented: ${#unimpl[@]}"
-    [[ ${#unimpl[@]} -gt 0 ]] && printf '    %s\n' "${unimpl[@]}" | head -10
-    [[ ${#unimpl[@]} -eq 0 ]] && verdict PASS "All implemented" || verdict PASS "Interface drift tracked: ${#unimpl[@]} interfaces flagged (heuristic)"
+
+    local allowed=()
+    while IFS= read -r line; do
+        [[ -n "$line" ]] && allowed+=("$line")
+    done < <(load_allowlist "$allow_file" || true)
+
+    local unexpected=()
+    local item
+    for item in "${unimpl_keys[@]}"; do
+        in_array "$item" "${allowed[@]}" || unexpected+=("$item")
+    done
+
+    local resolved_baseline=0
+    for item in "${allowed[@]}"; do
+        in_array "$item" "${unimpl_keys[@]}" || ((resolved_baseline++)) || true
+    done
+
+    echo "  Interfaces: $total, Flagged: ${#unimpl_keys[@]}, Unexpected: ${#unexpected[@]}, Baseline resolved: $resolved_baseline"
+    [[ ${#unexpected[@]} -gt 0 ]] && printf '    %s\n' "${unexpected[@]}" | head -15
+
+    if [[ ${#unexpected[@]} -eq 0 ]]; then
+        verdict PASS "No unexpected interface drift"
+    else
+        verdict FAIL "${#unexpected[@]} unexpected interface drift findings"
+    fi
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -385,13 +486,7 @@ audit_env_drift() {
     done <<< "$code_vars"
     echo "  In code: $(echo "$code_vars" | wc -l | tr -d ' '), Documented: $(echo "$doc_vars" | wc -l | tr -d ' '), Undocumented: ${#undoc[@]}"
     [[ ${#undoc[@]} -gt 0 ]] && printf '    %s\n' "${undoc[@]}" | head -15
-    if [[ ${#undoc[@]} -eq 0 ]]; then
-        verdict PASS "All documented"
-    elif [[ ${#undoc[@]} -le 3 ]]; then
-        verdict WARN "${#undoc[@]} undocumented"
-    else
-        verdict FAIL "${#undoc[@]} env vars missing from docs"
-    fi
+    [[ ${#undoc[@]} -eq 0 ]] && verdict PASS "All documented" || verdict FAIL "${#undoc[@]} env vars missing from docs"
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -409,13 +504,7 @@ audit_schema_code_drift() {
         [[ -z "$refs" ]] && unreferenced+=("${f#$REPO_ROOT/}")
     done < <(find "$REPO_ROOT/schemas" -name "*.json" -type f 2>/dev/null)
     echo "  Total: $total, Unreferenced: ${#unreferenced[@]}"
-    if [[ ${#unreferenced[@]} -eq 0 ]]; then
-        verdict PASS "All referenced"
-    elif [[ ${#unreferenced[@]} -le 5 ]]; then
-        verdict PASS "Schema drift tracked: ${#unreferenced[@]} unreferenced"
-    else
-        verdict FAIL "${#unreferenced[@]}/$total unreferenced schemas"
-    fi
+    [[ ${#unreferenced[@]} -eq 0 ]] && verdict PASS "All referenced" || verdict FAIL "${#unreferenced[@]}/$total unreferenced schemas"
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -430,7 +519,7 @@ audit_test_orphans() {
         local has_src; has_src=$(find "$dir" -maxdepth 1 -name "*.go" -not -name "*_test.go" 2>/dev/null | head -1)
         [[ -z "$has_src" ]] && orphans+=("${t#$REPO_ROOT/}")
     done < <(find "$REPO_ROOT/core" -name "*_test.go" -type f 2>/dev/null)
-    [[ ${#orphans[@]} -eq 0 ]] && verdict PASS "No orphan tests" || { printf '    %s\n' "${orphans[@]}"; verdict PASS "Test orphan debt tracked: ${#orphans[@]} files"; }
+    [[ ${#orphans[@]} -eq 0 ]] && verdict PASS "No orphan tests" || { printf '    %s\n' "${orphans[@]}"; verdict FAIL "${#orphans[@]} orphan test files"; }
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -439,6 +528,9 @@ audit_test_orphans() {
 audit_api_route_coverage() {
     section_start "api_route_coverage" "Detect API routes never exercised in tests"
     cd "$REPO_ROOT"
+    local allow_file="$BASELINES_DIR/untested_routes.allowlist"
+    [[ -f "$allow_file" ]] || { verdict FAIL "Missing baseline file: ${allow_file#$REPO_ROOT/}"; return; }
+
     local routes; routes=$(grep -rnE '(HandleFunc|Handle\(|\.GET\(|\.POST\(|\.PUT\(|\.DELETE\(|\.PATCH\()' --include="*.go" core/ 2>/dev/null | grep -v "_test.go" || true)
     local paths; paths=$(echo "$routes" | grep -oE '"(/[^"]*)"' | tr -d '"' | sort -u || true)
     local untested=()
@@ -447,8 +539,31 @@ audit_api_route_coverage() {
         local t; t=$(grep -rlF "$p" --include="*_test.go" core/ 2>/dev/null | head -1 || true)
         [[ -z "$t" ]] && untested+=("$p")
     done <<< "$paths"
-    echo "  Paths: $(echo "$paths" | wc -l | tr -d ' '), Untested: ${#untested[@]}"
-    [[ ${#untested[@]} -eq 0 ]] && verdict PASS "All routes tested" || verdict PASS "Route coverage debt tracked: ${#untested[@]} untested routes (heuristic scan)"
+
+    local allowed=()
+    while IFS= read -r line; do
+        [[ -n "$line" ]] && allowed+=("$line")
+    done < <(load_allowlist "$allow_file" || true)
+
+    local unexpected=()
+    local p
+    for p in "${untested[@]}"; do
+        in_array "$p" "${allowed[@]}" || unexpected+=("$p")
+    done
+
+    local resolved_baseline=0
+    for p in "${allowed[@]}"; do
+        in_array "$p" "${untested[@]}" || ((resolved_baseline++)) || true
+    done
+
+    echo "  Paths: $(echo "$paths" | wc -l | tr -d ' '), Untested: ${#untested[@]}, Unexpected: ${#unexpected[@]}, Baseline resolved: $resolved_baseline"
+    [[ ${#unexpected[@]} -gt 0 ]] && printf '    %s\n' "${unexpected[@]}" | head -15
+
+    if [[ ${#unexpected[@]} -eq 0 ]]; then
+        verdict PASS "No unexpected untested API routes"
+    else
+        verdict FAIL "${#unexpected[@]} unexpected untested API routes"
+    fi
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -463,9 +578,7 @@ audit_stale_todos() {
     hack=$(grep -rcE '(//|#)\s*(HACK|XXX)' --include="*.go" --include="*.ts" --include="*.sh" core/ scripts/ 2>/dev/null | awk -F: '{s+=$NF}END{print s+0}')
     local total=$((todo + fixme + hack))
     echo "  TODO: $todo, FIXME: $fixme, HACK/XXX: $hack, Total: $total"
-    if [[ "$total" -le 20 ]]; then verdict PASS "$total markers (acceptable)"
-    elif [[ "$total" -le 50 ]]; then verdict WARN "$total markers"
-    else verdict FAIL "$total markers — tech debt"; fi
+    [[ "$total" -eq 0 ]] && verdict PASS "0 markers" || verdict FAIL "$total markers — tech debt"
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -483,7 +596,7 @@ audit_sdk_parity() {
     done
     echo "  Expected SDKs: ${expected[*]}"
     echo "  Missing: ${missing[*]:-none}"
-    [[ ${#missing[@]} -eq 0 ]] && verdict PASS "All SDK languages present" || verdict WARN "${#missing[@]} SDK languages missing: ${missing[*]}"
+    [[ ${#missing[@]} -eq 0 ]] && verdict PASS "All SDK languages present" || verdict FAIL "${#missing[@]} SDK languages missing: ${missing[*]}"
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -497,7 +610,7 @@ audit_examples() {
     local has_readme=false
     [[ -f "$REPO_ROOT/examples/README.md" ]] && has_readme=true
     echo "  Example files: $count, Has README: $has_readme"
-    [[ "$count" -gt 0 ]] && verdict PASS "$count example files present" || verdict WARN "examples/ exists but is empty"
+    [[ "$count" -gt 0 ]] && verdict PASS "$count example files present" || verdict FAIL "examples/ exists but is empty"
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -516,7 +629,7 @@ audit_dep_freshness() {
     done
     local ioutil; ioutil=$(grep -rlF "io/ioutil" --include="*.go" core/ 2>/dev/null | wc -l | tr -d ' ')
     [[ "$ioutil" -gt 0 ]] && deprecated+=("io/ioutil ($ioutil files)")
-    [[ ${#deprecated[@]} -eq 0 ]] && verdict PASS "No deprecated deps" || { printf '    %s\n' "${deprecated[@]}"; verdict WARN "${#deprecated[@]} deprecated dependencies"; }
+    [[ ${#deprecated[@]} -eq 0 ]] && verdict PASS "No deprecated deps" || { printf '    %s\n' "${deprecated[@]}"; verdict FAIL "${#deprecated[@]} deprecated dependencies"; }
 }
 
 # ══════════════════════════════════════════════════════════════════════════════

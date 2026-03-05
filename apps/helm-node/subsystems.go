@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -18,7 +18,7 @@ import (
 //
 //nolint:gocyclo,gocognit // Route registration is linear and intentionally exhaustive.
 func RegisterSubsystemRoutes(mux *http.ServeMux, svc *Services) {
-	log.Println("[helm] routes: Registering API routes...")
+	slog.Info("helm routes registration started")
 
 	ctx := context.Background()
 
@@ -300,10 +300,10 @@ func RegisterSubsystemRoutes(mux *http.ServeMux, svc *Services) {
 	// --- Credentials ---
 	if svc.Creds != nil {
 		svc.Creds.RegisterRoutes(mux)
-		log.Println("[helm] routes: Credential management routes registered")
+		slog.Info("helm routes registered", "subsystem", "credentials")
 	}
 
 	_ = ctx
 
-	log.Println("[helm] routes: All subsystem routes registered")
+	slog.Info("helm routes registration completed")
 }

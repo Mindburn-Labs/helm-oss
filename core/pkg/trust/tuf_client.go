@@ -7,7 +7,7 @@ import (
 	"crypto"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 )
 
@@ -238,7 +238,7 @@ func (c *TUFClient) Update() error {
 	if c.trustStore != nil {
 		if err := c.trustStore.Save(c.localMetadata); err != nil {
 			// Log but don't fail - metadata is still valid in memory
-			log.Printf("trust: failed to persist TUF metadata: %v", err)
+			slog.Warn("trust: failed to persist TUF metadata", "error", err)
 		}
 	}
 

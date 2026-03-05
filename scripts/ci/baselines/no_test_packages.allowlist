@@ -1,0 +1,10 @@
+# Packages currently exempted from direct unit tests.
+# Any newly untested package in core/pkg should fail the audit.
+core/pkg/certification
+core/pkg/conform/adversarial
+core/pkg/interfaces
+core/pkg/kernel/errorir
+core/pkg/kernel/ui
+core/pkg/memory
+core/pkg/security/suites
+core/pkg/util/resiliency

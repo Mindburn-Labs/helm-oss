@@ -3,7 +3,7 @@ package kernel
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 )
 
 // Mode represents the agent's operating mode.
@@ -79,7 +79,13 @@ func (o *Optimizer) CheckAndAttenuate(ctx context.Context, actorID string, store
 
 	// 3. Apply Decision
 	if targetMode != o.currentMode {
-		log.Printf("optimizer: switching mode %s -> %s for actor %s (strategy: %s)", o.currentMode, targetMode, actorID, o.strategy)
+		slog.Info(
+			"optimizer mode switch",
+			"from", o.currentMode,
+			"to", targetMode,
+			"actor_id", actorID,
+			"strategy", o.strategy,
+		)
 		o.currentMode = targetMode
 	}
 

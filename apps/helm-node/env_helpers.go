@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"os"
 	"strconv"
 )
@@ -16,7 +16,8 @@ func getenvDefault(key, def string) string {
 func getenvRequired(key string) string {
 	v := os.Getenv(key)
 	if v == "" {
-		log.Fatalf("%s must be set", key)
+		slog.Error("required environment variable missing", "key", key)
+		os.Exit(1)
 	}
 	return v
 }

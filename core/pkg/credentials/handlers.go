@@ -3,12 +3,12 @@ package credentials
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/Mindburn-Labs/helm/core/pkg/api"
+	"github.com/google/uuid"
 )
 
 // Handler provides HTTP handlers for credential management.
@@ -90,7 +90,7 @@ func (h *Handler) handleGoogleToken(w http.ResponseWriter, r *http.Request) {
 	// Exchange code for tokens
 	tokenResp, err := h.googleOAuth.ExchangeCode(r.Context(), req.Code, req.CodeVerifier, req.RedirectURI)
 	if err != nil {
-		log.Printf("[Credentials] Google token exchange failed: %v", err)
+		slog.Warn("credentials: google token exchange failed", "error", err)
 		api.WriteBadRequest(w, "Token exchange failed")
 		return
 	}
@@ -98,7 +98,7 @@ func (h *Handler) handleGoogleToken(w http.ResponseWriter, r *http.Request) {
 	// Get user info
 	userInfo, err := h.googleOAuth.GetUserInfo(r.Context(), tokenResp.AccessToken)
 	if err != nil {
-		log.Printf("[Credentials] Failed to get user info: %v", err)
+		slog.Warn("credentials: failed to get user info", "error", err)
 		// Continue without email
 	}
 
@@ -121,7 +121,7 @@ func (h *Handler) handleGoogleToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.SaveCredential(r.Context(), cred); err != nil {
-		log.Printf("[Credentials] Failed to save credential: %v", err)
+		slog.Error("credentials: failed to save credential", "error", err)
 		api.WriteInternal(w, err)
 		return
 	}
@@ -154,7 +154,7 @@ func (h *Handler) handleGoogleRefresh(w http.ResponseWriter, r *http.Request) {
 	// Refresh token
 	tokenResp, err := h.googleOAuth.RefreshToken(r.Context(), cred.RefreshToken)
 	if err != nil {
-		log.Printf("[Credentials] Token refresh failed: %v", err)
+		slog.Warn("credentials: token refresh failed", "error", err)
 		api.WriteBadRequest(w, "Token refresh failed")
 		return
 	}
@@ -168,7 +168,7 @@ func (h *Handler) handleGoogleRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.SaveCredential(r.Context(), cred); err != nil {
-		log.Printf("[Credentials] Failed to update credential: %v", err)
+		slog.Error("credentials: failed to update credential", "error", err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

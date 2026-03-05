@@ -4,7 +4,7 @@ package trust
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"regexp"
 
 	"github.com/Masterminds/semver/v3"
@@ -235,7 +235,7 @@ func (l *PackLoader) checkPublisherStatus(keyID string) error {
 			return fmt.Errorf("publisher key %s is revoked", keyID)
 		}
 		// Allow with override - log warning
-		log.Printf("trust: loading pack with revoked publisher key %s under quarantine override", keyID)
+		slog.Warn("trust: loading pack with revoked publisher key under quarantine override", "key_id", keyID)
 	}
 
 	if status == KeyStatusExpired {

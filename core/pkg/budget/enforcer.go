@@ -3,7 +3,7 @@ package budget
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -50,7 +50,7 @@ func (e *SimpleEnforcer) Check(ctx context.Context, tenantID string, cost Cost) 
 	b, err := e.storage.Get(ctx, tenantID)
 	if err != nil {
 		// Log error here in real impl
-		log.Printf("budget: check failed for tenant %s: %v", tenantID, err)
+		slog.Warn("budget check failed", "tenant_id", tenantID, "error", err)
 		return &Decision{
 			Allowed:   false,
 			Reason:    fmt.Sprintf("check failed: %v", err),
@@ -63,7 +63,7 @@ func (e *SimpleEnforcer) Check(ctx context.Context, tenantID string, cost Cost) 
 	if b == nil {
 		daily, monthly, err := e.storage.Limits(ctx, tenantID)
 		if err != nil {
-			log.Printf("budget: failed to fetch limits for tenant %s: %v", tenantID, err)
+			slog.Warn("budget limits fetch failed", "tenant_id", tenantID, "error", err)
 			return &Decision{
 				Allowed: false,
 				Reason:  "failed to fetch limits",
@@ -95,7 +95,7 @@ func (e *SimpleEnforcer) Check(ctx context.Context, tenantID string, cost Cost) 
 	newMonthly := b.MonthlyUsed + cost.Amount
 
 	if newDaily > b.DailyLimit {
-		log.Printf("budget: daily limit exceeded for tenant %s: %d > %d", tenantID, newDaily, b.DailyLimit)
+		slog.Warn("budget daily limit exceeded", "tenant_id", tenantID, "new_daily", newDaily, "daily_limit", b.DailyLimit)
 		return &Decision{
 			Allowed:   false,
 			Reason:    fmt.Sprintf("daily limit exceeded: %d > %d", newDaily, b.DailyLimit),
@@ -105,7 +105,7 @@ func (e *SimpleEnforcer) Check(ctx context.Context, tenantID string, cost Cost) 
 	}
 
 	if newMonthly > b.MonthlyLimit {
-		log.Printf("budget: monthly limit exceeded for tenant %s: %d > %d", tenantID, newMonthly, b.MonthlyLimit)
+		slog.Warn("budget monthly limit exceeded", "tenant_id", tenantID, "new_monthly", newMonthly, "monthly_limit", b.MonthlyLimit)
 		return &Decision{
 			Allowed:   false,
 			Reason:    fmt.Sprintf("monthly limit exceeded: %d > %d", newMonthly, b.MonthlyLimit),
@@ -121,7 +121,7 @@ func (e *SimpleEnforcer) Check(ctx context.Context, tenantID string, cost Cost) 
 
 	if err := e.storage.Set(ctx, b); err != nil {
 		// FAIL-CLOSED on write failure
-		log.Printf("budget: failed to persist usage for tenant %s: %v", tenantID, err)
+		slog.Error("budget usage persistence failed", "tenant_id", tenantID, "error", err)
 		return &Decision{
 			Allowed: false,
 			Reason:  "failed to persist usage",

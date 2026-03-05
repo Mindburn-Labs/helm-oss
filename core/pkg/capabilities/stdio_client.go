@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"os/exec"
 )
 
@@ -55,6 +55,6 @@ func (s *StdioMCPClient) Call(tool string, params map[string]any) error {
 		return fmt.Errorf("mcp error: %w, output: %s", err, out)
 	}
 
-	log.Printf("mcp: stdio output: %s", string(out))
+	slog.Debug("mcp stdio output", "output", string(out))
 	return nil
 }

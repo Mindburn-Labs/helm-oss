@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	pkg_artifact "github.com/Mindburn-Labs/helm/core/pkg/artifacts"
@@ -161,7 +161,7 @@ func (g *Guardian) SignDecision(ctx context.Context, decision *contracts.Decisio
 			// Ideally rollback if PRG fails, but for requests counters it's fine.
 			if consumeErr := g.tracker.Consume(budgetID, cost); consumeErr != nil {
 				// Log but don't fail — the Check already passed.
-				log.Printf("[WARN] guardian: budget consume for %s: %v", budgetID, consumeErr)
+				slog.Warn("guardian: budget consume failed", "budget_id", budgetID, "error", consumeErr)
 			}
 		}
 	}

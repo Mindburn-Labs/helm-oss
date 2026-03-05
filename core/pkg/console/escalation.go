@@ -1,7 +1,7 @@
 package console
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
 )
@@ -38,6 +38,6 @@ func (s *Server) HandleEscalation(intent *contracts.Intent) error {
 		"metadata":    intent.Metadata,
 	})
 
-	log.Printf("escalation: %s (id: %s)", intent.Description, intentID)
+	slog.Info("escalation submitted", "description", intent.Description, "intent_id", intentID)
 	return nil
 }

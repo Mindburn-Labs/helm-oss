@@ -171,6 +171,8 @@ jobs:
             exit 1
           fi
           echo "✅ No TODOs in production code"
+      - name: Repository audit (strict baseline gates)
+        run: bash scripts/ci/repo_audit.sh
 
   sbom:
     runs-on: ubuntu-latest

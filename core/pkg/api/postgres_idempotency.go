@@ -2,7 +2,7 @@ package api
 
 import (
 	"database/sql"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -63,7 +63,7 @@ func (s *PostgresIdempotencyStore) Set(key string, statusCode int, headers http.
 	)
 	if err != nil {
 		// Log but don't fail — idempotency is best-effort enrichment
-		log.Printf("idempotency: failed to set key %s: %v", key, err)
+		slog.Warn("idempotency set failed", "key", key, "error", err)
 	}
 }
 
