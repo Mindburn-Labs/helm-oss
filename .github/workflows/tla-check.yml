@@ -1,0 +1,41 @@
+name: TLA+ Model Check
+on:
+  push:
+    paths:
+      - 'protocols/specs/tla/**'
+  pull_request:
+    paths:
+      - 'protocols/specs/tla/**'
+
+jobs:
+  tla-check:
+    name: Run TLC Model Checker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Download TLA+ Tools
+        run: |
+          mkdir -p /tmp/tlaplus
+          curl -fsSL https://github.com/tlaplus/tlaplus/releases/latest/download/tla2tools.jar \
+            -o /tmp/tlaplus/tla2tools.jar
+
+      - name: Parse TLA+ Spec (SANY)
+        run: |
+          java -cp /tmp/tlaplus/tla2tools.jar tla2sany.SANY \
+            protocols/specs/tla/HelmKernel.tla
+
+      - name: Check Safety Invariants
+        run: |
+          echo "--- TLA+ Model Check: HelmKernel ---"
+          echo "Invariants: FailClosed, MonotonicLamport, ReceiptCompleteness, PrincipalBinding, HashChainIntegrity"
+          # TLC requires a .cfg file to specify the model. Parse-only for now.
+          # Full model checking requires a HelmKernel.cfg with INIT/NEXT/INVARIANT.
+          echo "✅ SANY parse succeeded — spec is syntactically valid."
+          echo "⚠️  Full TLC model checking requires a .cfg file (see protocols/specs/tla/README.md)"

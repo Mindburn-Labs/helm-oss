@@ -153,7 +153,7 @@ func TestGuardian_SignDecision(t *testing.T) {
 		err := subject.SignDecision(ctx, decision, effect, evidence, nil)
 		require.NoError(t, err)
 
-		assert.Equal(t, "PASS", decision.Verdict)
+		assert.Equal(t, "ALLOW", decision.Verdict)
 		assert.Equal(t, "mock_decision_sig", decision.Signature)
 		assert.NotEmpty(t, decision.RequirementSetHash)
 		assert.WithinDuration(t, time.Now(), decision.Timestamp, 1*time.Second)
@@ -185,9 +185,9 @@ func TestGuardian_SignDecision(t *testing.T) {
 		err := subject.SignDecision(ctx, decision, effect, evidence, nil)
 		require.NoError(t, err) // Should NOT return error, but sign a FAIL verdict
 
-		assert.Equal(t, "FAIL", decision.Verdict)
+		assert.Equal(t, "DENY", decision.Verdict)
 		assert.Equal(t, "mock_decision_sig", decision.Signature) // Must be signed
-		assert.Contains(t, decision.Reason, "missing requirement")
+		assert.Contains(t, decision.Reason, "MISSING_REQUIREMENT")
 	})
 
 	t.Run("Fail: Unknown Action (No Policy) -> Fail Closed", func(t *testing.T) {
@@ -202,7 +202,7 @@ func TestGuardian_SignDecision(t *testing.T) {
 		err := subject.SignDecision(ctx, decision, effect, evidence, nil)
 		require.NoError(t, err)
 
-		assert.Equal(t, "FAIL", decision.Verdict)
+		assert.Equal(t, "DENY", decision.Verdict)
 		assert.Equal(t, "mock_decision_sig", decision.Signature)
 		assert.Contains(t, decision.Reason, "no policy defined")
 	})
@@ -233,7 +233,7 @@ func TestGuardian_SignDecision(t *testing.T) {
 
 		err := subject.SignDecision(ctx, decision, effect, nil, nil)
 		require.NoError(t, err)
-		assert.Equal(t, "PASS", decision.Verdict)
+		assert.Equal(t, "ALLOW", decision.Verdict)
 	})
 
 	t.Run("Fail: CEL Expression Violation", func(t *testing.T) {
@@ -249,8 +249,8 @@ func TestGuardian_SignDecision(t *testing.T) {
 
 		err := subject.SignDecision(ctx, decision, effect, nil, nil)
 		require.NoError(t, err)
-		assert.Equal(t, "FAIL", decision.Verdict)
-		assert.Equal(t, "missing requirement", decision.Reason)
+		assert.Equal(t, "DENY", decision.Verdict)
+		assert.Equal(t, string(contracts.ReasonMissingRequirement), decision.Reason)
 	})
 
 	t.Run("Fail: Signer Error", func(t *testing.T) {
@@ -312,7 +312,7 @@ func TestGuardian_BudgetEnforcement(t *testing.T) {
 
 		err := subject.SignDecision(ctx, decision, effect, nil, nil)
 		require.NoError(t, err)
-		assert.Equal(t, "PASS", decision.Verdict)
+		assert.Equal(t, "ALLOW", decision.Verdict)
 	})
 
 	t.Run("Fail: Budget Exceeded", func(t *testing.T) {
@@ -332,8 +332,8 @@ func TestGuardian_BudgetEnforcement(t *testing.T) {
 		// It might return error or sign fail depending on impl.
 		// My impl signs fail for "Budget Exceeded" but returns Signed decision (nil error).
 		require.NoError(t, err)
-		assert.Equal(t, "FAIL", decision.Verdict)
-		assert.Contains(t, decision.Reason, "Budget Exceeded")
+		assert.Equal(t, "DENY", decision.Verdict)
+		assert.Contains(t, decision.Reason, "BUDGET_EXCEEDED")
 	})
 
 	t.Run("Pass: No Budget ID (Bypass Check)", func(t *testing.T) {
@@ -349,6 +349,6 @@ func TestGuardian_BudgetEnforcement(t *testing.T) {
 
 		err := subject.SignDecision(ctx, decision, effect, nil, nil)
 		require.NoError(t, err)
-		assert.Equal(t, "PASS", decision.Verdict)
+		assert.Equal(t, "ALLOW", decision.Verdict)
 	})
 }

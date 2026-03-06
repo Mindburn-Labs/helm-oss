@@ -50,8 +50,28 @@ DOWNLOAD_PATH="/tmp/${BIN_NAME}"
 echo -e "  • Downloading... (${BINARY_URL})"
 curl -L -o "$DOWNLOAD_PATH" "$BINARY_URL" --progress-bar
 
-# 4. Verify Checksum (Optional but recommended)
-# TODO: Add checksum verification
+# 4. Verify Checksum
+CHECKSUM_URL="${BINARY_URL}.sha256"
+CHECKSUM_PATH="${DOWNLOAD_PATH}.sha256"
+
+echo -e "  • Verifying checksum..."
+if curl -fsSL -o "$CHECKSUM_PATH" "$CHECKSUM_URL" 2>/dev/null; then
+    EXPECTED=$(cat "$CHECKSUM_PATH" | awk '{print $1}')
+    ACTUAL=$(shasum -a 256 "$DOWNLOAD_PATH" | awk '{print $1}')
+    if [ "$EXPECTED" != "$ACTUAL" ]; then
+        echo -e "${RED}❌ Checksum verification FAILED.${NC}"
+        echo -e "   Expected: $EXPECTED"
+        echo -e "   Got:      $ACTUAL"
+        echo -e "   The downloaded binary may have been tampered with."
+        rm -f "$DOWNLOAD_PATH" "$CHECKSUM_PATH"
+        exit 1
+    fi
+    echo -e "  • Checksum: ${GREEN}✔ verified${NC}"
+    rm -f "$CHECKSUM_PATH"
+else
+    echo -e "${BLUE}  ⚠️  No checksum file found. Skipping verification.${NC}"
+    echo -e "     For production use, ensure checksum files are published with releases."
+fi
 
 # 5. Install
 echo -e "  • Installing to ${BOLD}${INSTALL_DIR}${NC}..."

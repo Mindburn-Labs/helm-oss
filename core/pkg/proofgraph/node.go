@@ -83,7 +83,13 @@ func (n *Node) Validate() error {
 }
 
 // NewNode creates a properly initialized node.
-func NewNode(kind NodeType, parents []string, payload []byte, lamport uint64, principal string, principalSeq uint64) *Node {
+// Per KERNEL_TCB §3: callers SHOULD pass a kernel authority clock.
+// If no clock is provided, time.Now is used for backward compatibility.
+func NewNode(kind NodeType, parents []string, payload []byte, lamport uint64, principal string, principalSeq uint64, clock ...func() time.Time) *Node {
+	now := time.Now
+	if len(clock) > 0 && clock[0] != nil {
+		now = clock[0]
+	}
 	n := &Node{
 		Kind:         kind,
 		Parents:      parents,
@@ -91,7 +97,7 @@ func NewNode(kind NodeType, parents []string, payload []byte, lamport uint64, pr
 		Lamport:      lamport,
 		Principal:    principal,
 		PrincipalSeq: principalSeq,
-		Timestamp:    time.Now().Unix(),
+		Timestamp:    now().Unix(),
 	}
 	n.NodeHash = n.ComputeNodeHash()
 	return n

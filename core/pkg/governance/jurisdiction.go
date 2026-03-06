@@ -45,6 +45,7 @@ type JurisdictionRule struct {
 	Region      string `json:"region"`
 	DataClass   string `json:"data_class,omitempty"` // PII, financial, health, etc.
 	Requirement string `json:"requirement"`
+	Priority    int    `json:"priority"` // Higher priority wins (0 = default)
 }
 
 // JurisdictionResolver binds intents to jurisdiction contexts.
@@ -77,6 +78,9 @@ func (r *JurisdictionResolver) AddRule(rule JurisdictionRule) {
 }
 
 // Resolve binds an intent to a jurisdiction context.
+// Resolution uses priority-based precedence. When multiple rules match
+// and the highest-priority rules have conflicting regimes at the same
+// priority level, the regime is left empty — forcing escalation.
 func (r *JurisdictionResolver) Resolve(entity, counterparty, dataSubject, serviceRegion string) (*JurisdictionContext, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -115,8 +119,35 @@ func (r *JurisdictionResolver) Resolve(entity, counterparty, dataSubject, servic
 		}
 	}
 
-	// Use first applicable regime
-	regime := applicable[0].LegalRegime
+	// Priority-based resolution: find the highest priority among applicable rules.
+	highestPriority := applicable[0].Priority
+	for _, r := range applicable[1:] {
+		if r.Priority > highestPriority {
+			highestPriority = r.Priority
+		}
+	}
+
+	// Collect all rules at the highest priority level.
+	var topRules []JurisdictionRule
+	for _, r := range applicable {
+		if r.Priority == highestPriority {
+			topRules = append(topRules, r)
+		}
+	}
+
+	// Check for conflicting regimes at the top priority level.
+	regime := topRules[0].LegalRegime
+	for _, r := range topRules[1:] {
+		if r.LegalRegime != regime {
+			// Equal-priority conflict — cannot auto-resolve. Force escalation.
+			// Leave regime empty; caller MUST escalate to human review.
+			regime = ""
+			for i := range conflicts {
+				conflicts[i].Resolution = "ESCALATE: equal-priority conflict requires human review"
+			}
+			break
+		}
+	}
 
 	contextID := fmt.Sprintf("jctx-%d", r.seq)
 	hashInput := fmt.Sprintf("%s:%s:%s:%s:%s", contextID, entity, serviceRegion, regime, now.String())

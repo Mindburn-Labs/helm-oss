@@ -15,6 +15,7 @@ curl -s http://localhost:8080/health   # → OK
 ## Step 2 — Trigger a Tool Call
 
 ### Option A: OpenAI proxy (1 line change)
+
 ```python
 import openai
 client = openai.OpenAI(base_url="http://localhost:8080/v1")
@@ -22,6 +23,7 @@ client = openai.OpenAI(base_url="http://localhost:8080/v1")
 ```
 
 ### Option B: Build + use CLI
+
 ```bash
 make build
 ./bin/helm doctor   # Check system health
@@ -43,10 +45,10 @@ Expected: 12/12 use cases pass, conformance L1+L2 verified.
 
 ```bash
 # Export a deterministic EvidencePack
-./bin/helm export --evidence ./data/evidence --out pack.tar.gz
+./bin/helm export --evidence ./data/evidence --out pack.tar
 
 # Verify offline (air-gapped safe)
-./bin/helm verify --bundle pack.tar.gz
+./bin/helm verify --bundle pack.tar
 ```
 
 ## Step 5 — See the ProofGraph
@@ -63,7 +65,7 @@ curl -s http://localhost:8080/api/v1/proofgraph | jq '.nodes | length'
 1. **HELM started** as a kernel with Postgres-backed ProofGraph
 2. **Tool calls** were intercepted, validated (JCS + SHA-256), and receipted
 3. **Conformance** verified L1 (structural) and L2 (temporal + checkpoint)
-4. **EvidencePack** was exported as a deterministic `.tar.gz`
+4. **EvidencePack** was exported as a deterministic `.tar`
 5. **Offline verify** proved the pack is valid with zero network access
 
 Every step produced signed, append-only, replayable proof.

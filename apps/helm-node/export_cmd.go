@@ -16,7 +16,7 @@ import (
 // runExportCmd implements `helm export` per §2.1.
 //
 // Exports selected EvidencePack sections for audit or incident response.
-// Supports deterministic .tar.gz packaging per UCS Appendix A.3.
+// Supports deterministic .tar packaging per UCS Appendix A.3.
 func runExportCmd(args []string, stdout, stderr io.Writer) int {
 	cmd := flag.NewFlagSet("export", flag.ContinueOnError)
 	cmd.SetOutput(stderr)
@@ -35,7 +35,7 @@ func runExportCmd(args []string, stdout, stderr io.Writer) int {
 	cmd.BoolVar(&audit, "audit", false, "Export full audit bundle")
 	cmd.StringVar(&incident, "incident", "", "Export incident-related evidence for given incident ID")
 	cmd.BoolVar(&jsonOutput, "json", false, "Output manifest as JSON")
-	cmd.BoolVar(&tarball, "tar", false, "Export as deterministic .tar.gz")
+	cmd.BoolVar(&tarball, "tar", false, "Export as deterministic .tar")
 
 	if err := cmd.Parse(args); err != nil {
 		return 2
@@ -139,7 +139,7 @@ func runExportCmd(args []string, stdout, stderr io.Writer) int {
 	return 0
 }
 
-// exportTarball creates a deterministic .tar.gz archive of the selected items.
+// exportTarball creates a deterministic .tar archive of the selected items.
 // Per UCS Appendix A.3.
 func exportTarball(srcDir, dstFile string, items []string) error {
 	f, err := os.Create(dstFile)

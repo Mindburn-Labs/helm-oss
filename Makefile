@@ -1,4 +1,4 @@
-.PHONY: build test test-race test-sdk-ts test-sdk-py test-all crucible lint proxy clean docker demo demo-down release-binaries verify-boundary
+.PHONY: build test test-race test-sdk-ts test-sdk-py test-all crucible lint proxy clean docker demo demo-down release-binaries verify-boundary onboard demo-cli mcp-pack mcp-install release-all
 
 # ── Build ──────────────────────────────────────────────
 build:
@@ -80,14 +80,42 @@ provenance:
 	@echo "✅ Provenance build: bin/helm + bin/helm.sha256"
 
 # ── Release Binaries (cross-compile) ──────────────────
+VERSION ?= 0.2.0
+COMMIT  := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+LDFLAGS := -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.buildTime=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+
 release-binaries:
-	@echo "Building release binaries..."
-	cd core && GOOS=linux   GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ../bin/helm-linux-amd64 ./cmd/helm/
-	cd core && GOOS=linux   GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ../bin/helm-linux-arm64 ./cmd/helm/
-	cd core && GOOS=darwin  GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ../bin/helm-darwin-amd64 ./cmd/helm/
-	cd core && GOOS=darwin  GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w" -o ../bin/helm-darwin-arm64 ./cmd/helm/
+	@echo "Building release binaries (v$(VERSION))..."
+	cd core && GOOS=linux   GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o ../bin/helm-linux-amd64 ./cmd/helm/
+	cd core && GOOS=linux   GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o ../bin/helm-linux-arm64 ./cmd/helm/
+	cd core && GOOS=darwin  GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o ../bin/helm-darwin-amd64 ./cmd/helm/
+	cd core && GOOS=darwin  GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o ../bin/helm-darwin-arm64 ./cmd/helm/
+	cd core && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o ../bin/helm-windows-amd64.exe ./cmd/helm/
 	cd bin && shasum -a 256 helm-* > SHA256SUMS.txt
-	@echo "✅ Release binaries + SHA256SUMS.txt"
+	@echo "✅ Release binaries + SHA256SUMS.txt (v$(VERSION))"
+
+# ── Quickstart (one-command onboard + demo) ────────────
+onboard: build
+	./bin/helm onboard --yes
+
+demo-cli: build
+	./bin/helm demo company --template starter
+
+# ── MCP ────────────────────────────────────────────────
+mcp-pack: build
+	./bin/helm mcp pack --client claude-desktop --out dist/helm.mcpb
+	@echo "✅ dist/helm.mcpb (MCPB bundle)"
+
+mcp-install: build
+	./bin/helm mcp install --client claude-code
+	@echo "✅ helm-mcp-plugin/ (Claude Code plugin)"
+
+# ── Full Release (all artifacts) ───────────────────────
+release-all: release-binaries sbom mcp-pack
+	@mkdir -p dist
+	cp bin/helm-* dist/
+	cp bin/SHA256SUMS.txt dist/
+	@echo "✅ Full release in dist/ (binaries + SBOM + MCPB)"
 
 # ── Repo Boundary (OSS ↔ Commercial) ──────────────────
 verify-boundary:
@@ -96,4 +124,5 @@ verify-boundary:
 
 # ── Clean ──────────────────────────────────────────────
 clean:
-	rm -rf bin/ sbom.json deps.txt
+	rm -rf bin/ dist/ sbom.json deps.txt helm-mcp-plugin/
+

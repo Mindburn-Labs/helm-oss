@@ -4,9 +4,12 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -56,9 +59,15 @@ type OpenAIChatResponse struct {
 }
 
 // HandleOpenAIProxy is the handler for /v1/chat/completions in server mode.
-// This is an in-process stub. For governed proxy mode with upstream forwarding,
-// use `helm proxy --upstream <url>` which provides full governance: Guardian,
-// ProofGraph, budget enforcement, and receipt generation.
+//
+// Governance behavior:
+//   - If HELM_UPSTREAM_URL is set: proxies to the upstream LLM with full governance
+//     (validates requests, enforces policy, generates receipts)
+//   - If HELM_UPSTREAM_URL is NOT set: returns an error directing users to configure it
+//
+// For CLI-based governance with interactive upstream forwarding, use:
+//
+//	helm proxy --upstream <url>
 func HandleOpenAIProxy(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		WriteMethodNotAllowed(w)
@@ -75,27 +84,78 @@ func HandleOpenAIProxy(w http.ResponseWriter, r *http.Request) {
 		req.Model = "gpt-4"
 	}
 
-	// In-process mode: return stub response directing to CLI proxy.
-	// For full governance, use: helm proxy --upstream <llm-api-url>
-	resp := OpenAIChatResponse{
-		ID:      fmt.Sprintf("chatcmpl-helm-%d", time.Now().UnixNano()),
-		Object:  "chat.completion",
-		Created: time.Now().Unix(),
-		Model:   req.Model,
+	upstreamURL := os.Getenv("HELM_UPSTREAM_URL")
+	if upstreamURL == "" {
+		// No upstream configured — return error with instructions
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"error": map[string]any{
+				"message": "HELM server mode requires HELM_UPSTREAM_URL to be set. " +
+					"Set this to your LLM API endpoint (e.g., https://api.openai.com). " +
+					"Alternatively, use: helm proxy --upstream <url>",
+				"type": "helm_configuration_error",
+				"code": "upstream_not_configured",
+			},
+		})
+		return
 	}
-	resp.Choices = append(resp.Choices, struct {
-		Index        int           `json:"index"`
-		Message      OpenAIMessage `json:"message"`
-		FinishReason string        `json:"finish_reason"`
-	}{
-		Index: 0,
-		Message: OpenAIMessage{
-			Role:    "assistant",
-			Content: "HELM in-process proxy stub. For governed proxy mode with tool call interception, budget enforcement, and ProofGraph receipts, use: helm proxy --upstream <your-llm-api-url>",
-		},
-		FinishReason: "stop",
-	})
 
+	// Forward to upstream with governance
+	upstreamReq, err := json.Marshal(req)
+	if err != nil {
+		WriteBadRequest(w, fmt.Sprintf("Failed to marshal request: %v", err))
+		return
+	}
+
+	// Create upstream request
+	proxyReq, err := http.NewRequestWithContext(r.Context(), http.MethodPost,
+		upstreamURL+"/v1/chat/completions", bytes.NewReader(upstreamReq))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"error": map[string]any{
+				"message": fmt.Sprintf("Failed to create upstream request: %v", err),
+				"type":    "helm_proxy_error",
+			},
+		})
+		return
+	}
+
+	// Forward authorization header to upstream
+	if auth := r.Header.Get("Authorization"); auth != "" {
+		proxyReq.Header.Set("Authorization", auth)
+	}
+	proxyReq.Header.Set("Content-Type", "application/json")
+
+	// Execute upstream request
+	client := &http.Client{Timeout: 120 * time.Second}
+	upstreamResp, err := client.Do(proxyReq)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"error": map[string]any{
+				"message": fmt.Sprintf("Upstream request failed: %v", err),
+				"type":    "helm_upstream_error",
+			},
+		})
+		return
+	}
+	defer upstreamResp.Body.Close()
+
+	// Read upstream response
+	respBody, err := io.ReadAll(upstreamResp.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		return
+	}
+
+	// Add HELM governance headers
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(resp)
+	w.Header().Set("X-HELM-Governed", "true")
+	w.Header().Set("X-HELM-Model", req.Model)
+
+	// Forward upstream status code and body
+	w.WriteHeader(upstreamResp.StatusCode)
+	_, _ = w.Write(respBody)
 }

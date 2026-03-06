@@ -1,28 +1,70 @@
-# HELM — Fail-Closed Tool Calling for AI Agents
+# HELM — Fail-Closed Execution Authority for AI Agents
 
-[![Build](https://github.com/Mindburn-Labs/helm/actions/workflows/helm_core_gates.yml/badge.svg)](https://github.com/Mindburn-Labs/helm/actions/workflows/helm_core_gates.yml)
+[![CI](https://github.com/Mindburn-Labs/helm-oss/actions/workflows/ci.yml/badge.svg)](https://github.com/Mindburn-Labs/helm-oss/actions/workflows/ci.yml)
 [![Conformance](https://img.shields.io/badge/conformance-L1%20%2B%20L2-brightgreen)](docs/CONFORMANCE.md)
-[![Verify](https://img.shields.io/badge/verify-npx%20%40mindburn%2Fhelm-blue)](docs/verify.md)
-[![Provenance](https://img.shields.io/badge/provenance-SLSA-blue)](https://github.com/Mindburn-Labs/helm/releases)
+[![Compatibility](https://img.shields.io/badge/compatibility-matrix-blue)](https://github.com/Mindburn-Labs/helm-oss/actions/workflows/compatibility_matrix.yml)
+[![Provenance](https://img.shields.io/badge/provenance-SLSA-blue)](https://github.com/Mindburn-Labs/helm-oss/releases)
 
 **Models propose. The kernel disposes.**
 
-HELM is a high-performance, deterministic proxy for LLM tool calling. It enforces mathematical and legal boundaries on AI agents in real-time, generating a tamper-proof **ProofGraph** of every decision.
+HELM is a kernel-grade execution authority for AI agents. Every tool call, sandbox execution, and self-extension goes through fail-closed governance — producing tamper-proof receipts and deterministic **EvidencePacks** you can hand to auditors, regulators, or your board.
 
-**[Read HELM for Humans](docs/FOR_HUMANS.md)** — A non-technical overview of why this exists.
+**What you get in 10 minutes:**
+
+- 🔒 **Fail-closed governance** — every action is ALLOW/DENY with a signed receipt
+- 📦 **Deterministic EvidencePacks** — offline-verifiable, air-gapped safe, bit-identical
+- 📊 **Interactive Proof Report** — shareable HTML with causal chain visualization
+- 🔌 **Works with your stack** — OpenAI SDK, LangChain, Claude, Mastra, any MCP client
+- 🧱 **Kernel-grade trust** — Ed25519 signed, Lamport-ordered, replay-from-genesis
+
+<details>
+<summary>📊 <strong>What the Proof Report looks like</strong></summary>
+
+> The `helm demo company` command generates an interactive HTML proof report with causal chain visualization, receipt details, verification status, and one-click sharing. Open `data/evidence/run-report.html` after running the demo.
+>
+> <!-- TODO: Replace with actual screenshot: ![HELM Proof Report](docs/assets/proof-report-screenshot.png) -->
+
+</details>
 
 ---
 
-## Quickstart
-
-Install the HELM CLI and start governing in 60 seconds:
+## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Mindburn-Labs/helm/main/install.sh | bash
-helm server
+# Homebrew
+brew install mindburn-labs/tap/helm
+
+# Go
+go install github.com/Mindburn-Labs/helm-oss/core/cmd/helm@latest
+
+# Docker
+docker run --rm ghcr.io/mindburn-labs/helm-oss/helm:latest --help
 ```
 
-*No Postgres required! HELM auto-provisions a local SQLite database and persistent trust root by default.*
+## MCP One-Click Install
+
+```bash
+# Claude Desktop — one-click .mcpb
+helm mcp pack --client claude-desktop --out helm.mcpb
+
+# Claude Code
+helm mcp install --client claude-code
+
+# Windsurf / Codex / VS Code / Cursor
+helm mcp print-config --client windsurf
+```
+
+## SDK Install
+
+```bash
+# TypeScript adapters
+npm install @mindburn/helm-openai-agents @mindburn/helm-mastra
+
+# Python adapters
+pip install helm-openai-agents helm-agent-framework helm-langchain
+```
+
+📊 **[Latest Compatibility Matrix →](https://github.com/Mindburn-Labs/helm-oss/actions/workflows/compatibility_matrix.yml)**
 
 ---
 
@@ -36,36 +78,24 @@ HELM is built for high-stakes, low-latency environments. To measure the overhead
 
 ---
 
-## 5-Minute Proof Loop
-
-**Goal: prove it works without trusting us.** You can verify the EvidencePack and replay without network access.
+## 10-Minute Wow Path
 
 ```bash
-# 1. Start
-docker compose up -d
+# 1. Setup (SQLite + Ed25519 + config — instant)
+helm onboard --yes
 
-# 2. Trigger a deny (schema mismatch → fail-closed)
-curl -s http://localhost:8080/v1/tools/execute \
-  -H 'Content-Type: application/json' \
-  -d '{"tool":"unknown_tool","args":{"bad_field":true}}' | jq .reason_code
-# → "ERR_TOOL_NOT_FOUND"
+# 2. Run governed company demo (15 receipts, 7 phases: approval → sandbox → deny → skill gap → incident)
+helm demo company --template starter --provider mock
 
-# 3. View receipt
-curl -s http://localhost:8080/api/v1/receipts?limit=1 | jq '.[0].receipt_hash'
+# 3. Export deterministic EvidencePack + verify offline (air-gapped safe)
+helm export --evidence ./data/evidence --out evidence.tar
+helm verify --bundle evidence.tar
 
-# 4. Export EvidencePack
-./bin/helm export --evidence ./data/evidence --out pack.tar.gz
-
-# 5. Offline replay verify — no network required
-./bin/helm verify --bundle pack.tar.gz
-# → "verification: PASS"  (air-gapped safe)
-
-# 6. Run conformance L1/L2
-./bin/helm conform --profile L2 --json
-# → {"profile":"L2","verdict":"PASS","gates":12}
+# 4. Explore skill lifecycle + maintenance loop
+helm pack list && helm incident list && helm brief daily
 ```
 
-Full walkthrough: [docs/QUICKSTART.md](docs/QUICKSTART.md) · [docs/POLICY_BACKENDS.md](docs/POLICY_BACKENDS.md) · [docs/VERIFIER_TRUST_MODEL.md](docs/VERIFIER_TRUST_MODEL.md) · [docs/PROCUREMENT.md](docs/PROCUREMENT.md)
+→ Full commands: [docs/VERIFICATION.md](docs/VERIFICATION.md) · [docs/QUICKSTART.md](docs/QUICKSTART.md)
 
 ---
 
@@ -88,14 +118,14 @@ npx @mindburn/helm --ci --bundle ./evidence 2>/dev/null | jq .verdict
 
 ## Why Devs Should Care
 
-| Pain (postmortem you're preventing) | HELM behavior | Receipt reason code | Proof |
-|------------------------------------|---------------|--------------------|---------|
-| Tool-call overspend blows budget | ACID budget locks, fail-closed on ceiling breach | `DENY_BUDGET_EXCEEDED` | [UC-005](docs/use-cases/UC-005_wasi_gas_exhaustion.sh) |
-| Schema drift breaks prod silently | Fail-closed on input AND output schema mismatch | `DENY_SCHEMA_MISMATCH` | [UC-002](docs/use-cases/UC-002_schema_mismatch.sh), [UC-009](docs/use-cases/UC-009_connector_drift.sh) |
-| Untrusted WASM runs wild | Sandbox: gas + time + memory budgets, deterministic traps | `DENY_GAS_EXHAUSTION` | [UC-004](docs/use-cases/UC-004_wasi_transform.sh) |
-| "Who approved that?" disputes | Timelock + challenge/response ceremony, Ed25519 signed | `DENY_APPROVAL_REQUIRED` | [UC-003](docs/use-cases/UC-003_approval_ceremony.sh) |
-| No audit trail for regulators | Deterministic EvidencePack, offline verifiable, replay from genesis | — | [UC-008](docs/use-cases/UC-008_replay_verify.sh) |
-| Can't prove compliance to auditors | Conformance L1 + L2 gates, 12 runnable use cases | — | [UC-012](docs/use-cases/UC-012_openai_proxy.sh) |
+| Pain (postmortem you're preventing) | HELM behavior                                                       | Receipt reason code      | Proof                                                                                                  |
+| ----------------------------------- | ------------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Tool-call overspend blows budget    | ACID budget locks, fail-closed on ceiling breach                    | `DENY_BUDGET_EXCEEDED`   | [UC-005](docs/use-cases/UC-005_wasi_gas_exhaustion.sh)                                                 |
+| Schema drift breaks prod silently   | Fail-closed on input AND output schema mismatch                     | `DENY_SCHEMA_MISMATCH`   | [UC-002](docs/use-cases/UC-002_schema_mismatch.sh), [UC-009](docs/use-cases/UC-009_connector_drift.sh) |
+| Untrusted WASM runs wild            | Sandbox: gas + time + memory budgets, deterministic traps           | `DENY_GAS_EXHAUSTION`    | [UC-004](docs/use-cases/UC-004_wasi_transform.sh)                                                      |
+| "Who approved that?" disputes       | Timelock + challenge/response ceremony, Ed25519 signed              | `DENY_APPROVAL_REQUIRED` | [UC-003](docs/use-cases/UC-003_approval_ceremony.sh)                                                   |
+| No audit trail for regulators       | Deterministic EvidencePack, offline verifiable, replay from genesis | —                        | [UC-008](docs/use-cases/UC-008_replay_verify.sh)                                                       |
+| Can't prove compliance to auditors  | Conformance L1 + L2 gates, 12 runnable use cases                    | —                        | [UC-012](docs/use-cases/UC-012_openai_proxy.sh)                                                        |
 
 ---
 
@@ -104,12 +134,14 @@ npx @mindburn/helm --ci --bundle ./evidence 2>/dev/null | jq .verdict
 ### Python — OpenAI SDK
 
 The only change:
+
 ```diff
 - client = openai.OpenAI()
 + client = openai.OpenAI(base_url="http://localhost:8080/v1")
 ```
 
 Full snippet:
+
 ```python
 import openai
 
@@ -131,12 +163,14 @@ print(response.choices[0].message.content)
 ### TypeScript — Vercel AI SDK / fetch
 
 The only change:
+
 ```diff
 - const BASE = "https://api.openai.com/v1";
 + const BASE = "http://localhost:8080/v1";
 ```
 
 Full snippet:
+
 ```typescript
 const response = await fetch("http://localhost:8080/v1/chat/completions", {
   method: "POST",
@@ -155,7 +189,7 @@ console.log(data.choices[0].message.content);
 
 ### MCP Gateway
 
-```bash
+````bash
 # List governed capabilities
 curl -s http://localhost:8080/mcp/v1/capabilities | jq '.tools[].name'
 
@@ -195,7 +229,7 @@ res, err := c.ChatCompletions(helm.ChatCompletionRequest{
 if apiErr, ok := err.(*helm.HelmApiError); ok {
     fmt.Println("Denied:", apiErr.ReasonCode) // DENY_TOOL_NOT_FOUND
 }
-```
+````
 
 **Rust:**
 
@@ -244,7 +278,7 @@ Your App (OpenAI SDK)
    Executor ──→ Tool ──→ Receipt (Ed25519 signed)
        │                        │
        ▼                        ▼
-  ProofGraph DAG          EvidencePack (.tar.gz)
+  ProofGraph DAG          EvidencePack (.tar)
   (append-only)           (offline verifiable)
        │
        ▼
@@ -256,17 +290,17 @@ Your App (OpenAI SDK)
 
 ## What Ships vs What's Spec
 
-| Shipped in OSS v0.1 | Spec (future / enterprise) |
-|---------------------|---------------------------|
-| ✅ OpenAI-compatible proxy | 🔮 Multi-model gateway |
-| ✅ Schema PEP (input + output) | 🔮 ZK-CPI (zero-knowledge proofs) |
-| ✅ ProofGraph DAG (Lamport + Ed25519) | 🔮 Hardware TEE attestation |
-| ✅ WASI sandbox (gas/time/memory) | 🔮 Post-quantum cryptography |
-| ✅ Approval ceremonies (timelock + challenge) | 🔮 Multi-org federation |
-| ✅ Trust registry (event-sourced) | 🔮 Formal verification (SMT/LTL) |
-| ✅ EvidencePack export + offline replay | 🔮 Cross-tenant ProofGraph merge |
-| ✅ Conformance L1 + L2 | 🔮 Conformance L3 (enterprise) |
-| ✅ 11 CLI commands | 🔮 Production key management (HSM) |
+| Shipped in OSS v1.0                           | Spec (future / enterprise)         |
+| --------------------------------------------- | ---------------------------------- |
+| ✅ OpenAI-compatible proxy                    | 🔮 Multi-model gateway             |
+| ✅ Schema PEP (input + output)                | 🔮 ZK-CPI (zero-knowledge proofs)  |
+| ✅ ProofGraph DAG (Lamport + Ed25519)         | 🔮 Hardware TEE attestation        |
+| ✅ WASI sandbox (gas/time/memory)             | 🔮 Post-quantum cryptography       |
+| ✅ Approval ceremonies (timelock + challenge) | 🔮 Multi-org federation            |
+| ✅ Trust registry (event-sourced)             | 🔮 Formal verification (SMT/LTL)   |
+| ✅ EvidencePack export + offline replay       | 🔮 Cross-tenant ProofGraph merge   |
+| ✅ Conformance L1 + L2                        | 🔮 Conformance L3 (enterprise)     |
+| ✅ 11 CLI commands                            | 🔮 Production key management (HSM) |
 
 Full scope details in [docs/OSS_SCOPE.md](docs/OSS_SCOPE.md)
 
@@ -313,6 +347,7 @@ helm/
 ├── docs/               # Threat model, quickstart, verify, conformance
 └── Makefile            # build, test, crucible, demo, release-binaries
 ```
+
 ---
 
 ## Scope and Guarantees

@@ -5,7 +5,7 @@ Shows HELM integration with the Go SDK.
 ## Prerequisites
 
 - HELM running at `http://localhost:8080` (`docker compose up -d`)
-- Go 1.24+
+- Go 1.25+
 
 ## Run
 

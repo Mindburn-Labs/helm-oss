@@ -350,23 +350,6 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
-  # SC-006: SBOM generation for supply chain transparency
-  sbom-generate:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.25"
-      - name: Install Syft
-        uses: anchore/sbom-action/download-syft@v0
-      - name: Generate Go SBOM (CycloneDX)
-        run: |
-          cd core && syft dir:. -o cyclonedx-json > ../sbom-core-cyclonedx.json
-      - name: Upload SBOM artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom-core
-          path: sbom-core-cyclonedx.json
+  # SC-006: SBOM generation consolidated into the 'sbom' job above (L177).
+  # The primary SBOM job uses scripts/ci/generate_sbom.sh and validates CycloneDX format.
+  # Removed duplicate 'sbom-generate' to keep a single source of truth.

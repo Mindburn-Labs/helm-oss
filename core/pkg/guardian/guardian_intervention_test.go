@@ -38,7 +38,7 @@ func TestGuardian_Intervention(t *testing.T) {
 		err := subject.SignDecision(ctx, decision, effect, nil, intervention)
 		require.NoError(t, err)
 
-		assert.Equal(t, "INTERVENE", decision.Verdict)
+		assert.Equal(t, "ESCALATE", decision.Verdict)
 		assert.Equal(t, "mock_decision_sig", decision.Signature)
 		assert.Contains(t, decision.Reason, "MANUAL_OVERRIDE")
 	})

@@ -40,6 +40,7 @@ curl -s http://localhost:8080/v1/tools/execute \
 ```
 
 **Expected:**
+
 ```json
 {
   "status": "DENIED",
@@ -51,16 +52,16 @@ curl -s http://localhost:8080/v1/tools/execute \
 ## 5. Export EvidencePack
 
 ```bash
-./bin/helm export --evidence ./data/evidence --out pack.tar.gz
-ls -la pack.tar.gz
+./bin/helm export --evidence ./data/evidence --out pack.tar
+ls -la pack.tar
 ```
 
-**Expected:** deterministic `pack.tar.gz` file.
+**Expected:** deterministic `pack.tar` file.
 
 ## 6. Verify offline
 
 ```bash
-./bin/helm verify --bundle pack.tar.gz
+./bin/helm verify --bundle pack.tar
 ```
 
 **Expected:** `verification: PASS` — no network required, air-gapped safe.
@@ -70,6 +71,7 @@ ls -la pack.tar.gz
 **Done.** You now have a governed tool-call loop with cryptographic receipts and offline-verifiable evidence.
 
 Next:
+
 - [QUICKSTART.md](QUICKSTART.md) — annotated 8-step walkthrough
 - [DEMO.md](DEMO.md) — copy-paste commands for HN/Reddit
 - [SDK docs](sdks/00_INDEX.md) — typed clients for 5 languages

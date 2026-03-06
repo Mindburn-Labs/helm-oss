@@ -44,7 +44,7 @@ func runExportCmd(args []string, stdout, stderr io.Writer) int {
 	cmd.BoolVar(&audit, "audit", false, "Export full audit bundle")
 	cmd.StringVar(&incident, "incident", "", "Export incident-related evidence for given incident ID")
 	cmd.BoolVar(&jsonOutput, "json", false, "Output manifest as JSON")
-	cmd.BoolVar(&tarOutput, "tar", false, "Export as deterministic tar.gz (sorted, epoch mtime, root uid)")
+	cmd.BoolVar(&tarOutput, "tar", false, "Export as deterministic .tar (sorted, epoch mtime, root uid)")
 
 	if err := cmd.Parse(args); err != nil {
 		return 2
@@ -138,17 +138,17 @@ func runExportCmd(args []string, stdout, stderr io.Writer) int {
 		}
 	}
 
-	// Deterministic tar.gz export (Phase 9: identical hashes for identical content)
+	// Deterministic .tar export (Phase 9: identical hashes for identical content)
 	if tarOutput {
-		tarPath := outDir + ".tar.gz"
+		tarPath := outDir + ".tar"
 		if err := deterministicTarGz(outDir, tarPath); err != nil {
-			_, _ = fmt.Fprintf(stderr, "Error creating tar.gz: %v\n", err)
+			_, _ = fmt.Fprintf(stderr, "Error creating .tar: %v\n", err)
 			return 2
 		}
 		if jsonOutput {
 			result["tar_path"] = tarPath
 		} else {
-			_, _ = fmt.Fprintf(stdout, "  📦 Deterministic tar.gz: %s\n", tarPath)
+			_, _ = fmt.Fprintf(stdout, "  📦 Deterministic .tar: %s\n", tarPath)
 		}
 	}
 
@@ -181,7 +181,7 @@ func copyDir(src, dst string) error {
 	})
 }
 
-// deterministicTarGz creates a byte-identical tar.gz from a directory.
+// deterministicTarGz creates a byte-identical .tar archive from a directory.
 // Invariants:
 //   - Paths sorted lexicographically
 //   - Mtime fixed to Unix epoch (1970-01-01T00:00:00Z)
@@ -208,10 +208,10 @@ func deterministicTarGz(srcDir, dstPath string) error {
 	}
 	sort.Strings(paths)
 
-	// 2. Create tar.gz
+	// 2. Create .tar archive
 	f, err := os.Create(dstPath)
 	if err != nil {
-		return fmt.Errorf("create tar.gz failed: %w", err)
+		return fmt.Errorf("create .tar failed: %w", err)
 	}
 	defer f.Close()
 

@@ -65,8 +65,8 @@ func TestEvaluateDecision_Persistence(t *testing.T) {
 	if !strings.Contains(entry.Details, decision.ID) {
 		t.Errorf("Details payload does not contain decision ID")
 	}
-	if !strings.Contains(entry.Details, "\"verdict\":\"FAIL\"") {
-		// Expect FAIL because PRG is empty/default deny or "rogue_tool" has no policy
-		t.Errorf("Details payload does not contain verdict FAIL")
+	if !strings.Contains(entry.Details, "\"verdict\":\"DENY\"") {
+		// Expect DENY because PRG is empty/default deny or "rogue_tool" has no policy
+		t.Errorf("Details payload does not contain verdict DENY")
 	}
 }

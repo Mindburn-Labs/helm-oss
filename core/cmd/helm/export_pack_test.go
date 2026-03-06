@@ -6,7 +6,7 @@ import (
 )
 
 func TestExportAndVerify_RoundTrip(t *testing.T) {
-	tmpFile := t.TempDir() + "/test.tar.gz"
+	tmpFile := t.TempDir() + "/test.tar"
 
 	files := map[string][]byte{
 		"decisions/dec-001.json": []byte(`{"id":"dec-001","verdict":"PASS"}`),
@@ -33,8 +33,8 @@ func TestExportAndVerify_RoundTrip(t *testing.T) {
 
 func TestExportPack_Deterministic(t *testing.T) {
 	dir := t.TempDir()
-	path1 := dir + "/pack1.tar.gz"
-	path2 := dir + "/pack2.tar.gz"
+	path1 := dir + "/pack1.tar"
+	path2 := dir + "/pack2.tar"
 
 	files := map[string][]byte{
 		"b.txt": []byte("second"),
@@ -67,7 +67,7 @@ func TestExportPack_Deterministic(t *testing.T) {
 func TestVerifyPack_TamperedFile(t *testing.T) {
 	// Create a valid pack, then we'll test the verify logic
 	dir := t.TempDir()
-	path := dir + "/tampered.tar.gz"
+	path := dir + "/tampered.tar"
 
 	files := map[string][]byte{
 		"data.json": []byte(`{"key":"value"}`),

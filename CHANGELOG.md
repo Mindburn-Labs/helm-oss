@@ -2,6 +2,46 @@
 
 All notable changes to HELM Core OSS are documented here.
 
+## [0.2.0] — 2026-03-05
+
+### Added
+
+**CLI**
+
+- `helm onboard` — one-command local setup (SQLite + Ed25519 keys + helm.yaml)
+- `helm demo company` — starter company demo with governed agents and receipts (default: mock sandbox)
+- `helm sandbox exec` — governed sandbox execution with strict preflight and receipt preimage binding
+- `helm sandbox conform` — sandbox conformance checker (Compatible/Verified/Sovereign tiers)
+- `helm mcp serve` — MCP server (stdio + remote HTTP + remote SSE)
+- `helm mcp install` — Claude Code plugin generator
+- `helm mcp pack` — .mcpb bundle generator (binary + platform_overrides)
+- `helm mcp print-config` — config snippets for Windsurf, Codex, VS Code, Cursor
+
+**Orchestrator Adapters**
+
+- OpenAI Agents SDK Python adapter with governance routing and EvidencePack export
+- MS Agent Framework Python adapter
+- MS Agent Framework .NET minimal example
+
+**Documentation**
+
+- CLI-first QUICKSTART (10-minute proof loop)
+- MCP clients, sandboxes, orchestrators, proxy snippets, troubleshooting guides
+- COMPATIBILITY.md with tier definitions and matrix
+- RELEASE.md with release engineering process
+
+**Release Engineering**
+
+- SBOM (CycloneDX) for binaries and containers
+- Signed checksums, container signing/attestation
+- MCPB toolchain for Claude Desktop bundles
+
+### Changed
+
+- Version bumped to 0.2.0
+- Help text reorganized into sections
+- EvidencePack default: `.tar` (deterministic), `.tar.gz` optional via `--compress`
+
 ## [3.0.0] — 2026-02-21
 
 ### Added
@@ -24,7 +64,6 @@ All notable changes to HELM Core OSS are documented here.
 - `cli/` directory (v2, superseded by `packages/mindburn-helm-cli/`).
 - Internal planning docs: `OSS_CUTLINE.md`, `UNKNOWNs.md`, TITAN docs, investment memo.
 - Dead redirect stubs for `HELM_Unified_Canonical_Standard.md`.
-
 
 ## [0.1.1] — 2026-02-19
 

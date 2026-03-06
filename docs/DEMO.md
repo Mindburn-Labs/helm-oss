@@ -1,3 +1,7 @@
+---
+title: HELM Demo — Copy-Paste Commands
+---
+
 # HELM Demo — Copy-Paste Commands
 
 Share this page. Every command below produces verifiable output.

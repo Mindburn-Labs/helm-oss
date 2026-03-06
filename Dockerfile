@@ -1,6 +1,6 @@
 # ── Stage 1: Build ─────────────────────────────────────
 # SC-004: Base images pinned by digest for supply chain integrity
-FROM golang:1.24-alpine@sha256:8bee1901f1e530bfb4a7850aa7a479d17ae3a18beb6e09064ed54cfd245b7191 AS builder
+FROM golang:1.25-alpine AS builder
 
 RUN apk add --no-cache git ca-certificates
 

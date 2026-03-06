@@ -3,6 +3,7 @@
 ## Canonicalization
 
 `00_INDEX.json` MUST be canonical JSON:
+
 - Keys sorted lexicographically (recursive)
 - No trailing whitespace
 - UTF-8 encoded
@@ -54,14 +55,14 @@ Leaves are sorted by canonical `path` string (ascending, lexicographic). This pr
 
 ```json
 {
-  "format":             "helm-attestation-v3",
-  "release_tag":        "v0.9.1",
-  "asset_name":         "helm-evidence-v0.9.1.tar.gz",
-  "asset_sha256":       "abc123...",
+  "format": "helm-attestation-v3",
+  "release_tag": "v0.9.1",
+  "asset_name": "helm-evidence-v0.9.1.tar",
+  "asset_sha256": "abc123...",
   "manifest_root_hash": "def456...",
-  "merkle_root":        "789abc...",
-  "created_at":         "2026-02-21T12:00:00Z",
-  "profiles_version":   "1.0.0"
+  "merkle_root": "789abc...",
+  "created_at": "2026-02-21T12:00:00Z",
+  "profiles_version": "1.0.0"
 }
 ```
 

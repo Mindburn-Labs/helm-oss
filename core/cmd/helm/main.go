@@ -53,6 +53,14 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	switch args[1] {
+	case "onboard":
+		return runOnboardCmd(args[2:], stdout, stderr)
+	case "demo":
+		return runDemoCmd(args[2:], stdout, stderr)
+	case "sandbox":
+		return runSandboxCmd(args[2:], stdout, stderr)
+	case "mcp":
+		return runMCPCmd(args[2:], stdout, stderr)
 	case "proxy":
 		return runProxyCmd(args[2:], stdout, stderr)
 	case "export":
@@ -84,12 +92,30 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		handleCoverage(args[2:])
 		return 0
 	case "pack":
-		handlePack(args[2:])
-		return 0
+		return runPackCmd(args[2:], stdout, stderr)
+	case "incident":
+		return runIncidentCmd(args[2:], stdout, stderr)
+	case "run":
+		if len(args) > 2 && args[2] == "maintenance" {
+			return runMaintenanceCmd(args[3:], stdout, stderr)
+		}
+		fmt.Fprintln(stderr, "Usage: helm run maintenance [--once|--schedule]")
+		return 2
+	case "brief":
+		return runBriefCmd(args[2:], stdout, stderr)
+	case "policy":
+		return runPolicyCmd(args[2:], stdout, stderr)
 	case "orgdna":
 		return runOrgDNACmd(args[2:], stdout, stderr)
 	case "help", "--help", "-h":
 		printUsage(stdout)
+		return 0
+	case "version", "--version", "-v":
+		fmt.Fprintf(stdout, "%sHELM%s v0.2.0 (%s)\n", ColorBold, ColorReset, getBuildInfo())
+		fmt.Fprintf(stdout, "  Report Schema:          %s\n", reportSchemaVersion)
+		fmt.Fprintf(stdout, "  EvidencePack Schema:    1\n")
+		fmt.Fprintf(stdout, "  Compatibility Schema:   1\n")
+		fmt.Fprintf(stdout, "  MCP Bundle Schema:      1\n")
 		return 0
 	default:
 		if args[1][0] == '-' {
@@ -118,18 +144,46 @@ const (
 
 func printUsage(w io.Writer) {
 	fmt.Fprintln(w, "")
-	fmt.Fprintf(w, "%sHELM Kernel %s%s\n", ColorBold+ColorBlue, "v0.1.1", ColorReset)
+	fmt.Fprintf(w, "%sHELM Kernel %s%s\n", ColorBold+ColorBlue, "v0.2.0", ColorReset)
 	fmt.Fprintf(w, "%sModels propose. The kernel disposes.%s\n", ColorGray, ColorReset)
 	fmt.Fprintln(w, "")
 	fmt.Fprintf(w, "%sUSAGE:%s\n", ColorBold, ColorReset)
 	fmt.Fprintln(w, "  helm <command> [flags]")
 	fmt.Fprintln(w, "")
 
+	printSection(w, "QUICKSTART")
+	printCommand(w, "onboard", "One-command local setup (SQLite + keys + config)")
+	printCommand(w, "demo", "Run governed demonstrations (demo company)")
+
 	printSection(w, "KERNEL")
 	printCommand(w, "server", "Run the HELM server (default)")
+	printCommand(w, "proxy", "OpenAI-compatible governance proxy (proxy --websocket)")
+	printCommand(w, "sandbox", "Governed sandbox execution (exec, conform)")
 	printCommand(w, "doctor", "Check system health and configuration")
 	printCommand(w, "health", "Check server health (HTTP)")
 	printCommand(w, "init", "Initialize a new HELM project")
+
+	printSection(w, "SKILL LIFECYCLE")
+	printCommand(w, "pack propose", "Create a SkillCandidate artifact")
+	printCommand(w, "pack build", "Build a Pack from a candidate")
+	printCommand(w, "pack test", "Run conformance on a Pack")
+	printCommand(w, "pack promote", "Promote a Pack (requires approval)")
+	printCommand(w, "pack install", "Install a promoted Pack")
+	printCommand(w, "pack list", "List candidates, packs, and installed skills")
+
+	printSection(w, "MAINTENANCE")
+	printCommand(w, "incident", "Manage incidents (list, show, ack, create)")
+	printCommand(w, "run maintenance", "Run governed self-fixing maintenance")
+	printCommand(w, "brief daily", "Generate daily system health brief")
+	printCommand(w, "policy test", "Run policy fixtures (--dir policies)")
+	printCommand(w, "policy init", "Generate starter policy (--template deny-first)")
+	printCommand(w, "policy templates", "List available policy templates")
+
+	printSection(w, "MCP DISTRIBUTION")
+	printCommand(w, "mcp serve", "Start HELM MCP server (stdio/HTTP/SSE)")
+	printCommand(w, "mcp install", "Install MCP for Claude Code")
+	printCommand(w, "mcp pack", "Generate .mcpb for Claude Desktop")
+	printCommand(w, "mcp print-config", "Print config for Windsurf/Codex/VS Code/Cursor")
 
 	printSection(w, "CONFORMANCE & VERIFICATION")
 	printCommand(w, "conform", "Run conformance gates (--profile, --json)")
@@ -141,9 +195,10 @@ func printUsage(w io.Writer) {
 	printCommand(w, "trust", "Manage trust root keys (add/revoke/list)")
 
 	printSection(w, "UTILITIES")
-	printCommand(w, "pack", "Manage evidence packs (create/verify)")
+	printCommand(w, "pack create", "Create a deterministic evidence pack (.tar)")
+	printCommand(w, "pack verify", "Verify an evidence pack's integrity")
+	printCommand(w, "orgdna", "OrgDNA management")
 	printCommand(w, "coverage", "Show coverage statistics")
-	printCommand(w, "version", "Show version information")
 	printCommand(w, "help", "Show this help")
 	fmt.Fprintln(w, "")
 }
@@ -160,27 +215,6 @@ func handleCoverage(args []string) {
 	log.Println("[helm] coverage factory: ready")
 }
 
-func handlePack(args []string) {
-	if len(args) == 0 {
-		fmt.Println("Usage: helm pack <create|verify> [options]")
-		fmt.Println("")
-		fmt.Println("Subcommands:")
-		fmt.Println("  create   Create a deterministic evidence pack (tar.gz)")
-		fmt.Println("  verify   Verify an evidence pack's integrity")
-		os.Exit(2)
-	}
-
-	switch args[0] {
-	case "create":
-		os.Exit(handlePackCreate(args[1:]))
-	case "verify":
-		os.Exit(handlePackVerify(args[1:]))
-	default:
-		fmt.Fprintf(os.Stderr, "Unknown pack subcommand: %s\n", args[0])
-		os.Exit(2)
-	}
-}
-
 func handlePackCreate(args []string) int {
 	cmd := flag.NewFlagSet("pack create", flag.ContinueOnError)
 	cmd.SetOutput(os.Stderr)
@@ -194,7 +228,7 @@ func handlePackCreate(args []string) int {
 
 	cmd.StringVar(&sessionID, "session", "", "Session ID for the evidence pack (REQUIRED)")
 	cmd.StringVar(&receiptsDir, "receipts", "", "Directory containing receipt files (REQUIRED)")
-	cmd.StringVar(&outPath, "out", "", "Output path for the tar.gz pack (REQUIRED)")
+	cmd.StringVar(&outPath, "out", "", "Output path for the .tar pack (REQUIRED)")
 	cmd.BoolVar(&jsonOutput, "json", false, "Output result as JSON")
 
 	if err := cmd.Parse(args); err != nil {
@@ -293,7 +327,7 @@ func handlePackVerify(args []string) int {
 		jsonOutput bool
 	)
 
-	cmd.StringVar(&bundlePath, "bundle", "", "Path to evidence pack tar.gz (REQUIRED)")
+	cmd.StringVar(&bundlePath, "bundle", "", "Path to evidence pack .tar (REQUIRED)")
 	cmd.BoolVar(&jsonOutput, "json", false, "Output result as JSON")
 
 	if err := cmd.Parse(args); err != nil {

@@ -3,6 +3,7 @@ package proofgraph
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 // Graph is an in-memory ProofGraph DAG.
@@ -11,13 +12,22 @@ type Graph struct {
 	nodes   map[string]*Node
 	heads   []string // Current head node IDs (tips of the DAG)
 	lamport uint64
+	clock   func() time.Time // Authority clock per KERNEL_TCB §3
 }
 
 // NewGraph creates a new empty ProofGraph.
 func NewGraph() *Graph {
 	return &Graph{
 		nodes: make(map[string]*Node),
+		clock: time.Now, // Default; SHOULD be overridden via WithClock
 	}
+}
+
+// WithClock sets the authority clock for the graph.
+// Per KERNEL_TCB §3, production graphs SHOULD use a kernel authority clock.
+func (g *Graph) WithClock(clock func() time.Time) *Graph {
+	g.clock = clock
+	return g
 }
 
 // Append adds a node to the graph, linking it to the current heads.
@@ -31,7 +41,7 @@ func (g *Graph) Append(kind NodeType, payload []byte, principal string, seq uint
 	// Standard v1.2: Graph is a DAG. Parents are heads.
 	// We don't track prevHash explicitly in new Node struct beyond parents.
 
-	node := NewNode(kind, g.heads, payload, g.lamport, principal, seq)
+	node := NewNode(kind, g.heads, payload, g.lamport, principal, seq, g.clock)
 	g.nodes[node.NodeHash] = node
 	g.heads = []string{node.NodeHash}
 
@@ -47,7 +57,7 @@ func (g *Graph) AppendSigned(kind NodeType, payload []byte, signature, principal
 
 	g.lamport++
 
-	node := NewNode(kind, g.heads, payload, g.lamport, principal, seq)
+	node := NewNode(kind, g.heads, payload, g.lamport, principal, seq, g.clock)
 
 	// Apply signature and recompute hash before storing.
 	oldHash := node.NodeHash

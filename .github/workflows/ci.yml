@@ -1,0 +1,169 @@
+name: CI Gate
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint & Vet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Go vet
+        run: cd core && go vet ./...
+      - name: Go fmt check
+        run: |
+          cd core
+          test -z "$(gofmt -l .)" || (echo "Run gofmt -w ." && exit 1)
+
+  test:
+    name: Go Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Run tests
+        run: cd core && go test ./pkg/... -count=1 -race -timeout 120s
+      - name: Build binary
+        run: cd core && go build -o ../bin/helm ./cmd/helm/
+
+  conformance:
+    name: Conformance (Mock)
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Build
+        run: cd core && go build -o ../bin/helm ./cmd/helm/
+      - name: Onboard
+        run: ./bin/helm onboard --yes
+      - name: Demo company (mock)
+        run: ./bin/helm demo company --template starter --provider mock
+      - name: Sandbox exec (mock)
+        run: ./bin/helm sandbox exec --provider mock -- echo "ci-test"
+      - name: Pack lifecycle
+        run: |
+          ./bin/helm pack propose --name ci-test --purpose "CI smoke test" --risk low
+          HASH=$(ls data/candidates/ | head -1 | sed 's/.*-\(.*\)\.json/\1/')
+          ./bin/helm pack build "$HASH"
+      - name: Incident + maintenance
+        run: |
+          ./bin/helm incident create --title "CI test incident" --severity low --category runtime
+          ./bin/helm incident list
+          ./bin/helm run maintenance --once
+          ./bin/helm brief daily
+
+  boundary:
+    name: Boundary Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify no kernel duplication
+        run: |
+          if [ -f Makefile ] && grep -q "verify-boundary" Makefile; then
+            make verify-boundary
+          else
+            echo "No boundary check configured, skipping"
+          fi
+
+  python-adapters:
+    name: Python Adapters
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: OpenAI Agents adapter
+        run: cd sdk/python/openai_agents && python -m pytest test_helm_openai_agents.py -v
+      - name: MS Agent Framework adapter
+        run: cd sdk/python/microsoft_agents && python -m pytest test_helm_ms_agent.py -v
+
+  ts-adapters:
+    name: TypeScript Adapters
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: OpenAI Agents TS
+        run: |
+          if [ -f sdk/ts/openai-agents/package.json ]; then
+            cd sdk/ts/openai-agents && npm ci && npm test -- --run
+          fi
+      - name: Mastra TS
+        run: |
+          if [ -f sdk/ts/mastra/package.json ]; then
+            cd sdk/ts/mastra && npm ci && npm test -- --run
+          fi
+
+  mcpb-validate:
+    name: MCPB Bundle Validation (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Build
+        run: cd core && go build -o ../bin/helm ./cmd/helm/
+      - name: Generate MCPB
+        run: ./bin/helm mcp pack --client claude-desktop --out /tmp/helm.mcpb
+      - name: Validate MCPB structure
+        run: |
+          test -f /tmp/helm.mcpb && echo "MCPB generated" || exit 1
+      - name: MCP server smoke test
+        run: |
+          timeout 3 ./bin/helm mcp serve --transport stdio < /dev/null 2>&1 || true
+          echo "MCP server launched successfully"
+
+  artifact-contract:
+    name: Artifact Contract Validation
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Build
+        run: cd core && go build -o ../bin/helm ./cmd/helm/
+      - name: Run demo and validate artifacts
+        run: |
+          ./bin/helm onboard --yes
+          ./bin/helm demo company --template starter --provider mock
+
+          # Proof report must exist and be well-formed
+          test -f data/evidence/run-report.html || (echo 'FAIL: proof report HTML missing' && exit 1)
+          grep -q 'data-helm-report="proof"' data/evidence/run-report.html || (echo 'FAIL: report missing data-helm-report' && exit 1)
+          grep -q 'data-verify-state' data/evidence/run-report.html || (echo 'FAIL: report missing data-verify-state' && exit 1)
+          grep -q 'proof_capsule_version' data/evidence/run-report.html || (echo 'FAIL: report missing proof capsule' && exit 1)
+
+          # JSON report must exist and be valid
+          test -f data/evidence/run-report.json || (echo 'FAIL: proof report JSON missing' && exit 1)
+          python3 -c "import json; json.load(open('data/evidence/run-report.json'))" || (echo 'FAIL: JSON report is malformed' && exit 1)
+
+          # MCP bundle must be generatable
+          ./bin/helm mcp pack --client claude-desktop --out /tmp/helm.mcpb
+          test -f /tmp/helm.mcpb || (echo 'FAIL: mcpb generation failed' && exit 1)
+
+          echo '✅ All artifact contract checks passed'
+

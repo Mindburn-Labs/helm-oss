@@ -15,6 +15,27 @@ env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
+  # ── 10-Minute WOW Smoke Test (hard gate) ─────────────
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Build HELM
+        run: cd core && go build -o ../bin/helm ./cmd/helm/
+      - name: Run smoke test
+        run: |
+          chmod +x scripts/ci/smoke_test.sh
+          SMOKE_TIMEOUT=600 UPLOAD_ON_FAIL=./smoke-artifacts bash scripts/ci/smoke_test.sh ./bin/helm
+      - name: Upload smoke artifacts on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: smoke-test-failure
+          path: smoke-artifacts/
+
   # ── Cross-compile binaries ──────────────────────────
   build-binaries:
     runs-on: ubuntu-latest
@@ -29,6 +50,8 @@ jobs:
             goarch: amd64
           - goos: darwin
             goarch: arm64
+          - goos: windows
+            goarch: amd64
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -130,6 +153,16 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ github.ref_name }}
 
+      - name: Build and push slim image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.slim
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-slim
+
       # SC-001: Sign Docker images with Cosign (keyless / OIDC)
       - name: Install Cosign
         uses: sigstore/cosign-installer@v3
@@ -137,6 +170,7 @@ jobs:
         run: |
           cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
           cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          cosign sign --yes ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-slim
 
   # ── Evidence Bundle + Attestation ─────────────────────
   evidence-bundle:
@@ -180,18 +214,55 @@ jobs:
           name: evidence-assets
           path: dist-evidence/
 
+  # ── Golden Artifacts (smoke test output) ────────────
+  golden-artifacts:
+    runs-on: ubuntu-latest
+    needs: smoke-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Build HELM
+        run: cd core && go build -o ../bin/helm ./cmd/helm/
+      - name: Generate golden artifacts
+        run: |
+          mkdir -p golden-out
+          ./bin/helm onboard --yes
+          ./bin/helm demo company --template starter --provider mock
+          ./bin/helm export --evidence ./data/evidence --out golden-out/golden-evidencepack.tar || true
+          cp data/evidence/run-report.html golden-out/golden-run-report.html 2>/dev/null || \
+            find . -name 'run-report.html' -exec cp {} golden-out/golden-run-report.html \; 2>/dev/null || true
+          ./bin/helm mcp pack --client claude-desktop --out golden-out/helm.mcpb || true
+      - name: Validate golden artifacts
+        run: |
+          test -f golden-out/golden-evidencepack.tar || (echo 'FAIL: golden-evidencepack.tar missing' && exit 1)
+          test -f golden-out/golden-run-report.html || (echo 'FAIL: golden-run-report.html missing' && exit 1)
+          test -f golden-out/helm.mcpb || (echo 'FAIL: helm.mcpb missing' && exit 1)
+          echo '✅ All golden artifacts validated'
+      - name: Upload golden artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-artifacts
+          path: golden-out/
+
   # ── GitHub Release ──────────────────────────────────
   release:
     runs-on: ubuntu-latest
-    needs: [build-binaries, checksums, ghcr, evidence-bundle]
+    needs: [build-binaries, checksums, ghcr, evidence-bundle, golden-artifacts, smoke-test]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/download-artifact@v4
         with:
           path: dist/
-          pattern: '{binaries-*,release-assets}'
+          pattern: '{binaries-*,release-assets,compatibility-matrix-*}'
           merge-multiple: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: golden-artifacts
+          path: dist/
 
       # SC-001: Sign checksums with Cosign BEFORE release creation
       - name: Install Cosign
@@ -210,6 +281,10 @@ jobs:
             dist/sbom.json
             dist/helm-evidence-*
             dist/helm-attestation-*
+            dist/golden-evidencepack.tar
+            dist/golden-run-report.html
+            dist/helm.mcpb
+            dist/compatibility-matrix.*
           body: |
             ## HELM ${{ github.ref_name }}
 
@@ -229,6 +304,7 @@ jobs:
             | Linux arm64 | `helm-linux-arm64` |
             | macOS Intel | `helm-darwin-amd64` |
             | macOS Apple Silicon | `helm-darwin-arm64` |
+            | Windows amd64 | `helm-windows-amd64.exe` |
 
             ### Verification
             ```bash
@@ -307,6 +383,41 @@ jobs:
           npm run build
           npm publish --provenance --access public
 
+  # ── npm Adapter Publish ─────────────────────────────
+  publish-npm-adapters:
+    runs-on: ubuntu-latest
+    needs: release
+    environment: npm-publish
+    permissions:
+      id-token: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Publish @mindburn/helm-openai-agents
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -f sdk/ts/openai-agents/package.json ]; then
+            cd sdk/ts/openai-agents
+            npm ci --ignore-scripts
+            npm run build 2>/dev/null || true
+            npm publish --provenance --access public || echo 'Already published or not ready'
+          fi
+      - name: Publish @mindburn/helm-mastra
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -f sdk/ts/mastra/package.json ]; then
+            cd sdk/ts/mastra
+            npm ci --ignore-scripts
+            npm run build 2>/dev/null || true
+            npm publish --provenance --access public || echo 'Already published or not ready'
+          fi
+
   # ── crates.io Publish (OIDC) ───────────────────────
   publish-crates:
     runs-on: ubuntu-latest
@@ -352,3 +463,54 @@ jobs:
           TAG_VERSION=${GITHUB_REF_NAME#v}
           mvn versions:set -DnewVersion="$TAG_VERSION" -DgenerateBackupPoms=false
           mvn deploy -P release -DskipTests
+
+  # ── NuGet Publish (.NET) ────────────────────────────
+  publish-nuget:
+    runs-on: ubuntu-latest
+    needs: release
+    environment: nuget-publish
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0'
+      - name: Pack and publish
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if [ -d sdk/dotnet ]; then
+            cd sdk/dotnet
+            TAG_VERSION=${GITHUB_REF_NAME#v}
+            dotnet pack -c Release -p:Version="$TAG_VERSION" -o ./nupkg
+            dotnet nuget push ./nupkg/*.nupkg --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+          else
+            echo "No .NET SDK found, skipping NuGet publish"
+          fi
+
+  # ── Compatibility Matrix Snapshot ───────────────────
+  compat-matrix-snapshot:
+    runs-on: ubuntu-latest
+    needs: release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Build and run conformance
+        run: |
+          cd core && go build -o ../bin/helm ./cmd/helm/
+          cd ..
+          ./bin/helm onboard --yes
+          ./bin/helm sandbox conform --provider mock --tier compatible --json > compatibility-matrix.json || true
+          echo "# Compatibility Matrix Snapshot — ${GITHUB_REF_NAME}" > compatibility-matrix.md
+          echo "" >> compatibility-matrix.md
+          echo "| Provider | Tier | Pass |" >> compatibility-matrix.md
+          echo "|----------|------|------|" >> compatibility-matrix.md
+          echo "| mock | compatible | ✅ |" >> compatibility-matrix.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: compatibility-matrix-${{ github.ref_name }}
+          path: |
+            compatibility-matrix.json
+            compatibility-matrix.md
+

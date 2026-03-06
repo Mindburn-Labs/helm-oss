@@ -1,3 +1,7 @@
+---
+title: HELM Quickstart — 5-Minute Proof Loop
+---
+
 # HELM Quickstart — 5-Minute Proof Loop
 
 Goal: **prove HELM works without trusting us.** Every step is one command.

@@ -1,0 +1,23 @@
+---
+title: UC-011_island_mode.sh
+slug: use-cases/uc-011
+---
+
+```bash
+#!/bin/bash
+# UC-011: Island Mode restricted operation
+# Expected: kernel operates without external network access
+set -euo pipefail
+
+echo "=== UC-011: Island Mode ==="
+cd "$(dirname "$0")/../../core"
+
+# Verify kernel builds and tests pass without any external dependencies
+go build ./cmd/helm ./cmd/helm-node
+go test ./pkg/guardian/ ./pkg/executor/... ./pkg/contracts/... -count=1
+
+echo "UC-011: PASS"
+
+```
+
+[View on GitHub](https://github.com/Mindburn-Labs/helm/tree/main/docs/use_cases/UC-011_island_mode.sh)

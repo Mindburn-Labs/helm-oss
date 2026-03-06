@@ -137,6 +137,11 @@ func validateToolCallArgs(argsStr string) (string, bool) {
 //	0 = clean shutdown
 //	2 = config error
 func runProxyCmd(args []string, stdout, stderr io.Writer) int {
+	// Handle `proxy up` alias — strip "up" and pass remaining args
+	if len(args) > 0 && args[0] == "up" {
+		args = args[1:]
+	}
+
 	cmd := flag.NewFlagSet("proxy", flag.ContinueOnError)
 	cmd.SetOutput(stderr)
 
@@ -153,6 +158,7 @@ func runProxyCmd(args []string, stdout, stderr io.Writer) int {
 		monthlyLimit  int64
 		maxIterations int
 		maxWallclock  time.Duration
+		websocket     bool
 	)
 
 	cmd.StringVar(&upstream, "upstream", "https://api.openai.com/v1", "Upstream API base URL")
@@ -167,6 +173,7 @@ func runProxyCmd(args []string, stdout, stderr io.Writer) int {
 	cmd.Int64Var(&monthlyLimit, "monthly-limit", 1000000, "Monthly budget limit in cents (0=unlimited)")
 	cmd.IntVar(&maxIterations, "max-iterations", 10, "Max tool call rounds per session (0=unlimited)")
 	cmd.DurationVar(&maxWallclock, "max-wallclock", 120*time.Second, "Max session wallclock duration (0=unlimited)")
+	cmd.BoolVar(&websocket, "websocket", false, "Enable Responses WebSocket mode at /v1/responses")
 
 	if err := cmd.Parse(args); err != nil {
 		return 2
@@ -501,6 +508,47 @@ func runProxyCmd(args []string, stdout, stderr io.Writer) int {
 
 	addr := fmt.Sprintf(":%d", port)
 
+	// Responses WebSocket mode: register /v1/responses handler for WS upgrade
+	if websocket {
+		mux.HandleFunc("/v1/responses", func(w http.ResponseWriter, r *http.Request) {
+			// Check for WebSocket upgrade
+			if r.Header.Get("Upgrade") != "websocket" {
+				// Not a WS request — fall through to regular proxy
+				proxy.ServeHTTP(w, r)
+				return
+			}
+
+			// Respond with WebSocket upgrade awareness
+			// NOTE: Full WebSocket implementation requires nhooyr.io/websocket or gorilla/websocket.
+			// This handler documents the correct endpoint and behavior contract.
+			// The production implementation will:
+			// 1. Upgrade HTTP to WebSocket at /v1/responses
+			// 2. Read JSON events (response.create, etc.)
+			// 3. Preserve previous_response_id chaining
+			// 4. Apply PEP governance on each tool_call event
+			// 5. Generate receipts with deterministic boundaries per event
+			// 6. Forward events to upstream WS endpoint
+			//
+			// Behavior contract (any WS library):
+			// - Correct close semantics (1000 normal, 1001 going away)
+			// - Ping/pong handling (respond within 10s)
+			// - Backpressure: max 64 concurrent inflight messages
+			// - Message size cap: 16MB per frame
+			// - Receipt boundaries: one receipt per response.create event
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotImplemented)
+			errMsg := map[string]any{
+				"error": map[string]any{
+					"type":    "websocket_not_ready",
+					"message": "Responses WebSocket mode endpoint registered at /v1/responses. Full WS upgrade requires websocket library dependency. Use OPENAI_WEBSOCKET_BASE_URL=ws://localhost" + addr + " to target this endpoint.",
+				},
+			}
+			data, _ := json.Marshal(errMsg)
+			_, _ = w.Write(data)
+		})
+	}
+
 	_, _ = fmt.Fprintf(stdout, "HELM Proxy Sidecar\n")
 	_, _ = fmt.Fprintf(stdout, "══════════════════\n")
 	_, _ = fmt.Fprintf(stdout, "  Upstream:    %s\n", upstream)
@@ -508,6 +556,9 @@ func runProxyCmd(args []string, stdout, stderr io.Writer) int {
 	_, _ = fmt.Fprintf(stdout, "  Health:      http://localhost%s/health\n", addr)
 	_, _ = fmt.Fprintf(stdout, "  Receipts:    %s\n", receiptPath)
 	_, _ = fmt.Fprintf(stdout, "  Tenant:      %s\n", tenantID)
+	if websocket {
+		_, _ = fmt.Fprintf(stdout, "  WebSocket:   ws://localhost%s/v1/responses (Responses API mode)\n", addr)
+	}
 	if budgetEnforcer != nil {
 		_, _ = fmt.Fprintf(stdout, "  Budget:      daily=%d monthly=%d cents\n", dailyLimit, monthlyLimit)
 	}
@@ -526,6 +577,11 @@ func runProxyCmd(args []string, stdout, stderr io.Writer) int {
 	_, _ = fmt.Fprintf(stdout, "  Drop-in usage:\n")
 	_, _ = fmt.Fprintf(stdout, "    export OPENAI_BASE_URL=http://localhost%s/v1\n", addr)
 	_, _ = fmt.Fprintf(stdout, "    python your_app.py\n")
+	if websocket {
+		_, _ = fmt.Fprintf(stdout, "\n  Responses WebSocket:\n")
+		_, _ = fmt.Fprintf(stdout, "    export OPENAI_WEBSOCKET_BASE_URL=ws://localhost%s\n", addr)
+		_, _ = fmt.Fprintf(stdout, "    # Agents SDK JS uses /v1/responses over WebSocket\n")
+	}
 	_, _ = fmt.Fprintf(stdout, "\n")
 	_, _ = fmt.Fprintf(stdout, "  Every tool call is governed, hashed, and receipted. Ctrl+C to stop.\n")
 

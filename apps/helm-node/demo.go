@@ -364,10 +364,10 @@ func (ds *DemoServer) handleDemoExport(w http.ResponseWriter, r *http.Request) {
 
 	// Actually, let's just use a manual tar.gz of receipts + graph for the demo export.
 	// It's simpler and meets the requirement "Exports an EvidencePack".
-	// The EvidencePack structure is loosely defined in OSS v0.1 as a bundle of JSONs.
+	// The EvidencePack structure is loosely defined in OSS v1.0 as a bundle of JSONs.
 
 	w.Header().Set("Content-Type", "application/gzip")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"helm_evidence_%d.tar.gz\"", time.Now().Unix()))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"helm_evidence_%d.tar\"", time.Now().Unix()))
 
 	gw := gzip.NewWriter(w)
 	defer gw.Close()

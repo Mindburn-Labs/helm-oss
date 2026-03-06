@@ -40,16 +40,16 @@ This chain is append-only and verifiable offline.
 
 The TCB is explicitly bounded to 8 packages:
 
-| Package | Responsibility |
-|---------|---------------|
-| `crypto` | Ed25519 signing, verification, canonicalization |
-| `executor` | SafeExecutor — the single execution boundary |
-| `guardian` | Policy enforcement (allowlist, deny rules) |
-| `manifest` | Schema validation (input + output) |
-| `proofgraph` | DAG construction and verification |
-| `trust` | Event-sourced key registry |
-| `runtime/sandbox` | WASI isolation |
-| `contracts` | Data structures (Decision, Effect, Receipt, Intent) |
+| Package           | Responsibility                                      |
+| ----------------- | --------------------------------------------------- |
+| `crypto`          | Ed25519 signing, verification, canonicalization     |
+| `executor`        | SafeExecutor — the single execution boundary        |
+| `guardian`        | Policy enforcement (allowlist, deny rules)          |
+| `manifest`        | Schema validation (input + output)                  |
+| `proofgraph`      | DAG construction and verification                   |
+| `trust`           | Event-sourced key registry                          |
+| `runtime/sandbox` | WASI isolation                                      |
+| `contracts`       | Data structures (Decision, Effect, Receipt, Intent) |
 
 **TCB expansion requires**: justification, new CI gates, and maintainer review (see `docs/TCB_POLICY.md`).
 
@@ -75,7 +75,7 @@ High-risk operations require human approval with:
 
 ## EvidencePack
 
-Every session can be exported as a deterministic `.tar.gz` containing:
+Every session can be exported as a deterministic `.tar` containing:
 
 - All receipts (signed)
 - ProofGraph DAG state

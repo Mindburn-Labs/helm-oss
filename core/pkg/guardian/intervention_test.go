@@ -38,7 +38,7 @@ func TestGuardian_SignDecision_TemporalInterventions(t *testing.T) {
 		err := g.SignDecision(ctx, decision, effect, []string{}, intervention)
 		// Should NOT error, but Verdict should be INTERVENE
 		require.NoError(t, err)
-		assert.Equal(t, "INTERVENE", decision.Verdict)
+		assert.Equal(t, "ESCALATE", decision.Verdict)
 		assert.Contains(t, decision.Reason, "VELOCITY_LIMIT_EXCEEDED")
 		assert.NotNil(t, decision.Intervention)
 		assert.Equal(t, contracts.InterventionInterrupt, decision.Intervention.Type)
@@ -53,7 +53,7 @@ func TestGuardian_SignDecision_TemporalInterventions(t *testing.T) {
 
 		err := g.SignDecision(ctx, decision, effect, []string{}, intervention)
 		require.NoError(t, err)
-		assert.Equal(t, "INTERVENE", decision.Verdict)
+		assert.Equal(t, "ESCALATE", decision.Verdict)
 		assert.Contains(t, decision.Reason, "SUSPICIOUS_PATTERN")
 	})
 
@@ -64,8 +64,8 @@ func TestGuardian_SignDecision_TemporalInterventions(t *testing.T) {
 		// But we want to ensure Intervention didn't force INTERVENE
 		err := g.SignDecision(ctx, decision, effect, []string{}, nil)
 		require.NoError(t, err) // Sign fails? No, returns error if signing fails, but Verdict is FAIL
-		assert.Equal(t, "FAIL", decision.Verdict)
-		assert.NotEqual(t, "INTERVENE", decision.Verdict)
+		assert.Equal(t, "DENY", decision.Verdict)
+		assert.NotEqual(t, "ESCALATE", decision.Verdict)
 	})
 
 	t.Run("Determinism: Same Input -> Identical Intervention", func(t *testing.T) {

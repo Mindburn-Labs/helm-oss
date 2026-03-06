@@ -1,8 +1,9 @@
 ---
 title: "HELM Receipt Format Specification"
-status: draft
+status: final
 version: "1.0.0"
 created: 2026-02-25
+finalized: 2026-03-06
 authors:
   - HELM Core Team
 ---
@@ -17,7 +18,7 @@ attests to a governance decision and its execution outcome.
 
 ## Status
 
-Draft — Community Feedback Requested
+Final — Normative Standard
 
 ## 1. Introduction
 
@@ -68,6 +69,7 @@ where `canonical_json` produces deterministic JSON with sorted keys.
 ### 2.2 Verdict
 
 The `verdict` field MUST be one of:
+
 - `ALLOW` — The decision was permitted.
 - `DENY` — The decision was denied.
 - `ESCALATE` — The decision requires human review.
@@ -76,6 +78,31 @@ The `verdict` field MUST be one of:
 
 The `signature` field MUST be an Ed25519 signature over the `receipt_id`.
 The `signer_key_id` MUST reference a key published in the trust root.
+
+### 2.5 Reason Code
+
+When `verdict` is `DENY` or `ESCALATE`, a `reason_code` field SHOULD be
+present. Valid reason codes form the following normative registry:
+
+| Code                     | Category     | Description                                       |
+| ------------------------ | ------------ | ------------------------------------------------- |
+| `POLICY_VIOLATION`       | Policy       | General policy rule violation                     |
+| `NO_POLICY_DEFINED`      | Policy       | No policy exists for the requested action         |
+| `PRG_EVALUATION_ERROR`   | Policy       | Error evaluating the Proof Requirement Graph      |
+| `MISSING_REQUIREMENT`    | Policy       | Required evidence or condition not met            |
+| `PDP_DENY`               | PDP          | External policy decision point denied the request |
+| `PDP_ERROR`              | PDP          | External PDP returned an error (fail-closed)      |
+| `BUDGET_EXCEEDED`        | Resource     | Financial or rate budget exhausted                |
+| `BUDGET_ERROR`           | Resource     | Error checking budget (fail-closed)               |
+| `ENVELOPE_INVALID`       | Schema       | Effect envelope failed structural validation      |
+| `SCHEMA_VIOLATION`       | Schema       | Payload violates declared schema                  |
+| `TEMPORAL_INTERVENTION`  | Temporal     | Temporal guardian triggered intervention          |
+| `TEMPORAL_THROTTLE`      | Temporal     | Temporal guardian applied throttling              |
+| `SANDBOX_VIOLATION`      | Security     | Sandbox security boundary violated                |
+| `PROVENANCE_FAILURE`     | Security     | Artifact provenance verification failed           |
+| `VERIFICATION_FAILURE`   | Security     | Cryptographic verification failed                 |
+| `TENANT_ISOLATION`       | Tenancy      | Multi-tenant isolation boundary violated          |
+| `JURISDICTION_VIOLATION` | Jurisdiction | Jurisdictional constraint not met                 |
 
 ### 2.4 Lamport Clock
 

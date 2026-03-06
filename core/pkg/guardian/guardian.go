@@ -130,7 +130,7 @@ func (g *Guardian) SignDecision(ctx context.Context, decision *contracts.Decisio
 		decision.Intervention = intervention
 		// If interrupting or quarantining, strict verdict override
 		if intervention.Type == contracts.InterventionInterrupt || intervention.Type == contracts.InterventionQuarantine {
-			decision.Verdict = "INTERVENE"
+			decision.Verdict = string(contracts.VerdictEscalate)
 			decision.Reason = fmt.Sprintf("Temporal Intervention: %s (%s)", intervention.Type, intervention.ReasonCode)
 			return g.signer.SignDecision(decision)
 		}
@@ -153,13 +153,13 @@ func (g *Guardian) SignDecision(ctx context.Context, decision *contracts.Decisio
 			if err != nil {
 				// If checking fails (e.g. invalid budget ID), fail closed? Or open if just missing?
 				// Fail closed for security.
-				decision.Verdict = "FAIL"
+				decision.Verdict = string(contracts.VerdictDeny)
 				decision.Reason = fmt.Sprintf("Budget Error: %v", err)
 				return g.signer.SignDecision(decision)
 			}
 			if !allowed {
-				decision.Verdict = "FAIL"
-				decision.Reason = "Budget Exceeded"
+				decision.Verdict = string(contracts.VerdictDeny)
+				decision.Reason = string(contracts.ReasonBudgetExceeded)
 				return g.signer.SignDecision(decision)
 			}
 
@@ -176,7 +176,7 @@ func (g *Guardian) SignDecision(ctx context.Context, decision *contracts.Decisio
 	// AC-REG-10: EnvelopeCheck precedes every effect dispatch
 	// Verify that the effect is properly enveloped (e.g. valid structure, allowed type)
 	if err := g.checkEnvelope(effect); err != nil {
-		decision.Verdict = "FAIL"
+		decision.Verdict = string(contracts.VerdictDeny)
 		decision.Reason = fmt.Sprintf("Envelope Violation: %v", err)
 		return g.signer.SignDecision(decision)
 	}
@@ -184,8 +184,8 @@ func (g *Guardian) SignDecision(ctx context.Context, decision *contracts.Decisio
 	// 4. Validate against PRG
 	rule, exists := g.prg.Rules[actionID]
 	if !exists {
-		decision.Verdict = "FAIL"
-		decision.Reason = fmt.Sprintf("no policy defined for action %s", actionID)
+		decision.Verdict = string(contracts.VerdictDeny)
+		decision.Reason = fmt.Sprintf("%s: no policy defined for action %s", contracts.ReasonNoPolicy, actionID)
 		return g.signer.SignDecision(decision)
 	}
 
@@ -200,19 +200,19 @@ func (g *Guardian) SignDecision(ctx context.Context, decision *contracts.Decisio
 
 	valid, err := g.pe.EvaluateRequirementSet(rule, input)
 	if err != nil {
-		decision.Verdict = "FAIL"
+		decision.Verdict = string(contracts.VerdictDeny)
 		decision.Reason = fmt.Sprintf("PRG Evaluation Error: %v", err)
 		return g.signer.SignDecision(decision)
 	}
 
 	if !valid {
-		decision.Verdict = "FAIL"
-		decision.Reason = "missing requirement"
+		decision.Verdict = string(contracts.VerdictDeny)
+		decision.Reason = string(contracts.ReasonMissingRequirement)
 		return g.signer.SignDecision(decision)
 	}
 
 	// 5. Pass -> Sign
-	decision.Verdict = "PASS"
+	decision.Verdict = string(contracts.VerdictAllow)
 	decision.RequirementSetHash = rule.Hash()
 	decision.Timestamp = g.clock.Now() // Authority time (KERNEL_TCB §3)
 	// Optionally link evidence hashes in the decision record (needs schema update)
@@ -223,7 +223,7 @@ func (g *Guardian) SignDecision(ctx context.Context, decision *contracts.Decisio
 // IssueExecutionIntent verifies a Decision and issues a signed Intent for the Executor.
 func (g *Guardian) IssueExecutionIntent(ctx context.Context, decision *contracts.DecisionRecord, effect *contracts.Effect) (*contracts.AuthorizedExecutionIntent, error) {
 	// 1. Verify Decision Structure
-	if decision.Verdict != "PASS" {
+	if decision.Verdict != string(contracts.VerdictAllow) {
 		return nil, fmt.Errorf("cannot issue intent for denied decision: %s", decision.Verdict)
 	}
 
@@ -287,11 +287,13 @@ func (g *Guardian) checkEnvelope(effect *contracts.Effect) error {
 
 // --- High-Level Governance API ---
 
-const (
-	VerdictAllow     = "PASS"
-	VerdictBlock     = "FAIL"
-	VerdictIntervene = "INTERVENE"
-	VerdictPending   = "PENDING"
+// Verdict constants are now canonical in contracts/verdict.go.
+// These aliases are kept for backward compatibility during migration.
+var (
+	VerdictAllow     = string(contracts.VerdictAllow)
+	VerdictBlock     = string(contracts.VerdictDeny)
+	VerdictIntervene = string(contracts.VerdictEscalate)
+	VerdictPending   = "PENDING" // No canonical constant — pending is a transient state
 )
 
 // DecisionRequest represents a request for a governance decision.
@@ -354,7 +356,7 @@ func (g *Guardian) EvaluateDecision(ctx context.Context, req DecisionRequest) (*
 	decision := &contracts.DecisionRecord{
 		ID:             fmt.Sprintf("dec-%d", g.clock.Now().UnixNano()),
 		Timestamp:      g.clock.Now(),
-		Verdict:        VerdictBlock, // Default deny
+		Verdict:        string(contracts.VerdictDeny), // Default deny
 		EffectDigest:   effectDigest,
 		InputContext:   req.Context,
 		EnvFingerprint: envFP,
@@ -373,8 +375,8 @@ func (g *Guardian) EvaluateDecision(ctx context.Context, req DecisionRequest) (*
 		pdpResp, pdpErr := g.pdp.Evaluate(ctx, pdpReq)
 		if pdpErr != nil {
 			// Fail-closed: PDP error → DENY
-			decision.Verdict = VerdictBlock
-			decision.Reason = fmt.Sprintf("PDP error: %v", pdpErr)
+			decision.Verdict = string(contracts.VerdictDeny)
+			decision.Reason = fmt.Sprintf("%s: %v", contracts.ReasonPDPError, pdpErr)
 			decision.PolicyBackend = string(g.pdp.Backend())
 			_ = g.signer.SignDecision(decision)
 			return decision, nil
@@ -386,8 +388,8 @@ func (g *Guardian) EvaluateDecision(ctx context.Context, req DecisionRequest) (*
 		decision.PolicyDecisionHash = pdpResp.DecisionHash
 
 		if !pdpResp.Allow {
-			decision.Verdict = VerdictBlock
-			decision.Reason = fmt.Sprintf("PDP deny: %s (ref=%s)", pdpResp.ReasonCode, pdpResp.PolicyRef)
+			decision.Verdict = string(contracts.VerdictDeny)
+			decision.Reason = fmt.Sprintf("%s: %s (ref=%s)", contracts.ReasonPDPDeny, pdpResp.ReasonCode, pdpResp.PolicyRef)
 			_ = g.signer.SignDecision(decision)
 			// Audit log for PDP denials
 			if g.auditLog != nil {
