@@ -16,14 +16,15 @@ import (
 // preventing SQL injection via json_extract path interpolation.
 var validPropertyKey = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
-// SQLiteStore implements the knowledge graph Store using SQLite and FTS5.
+// SQLiteStore implements the knowledge graph Store using SQLite and optionally FTS5.
 type SQLiteStore struct {
-	db *sql.DB
+	db      *sql.DB
+	hasFTS5 bool // true if FTS5 is available
 }
 
 // NewSQLiteStore creates a new SQLiteStore and initializes the schema if needed.
 func NewSQLiteStore(dbPath string) (*SQLiteStore, error) {
-	// Require FTS5 and foreign keys.
+	// Require foreign keys.
 	dsn := fmt.Sprintf("file:%s?_fk=1", dbPath)
 	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
@@ -43,7 +44,7 @@ func NewSQLiteStore(dbPath string) (*SQLiteStore, error) {
 }
 
 func (s *SQLiteStore) initSchema() error {
-	schema := `
+	coreSchema := `
 	CREATE TABLE IF NOT EXISTS entities (
 		id TEXT PRIMARY KEY,
 		type TEXT NOT NULL,
@@ -59,6 +60,30 @@ func (s *SQLiteStore) initSchema() error {
 	CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(type);
 	CREATE INDEX IF NOT EXISTS idx_entities_updated_at ON entities(updated_at);
 
+	CREATE TABLE IF NOT EXISTS relations (
+		id TEXT PRIMARY KEY,
+		source_id TEXT NOT NULL,
+		target_id TEXT NOT NULL,
+		type TEXT NOT NULL,
+		properties JSON,
+		weight REAL NOT NULL DEFAULT 1.0,
+		created_at DATETIME NOT NULL,
+		FOREIGN KEY (source_id) REFERENCES entities(id) ON DELETE CASCADE,
+		FOREIGN KEY (target_id) REFERENCES entities(id) ON DELETE CASCADE
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_relations_source ON relations(source_id);
+	CREATE INDEX IF NOT EXISTS idx_relations_target ON relations(target_id);
+	CREATE INDEX IF NOT EXISTS idx_relations_type ON relations(type);
+	`
+
+	_, err := s.db.Exec(coreSchema)
+	if err != nil {
+		return fmt.Errorf("knowledge: init schema: %w", err)
+	}
+
+	// Attempt FTS5 — gracefully degrade if not available
+	ftsSchema := `
 	CREATE VIRTUAL TABLE IF NOT EXISTS entities_fts USING fts5(
 		id UNINDEXED,
 		name,
@@ -78,28 +103,10 @@ func (s *SQLiteStore) initSchema() error {
 		INSERT INTO entities_fts(entities_fts, rowid, id, name, properties) VALUES('delete', old.rowid, old.id, old.name, old.properties);
 		INSERT INTO entities_fts(rowid, id, name, properties) VALUES (new.rowid, new.id, new.name, new.properties);
 	END;
-
-	CREATE TABLE IF NOT EXISTS relations (
-		id TEXT PRIMARY KEY,
-		source_id TEXT NOT NULL,
-		target_id TEXT NOT NULL,
-		type TEXT NOT NULL,
-		properties JSON,
-		weight REAL NOT NULL DEFAULT 1.0,
-		created_at DATETIME NOT NULL,
-		FOREIGN KEY (source_id) REFERENCES entities(id) ON DELETE CASCADE,
-		FOREIGN KEY (target_id) REFERENCES entities(id) ON DELETE CASCADE
-	);
-
-	CREATE INDEX IF NOT EXISTS idx_relations_source ON relations(source_id);
-	CREATE INDEX IF NOT EXISTS idx_relations_target ON relations(target_id);
-	CREATE INDEX IF NOT EXISTS idx_relations_type ON relations(type);
 	`
 
-	_, err := s.db.Exec(schema)
-	if err != nil {
-		return fmt.Errorf("knowledge: init schema: %w", err)
-	}
+	_, ftsErr := s.db.Exec(ftsSchema)
+	s.hasFTS5 = ftsErr == nil
 
 	return nil
 }
@@ -335,53 +342,77 @@ func (s *SQLiteStore) Query(ctx context.Context, q Query) (*QueryResult, error) 
 }
 
 func (s *SQLiteStore) Search(ctx context.Context, query string, opts SearchOptions) ([]*Entity, error) {
-	// Use FTS5 match
-	matchQuery := query
-	// Escape double quotes and other chars if needed, simple approach:
-	matchQuery = strings.ReplaceAll(matchQuery, `"`, `""`)
-
 	limit := opts.Limit
 	if limit == 0 {
 		limit = 100
 	}
 
-	// Build FTS5 match expression: each word gets a prefix match
-	terms := strings.Fields(matchQuery)
-	for i, t := range terms {
-		terms[i] = t + "*"
-	}
-	ftsExpr := strings.Join(terms, " ")
-
-	var conditions []string
+	var sqlQuery string
 	var args []interface{}
 
-	conditions = append(conditions, "entities_fts MATCH ?")
-	args = append(args, ftsExpr)
-
-	if len(opts.Types) > 0 {
-		placeholders := make([]string, len(opts.Types))
-		for i, typ := range opts.Types {
-			placeholders[i] = "?"
-			args = append(args, string(typ))
+	if s.hasFTS5 {
+		// FTS5 path
+		matchQuery := strings.ReplaceAll(query, `"`, `""`)
+		terms := strings.Fields(matchQuery)
+		for i, t := range terms {
+			terms[i] = t + "*"
 		}
-		conditions = append(conditions, fmt.Sprintf("e.type IN (%s)", strings.Join(placeholders, ",")))
+		ftsExpr := strings.Join(terms, " ")
+
+		var conditions []string
+		conditions = append(conditions, "entities_fts MATCH ?")
+		args = append(args, ftsExpr)
+
+		if len(opts.Types) > 0 {
+			placeholders := make([]string, len(opts.Types))
+			for i, typ := range opts.Types {
+				placeholders[i] = "?"
+				args = append(args, string(typ))
+			}
+			conditions = append(conditions, fmt.Sprintf("e.type IN (%s)", strings.Join(placeholders, ",")))
+		}
+
+		whereClause := "WHERE " + strings.Join(conditions, " AND ")
+		args = append(args, limit)
+
+		sqlQuery = fmt.Sprintf(`
+			SELECT e.id, e.type, e.name, e.properties, e.provenance_node_id, e.created_at, e.updated_at, e.ttl, e.pinned
+			FROM entities_fts f
+			JOIN entities e ON e.rowid = f.rowid
+			%s
+			ORDER BY rank
+			LIMIT ?
+		`, whereClause)
+	} else {
+		// LIKE fallback — search name and properties
+		likePattern := "%" + query + "%"
+		var conditions []string
+		conditions = append(conditions, "(name LIKE ? OR properties LIKE ?)")
+		args = append(args, likePattern, likePattern)
+
+		if len(opts.Types) > 0 {
+			placeholders := make([]string, len(opts.Types))
+			for i, typ := range opts.Types {
+				placeholders[i] = "?"
+				args = append(args, string(typ))
+			}
+			conditions = append(conditions, fmt.Sprintf("type IN (%s)", strings.Join(placeholders, ",")))
+		}
+
+		whereClause := "WHERE " + strings.Join(conditions, " AND ")
+		args = append(args, limit)
+
+		sqlQuery = fmt.Sprintf(`
+			SELECT id, type, name, properties, provenance_node_id, created_at, updated_at, ttl, pinned
+			FROM entities
+			%s
+			LIMIT ?
+		`, whereClause)
 	}
-
-	whereClause := "WHERE " + strings.Join(conditions, " AND ")
-	args = append(args, limit) // for LIMIT
-
-	sqlQuery := fmt.Sprintf(`
-		SELECT e.id, e.type, e.name, e.properties, e.provenance_node_id, e.created_at, e.updated_at, e.ttl, e.pinned
-		FROM entities_fts f
-		JOIN entities e ON e.rowid = f.rowid
-		%s
-		ORDER BY rank
-		LIMIT ?
-	`, whereClause)
 
 	rows, err := s.db.QueryContext(ctx, sqlQuery, args...)
 	if err != nil {
-		return nil, fmt.Errorf("knowledge: fts search: %w", err)
+		return nil, fmt.Errorf("knowledge: search: %w", err)
 	}
 	defer rows.Close()
 

@@ -43,7 +43,7 @@ func TestGovern_AllowedToolCall(t *testing.T) {
 	assert.Equal(t, "PROXY_TOOL_ALLOWED", result.ReasonCode)
 	assert.NotEmpty(t, result.NodeID, "expected ProofGraph node")
 	assert.NotNil(t, result.Decision)
-	assert.Equal(t, "PASS", result.Decision.Verdict)
+	assert.Equal(t, "ALLOW", result.Decision.Verdict)
 
 	// ProofGraph should have 2 nodes: INTENT + ATTESTATION
 	assert.Equal(t, 2, pg.Len())
@@ -125,6 +125,6 @@ func TestGovern_DecisionHasToolName(t *testing.T) {
 	result, err := kb.Govern(context.Background(), "execute_code", "sha256:code")
 	require.NoError(t, err)
 	require.NotNil(t, result.Decision)
-	// Verify that the decision was made (verdict should be PASS with our open policy)
-	assert.Equal(t, "PASS", result.Decision.Verdict)
+	// Verify that the decision was made (verdict should be ALLOW with our open policy)
+	assert.Equal(t, "ALLOW", result.Decision.Verdict)
 }

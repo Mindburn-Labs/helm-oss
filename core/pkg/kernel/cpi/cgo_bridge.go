@@ -1,3 +1,5 @@
+//go:build cpi_native
+
 package cpi
 
 /*

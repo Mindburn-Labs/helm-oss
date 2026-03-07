@@ -1,0 +1,156 @@
+{
+  "test_suite": "helm-conformance-v1",
+  "version": "1.0.0",
+  "description": "Conformance test vectors for HELM governance implementations",
+  "vectors": [
+    {
+      "id": "ALLOW-001",
+      "description": "Basic allow verdict for a legitimate file read",
+      "input": {
+        "effect": {"effect_type": "file_read", "effect_id": "eff-001", "params": {"path": "/data/report.csv"}},
+        "principal": "agent:analyst",
+        "context": {"environment": "production"}
+      },
+      "expected": {
+        "verdict": "ALLOW",
+        "reason_code": null,
+        "receipt_present": true,
+        "intent_present": true
+      }
+    },
+    {
+      "id": "DENY-001",
+      "description": "Deny due to policy violation — writing to system directory",
+      "input": {
+        "effect": {"effect_type": "file_write", "effect_id": "eff-002", "params": {"path": "/etc/passwd"}},
+        "principal": "agent:assistant",
+        "context": {}
+      },
+      "expected": {
+        "verdict": "DENY",
+        "reason_code": "POLICY_VIOLATION",
+        "receipt_present": true,
+        "intent_present": false
+      }
+    },
+    {
+      "id": "DENY-002",
+      "description": "Deny due to budget exceeded",
+      "input": {
+        "effect": {"effect_type": "api_call", "effect_id": "eff-003", "params": {"url": "https://api.openai.com/v1/chat/completions"}, "budget_id": "budget-001"},
+        "principal": "agent:spender",
+        "context": {}
+      },
+      "expected": {
+        "verdict": "DENY",
+        "reason_code": "BUDGET_EXCEEDED",
+        "receipt_present": true,
+        "intent_present": false
+      }
+    },
+    {
+      "id": "DENY-003",
+      "description": "Deny due to missing requirement",
+      "input": {
+        "effect": {"effect_type": "deploy", "effect_id": "eff-004", "params": {"target": "production"}},
+        "principal": "agent:deployer",
+        "context": {}
+      },
+      "expected": {
+        "verdict": "DENY",
+        "reason_code": "MISSING_REQUIREMENT",
+        "receipt_present": true,
+        "intent_present": false
+      }
+    },
+    {
+      "id": "DENY-004",
+      "description": "Deny due to sandbox violation",
+      "input": {
+        "effect": {"effect_type": "exec", "effect_id": "eff-005", "params": {"command": "rm -rf /"}},
+        "principal": "agent:runner",
+        "context": {}
+      },
+      "expected": {
+        "verdict": "DENY",
+        "reason_code": "SANDBOX_VIOLATION",
+        "receipt_present": true,
+        "intent_present": false
+      }
+    },
+    {
+      "id": "ESCALATE-001",
+      "description": "Escalate due to temporal intervention",
+      "input": {
+        "effect": {"effect_type": "financial_transfer", "effect_id": "eff-006", "params": {"amount_cents": 100000, "currency": "USD"}},
+        "principal": "agent:finance",
+        "context": {}
+      },
+      "expected": {
+        "verdict": "ESCALATE",
+        "reason_code": "TEMPORAL_INTERVENTION",
+        "receipt_present": true,
+        "intent_present": false
+      }
+    },
+    {
+      "id": "DENY-PDP-001",
+      "description": "Deny from external PDP returning explicit deny",
+      "input": {
+        "effect": {"effect_type": "data_export", "effect_id": "eff-007", "params": {"format": "csv", "destination": "external"}},
+        "principal": "agent:exporter",
+        "context": {"jurisdiction": "EU"}
+      },
+      "expected": {
+        "verdict": "DENY",
+        "reason_code": "PDP_DENY",
+        "receipt_present": true,
+        "intent_present": false
+      }
+    },
+    {
+      "id": "DENY-FAILCLOSED-001",
+      "description": "Deny due to PDP being unreachable — fail-closed invariant",
+      "input": {
+        "effect": {"effect_type": "api_call", "effect_id": "eff-008", "params": {}},
+        "principal": "agent:caller",
+        "context": {}
+      },
+      "pdp_behavior": "unreachable",
+      "expected": {
+        "verdict": "DENY",
+        "reason_code": "PDP_ERROR",
+        "receipt_present": true,
+        "intent_present": false
+      }
+    }
+  ],
+  "receipt_invariants": {
+    "description": "Properties that MUST hold for every generated receipt",
+    "rules": [
+      "receipt.receipt_id is non-empty and unique",
+      "receipt.verdict matches the returned verdict",
+      "receipt.timestamp is monotonically increasing within a session",
+      "receipt.signature is a valid Ed25519 or ECDSA signature over the receipt payload",
+      "receipt.payload_hash is SHA-256 of the canonical JSON payload",
+      "receipt.reason_code is a registered code from reason-codes-v1.json",
+      "receipt.lamport is strictly increasing within a ProofGraph"
+    ]
+  },
+  "hash_chain_vectors": [
+    {
+      "id": "CHAIN-001",
+      "description": "Three-node ProofGraph chain with monotonic Lamport clock",
+      "nodes": [
+        {"kind": "ATTESTATION", "lamport": 1, "payload": "{\"verdict\":\"ALLOW\"}", "parents": []},
+        {"kind": "INTENT", "lamport": 2, "payload": "{\"intent_id\":\"i1\"}", "parents": ["node-0-hash"]},
+        {"kind": "EFFECT", "lamport": 3, "payload": "{\"result\":\"ok\"}", "parents": ["node-1-hash"]}
+      ],
+      "invariants": [
+        "Each node hash includes parent hashes",
+        "Lamport values are strictly increasing",
+        "Removing any node breaks the chain verification"
+      ]
+    }
+  ]
+}

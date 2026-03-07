@@ -117,7 +117,7 @@ func (kb *KernelBridge) Govern(ctx context.Context, toolName string, argsHash st
 	}
 
 	// 4. Record ATTESTATION with verdict
-	allowed := decision.Verdict == contracts.VerdictPass
+	allowed := decision.Verdict == string(contracts.VerdictAllow)
 	var reasonCode string
 	if allowed {
 		reasonCode = "PROXY_TOOL_ALLOWED"

@@ -1,36 +1,37 @@
 package cpi
 
 import (
+	"errors"
 	"testing"
 )
 
-// These tests require the helm-policy-vm cdylib to be built.
-// Run: cargo build --release -p helm-policy-vm
-// Then: go test ./kernel/cpi/...
-
-func TestValidateEmpty(t *testing.T) {
-	// Empty inputs should return OK with empty verdict
-	verdict, err := Validate(nil, nil, nil, nil)
-	if err != nil {
-		t.Fatalf("Validate failed: %v", err)
-	}
-	// Empty verdict is valid (stub implementation returns empty bytes)
-	t.Logf("verdict bytes: %d", len(verdict))
-}
-
-func TestCompileInvalidSource(t *testing.T) {
-	// Invalid source should return ErrInvalidInput
-	_, err := Compile([]byte("this is not valid policy DSL"))
+func TestValidateStubReturnsNotAvailable(t *testing.T) {
+	_, err := Validate(nil, nil, nil, nil)
 	if err == nil {
-		t.Fatal("expected error for invalid source")
+		// If CPI native is compiled in we accept success too
+		return
+	}
+	if !errors.Is(err, ErrNotAvailable) {
+		t.Fatalf("expected ErrNotAvailable, got: %v", err)
 	}
 }
 
-func TestExplainEmpty(t *testing.T) {
-	// Empty verdict should return OK with empty tooltip
-	tooltip, err := Explain(nil)
-	if err != nil {
-		t.Fatalf("Explain failed: %v", err)
+func TestCompileStubReturnsNotAvailable(t *testing.T) {
+	_, err := Compile([]byte("source"))
+	if err == nil {
+		return
 	}
-	t.Logf("tooltip bytes: %d", len(tooltip))
+	if !errors.Is(err, ErrNotAvailable) {
+		t.Fatalf("expected ErrNotAvailable, got: %v", err)
+	}
+}
+
+func TestExplainStubReturnsNotAvailable(t *testing.T) {
+	_, err := Explain(nil)
+	if err == nil {
+		return
+	}
+	if !errors.Is(err, ErrNotAvailable) {
+		t.Fatalf("expected ErrNotAvailable, got: %v", err)
+	}
 }

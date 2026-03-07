@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -78,10 +79,19 @@ func TestApproveHandler_RegisteredKey_Accepted(t *testing.T) {
 		ExpiresAt:  time.Now().Add(5 * time.Minute),
 	}
 
-	sig := ed25519.Sign(priv, []byte(intentHash))
+	// Sign the domain-separated message matching handler's verification
+	planHash := "sha256:plan123"
+	policyHash := "sha256:policy456"
+	nonce := "test-nonce-1"
+	message := fmt.Sprintf("HELM/Approval/v1:%s:%s:%s:%s", planHash, policyHash, intentHash, nonce)
+	sig := ed25519.Sign(priv, []byte(message))
 	sigHex := hex.EncodeToString(sig)
 
-	body := `{"intent_hash":"` + intentHash + `","public_key":"` + pubHex + `","signature":"` + sigHex + `"}`
+	body := `{"intent_hash":"` + intentHash + `","public_key":"` + pubHex +
+		`","signature":"` + sigHex +
+		`","plan_hash":"` + planHash +
+		`","policy_hash":"` + policyHash +
+		`","nonce":"` + nonce + `"}`
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/kernel/approve", strings.NewReader(body))
 	w := httptest.NewRecorder()
