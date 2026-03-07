@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/kms"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/kms"
 )
 
 // ProviderType represents supported credential providers.

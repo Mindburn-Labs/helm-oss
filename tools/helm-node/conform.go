@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/conform"
-	"github.com/Mindburn-Labs/helm/core/pkg/conform/gates"
-	"github.com/Mindburn-Labs/helm/core/pkg/crypto"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/conform"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/conform/gates"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/crypto"
 )
 
 // runConform implements `helm conform` per §2.1.

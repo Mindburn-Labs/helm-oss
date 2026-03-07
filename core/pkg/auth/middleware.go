@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/api"
-	"github.com/Mindburn-Labs/helm/core/pkg/identity"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/api"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/identity"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -51,9 +51,14 @@ func (v *JWTValidator) Validate(tokenStr string) (*HelmClaims, error) {
 // publicPaths are endpoints that do not require authentication.
 var publicPaths = []string{
 	"/health",
+	"/healthz",
 	"/readiness",
 	"/startup",
+	"/version",
 	"/v1/chat/completions",
+	"/mcp",
+	"/mcp/v1/capabilities",
+	"/mcp/v1/execute",
 	"/api/auth/login",
 	"/api/auth/callback",
 	"/api/signup",

@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/knowledge/graph"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/knowledge/graph"
 )
 
 // Store implements the graph.Store interface using Neo4j as the backend.

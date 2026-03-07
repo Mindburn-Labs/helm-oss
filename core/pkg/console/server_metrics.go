@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/api"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/api"
 )
 
 // ── SLO Types ──────────────────────────────────────────────────

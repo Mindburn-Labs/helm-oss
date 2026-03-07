@@ -11,8 +11,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/conform"
-	"github.com/Mindburn-Labs/helm/core/pkg/conform/gates"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/conform"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/conform/gates"
 )
 
 // runConform implements `helm conform` per §2.1.
@@ -151,17 +151,18 @@ func runConform(args []string, stdout, stderr io.Writer) int {
 			_ = os.WriteFile(sigPath, sigData, 0644)
 			_, _ = fmt.Fprintf(stdout, "Ed25519 signed artifacts written to %s/\n", artDir)
 		} else {
-			// Hash-based fallback (unsigned environments)
+			// Unsigned fallback — clearly labeled as digest-only (NOT an HMAC)
 			sigPayload := map[string]string{
-				"algorithm":   "sha256-hmac",
+				"algorithm":   "sha256-digest-only",
 				"report_hash": hashHex,
 				"profile":     string(report.Profile),
 				"run_id":      report.RunID,
 				"verdict":     fmt.Sprintf("%v", report.Pass),
+				"warning":     "UNSIGNED: set HELM_SIGNING_KEY_HEX for cryptographic Ed25519 signatures",
 			}
 			sigData, _ := json.MarshalIndent(sigPayload, "", "  ")
 			_ = os.WriteFile(sigPath, sigData, 0644)
-			_, _ = fmt.Fprintf(stdout, "Hash-based signed artifacts written to %s/ (set HELM_SIGNING_KEY_HEX for Ed25519)\n", artDir)
+			_, _ = fmt.Fprintf(stdout, "⚠️  Unsigned digest-only artifacts written to %s/ (set HELM_SIGNING_KEY_HEX for Ed25519)\n", artDir)
 		}
 		_, _ = fmt.Fprintf(stdout, "  conform_report.json\n")
 		_, _ = fmt.Fprintf(stdout, "  conform_report.sha256\n")

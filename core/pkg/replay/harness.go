@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
 )
 
 // ReplayHarness orchestrates the re-execution of a receipt.

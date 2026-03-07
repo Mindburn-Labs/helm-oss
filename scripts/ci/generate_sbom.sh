@@ -8,6 +8,12 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CORE_DIR="$PROJECT_ROOT/core"
 OUTPUT="$PROJECT_ROOT/sbom.json"
 DEPS_OUTPUT="$PROJECT_ROOT/deps.txt"
+RAW_VERSION="${HELM_VERSION:-${GITHUB_REF_NAME:-}}"
+RAW_VERSION="${RAW_VERSION#v}"
+if [ -z "$RAW_VERSION" ]; then
+    RAW_VERSION="0.0.0-dev"
+fi
+ROOT_MODULE_PURL="pkg:golang/github.com/Mindburn-Labs/helm-oss/core@${RAW_VERSION}"
 
 cd "$CORE_DIR"
 
@@ -61,8 +67,8 @@ cat > "$OUTPUT" << SBOM_EOF
     "component": {
       "type": "application",
       "name": "helm",
-      "version": "0.1.0",
-      "purl": "pkg:golang/github.com/Mindburn-Labs/helm/core@0.1.0"
+      "version": "${RAW_VERSION}",
+      "purl": "${ROOT_MODULE_PURL}"
     },
     "tools": [
       {

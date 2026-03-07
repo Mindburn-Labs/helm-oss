@@ -3,8 +3,8 @@ package csr
 import (
 	"fmt"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/compliance/jkg"
-	"github.com/Mindburn-Labs/helm/core/pkg/compliance/regwatch"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/jkg"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/regwatch"
 )
 
 // CreateCSRWithDefaults bootstraps a fully wired CSR with:

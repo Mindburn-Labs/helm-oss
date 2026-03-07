@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/metering"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/metering"
 	// Assuming test helpers
 )
 

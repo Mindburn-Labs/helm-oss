@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/api"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/api"
 )
 
 func TestWriteError_ContentType(t *testing.T) {

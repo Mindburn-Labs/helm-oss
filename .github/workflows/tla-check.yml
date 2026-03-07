@@ -1,11 +1,11 @@
 name: TLA+ Model Check
 on:
   push:
-    paths:
-      - 'protocols/specs/tla/**'
+    branches: [main]
   pull_request:
     paths:
       - 'protocols/specs/tla/**'
+      - 'core/pkg/**'
 
 jobs:
   tla-check:

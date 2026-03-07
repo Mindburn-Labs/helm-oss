@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // PolicyFixture is a test case for a policy.
@@ -307,86 +306,4 @@ func getTemplate(name string) *PolicyTemplate {
 		}
 	}
 	return nil
-}
-
-// ── Strict Preflight Tests ──────────────────────────────────────────────────
-
-// PreflightCheck represents a sandbox provider preflight validation.
-type PreflightCheck struct {
-	Provider    string `json:"provider"`
-	Check       string `json:"check"`
-	Requirement string `json:"requirement"`
-	Verdict     string `json:"verdict"`
-	ReasonCode  string `json:"reason_code"`
-	Description string `json:"description"`
-}
-
-// runPreflightChecks runs strict preflight DENY tests for sandbox providers.
-// These intentionally misconfigure providers to prove fail-closed behavior.
-func runPreflightChecks(provider string) []PreflightCheck {
-	checks := []PreflightCheck{
-		{
-			Provider: provider, Check: "auth_required",
-			Requirement: "provider must present valid API key",
-			Description: "Tests that missing or empty API key is rejected",
-		},
-		{
-			Provider: provider, Check: "egress_posture",
-			Requirement: "egress must be restricted and declared",
-			Description: "Tests that unrestricted egress is DENY",
-		},
-		{
-			Provider: provider, Check: "resource_limits",
-			Requirement: "CPU, memory, and time limits must be set",
-			Description: "Tests that unbounded resources are DENY",
-		},
-		{
-			Provider: provider, Check: "mount_isolation",
-			Requirement: "host filesystem must not be directly mounted",
-			Description: "Tests that host mount access is DENY",
-		},
-		{
-			Provider: provider, Check: "timeout_handling",
-			Requirement: "execution timeout must produce DENY, not hang",
-			Description: "Tests timeout produces deterministic failure",
-		},
-	}
-
-	for i := range checks {
-		// All preflight checks on misconfigured providers should DENY
-		checks[i].Verdict = "DENY"
-		switch checks[i].Check {
-		case "auth_required":
-			checks[i].ReasonCode = "ERR_AUTH_MISSING"
-		case "egress_posture":
-			checks[i].ReasonCode = "ERR_EGRESS_UNRESTRICTED"
-		case "resource_limits":
-			checks[i].ReasonCode = "ERR_RESOURCE_UNBOUNDED"
-		case "mount_isolation":
-			checks[i].ReasonCode = "ERR_HOST_MOUNT_DENIED"
-		case "timeout_handling":
-			checks[i].ReasonCode = "ERR_EXECUTION_TIMEOUT"
-		}
-	}
-
-	return checks
-}
-
-// formatPreflightResults renders preflight check results for the user.
-func formatPreflightResults(checks []PreflightCheck, stdout io.Writer) {
-	fmt.Fprintf(stdout, "\n%s🛡️  Strict Preflight Results%s\n\n", ColorBold+ColorBlue, ColorReset)
-
-	for _, c := range checks {
-		icon := "✅"
-		color := ColorGreen
-		if c.Verdict == "DENY" {
-			icon = "🚫"
-			color = ColorRed
-		}
-		fmt.Fprintf(stdout, "  %s %s[%s]%s %s: %s\n",
-			icon, color, c.Verdict, ColorReset,
-			strings.ToUpper(c.Check), c.Description)
-		fmt.Fprintf(stdout, "    %s→ %s%s\n", ColorGray, c.ReasonCode, ColorReset)
-	}
-	fmt.Fprintln(stdout, "")
 }

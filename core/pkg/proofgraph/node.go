@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/canonicalize"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/canonicalize"
 )
 
 // NodeType enumerates the types of nodes in the ProofGraph.

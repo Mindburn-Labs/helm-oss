@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
 )
 
 // Registry manages evidence contracts and verifies submissions.

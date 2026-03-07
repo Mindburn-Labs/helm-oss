@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/api"
-	"github.com/Mindburn-Labs/helm/core/pkg/audit"
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
-	"github.com/Mindburn-Labs/helm/core/pkg/store"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/api"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/audit"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store"
 )
 
 // ── Policy API ─────────────────────────────────────────────────

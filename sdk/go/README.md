@@ -5,7 +5,7 @@ Typed Go client for the HELM kernel API. Zero external dependencies.
 ## Install
 
 ```bash
-go get github.com/Mindburn-Labs/helm/sdk/go
+go get github.com/Mindburn-Labs/helm-oss/sdk/go
 ```
 
 ## Quick Example
@@ -17,7 +17,7 @@ import (
     "fmt"
     "log"
 
-    helm "github.com/Mindburn-Labs/helm/sdk/go/client"
+    helm "github.com/Mindburn-Labs/helm-oss/sdk/go/client"
 )
 
 func main() {

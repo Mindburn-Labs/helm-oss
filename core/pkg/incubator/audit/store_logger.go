@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/auth"
-	"github.com/Mindburn-Labs/helm/core/pkg/store"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/auth"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store"
 	"github.com/google/uuid"
 )
 

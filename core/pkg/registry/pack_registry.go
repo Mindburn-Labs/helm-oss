@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/Mindburn-Labs/helm/core/pkg/compliance/jcs"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/jcs"
 )
 
 // PackState represents the lifecycle state of a pack in the registry.

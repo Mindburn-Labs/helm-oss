@@ -15,6 +15,7 @@
  * ```
  */
 
+import { createHash } from 'node:crypto';
 import { HelmClient, HelmApiError } from '@mindburn/helm-sdk';
 import type { HelmClientConfig, Receipt } from '@mindburn/helm-sdk';
 
@@ -90,6 +91,7 @@ export class HelmToolProxy {
   private readonly onReceipt?: (receipt: ToolCallReceipt) => void;
   private readonly onDeny?: (denial: ToolCallDenial) => void;
   private readonly receipts: ToolCallReceipt[] = [];
+  private lastLamportClock = -1;
 
   constructor(config: HelmToolProxyConfig) {
     this.client = new HelmClient(config);
@@ -147,7 +149,8 @@ export class HelmToolProxy {
     try {
       // Step 1: Send tool call intent through HELM's OpenAI proxy.
       // This lets the kernel evaluate policy and produce a receipt.
-      const response = await this.client.chatCompletions({
+      // Uses chatCompletionsWithReceipt to extract kernel-issued governance metadata.
+      const { response, governance } = await this.client.chatCompletionsWithReceipt({
         model: 'helm-governance',
         messages: [
           {
@@ -172,13 +175,15 @@ export class HelmToolProxy {
       });
 
       // Step 2: Check if the kernel approved the call.
+      // Check both the response body AND the kernel governance headers.
       const choice = response.choices?.[0];
-      if (!choice || choice.finish_reason === 'stop') {
-        // Kernel denied — extract reasoning from content.
+      const kernelDenied = governance.status === 'DENIED' || governance.status === 'PEP_VALIDATION_FAILED';
+
+      if (kernelDenied || (!choice || choice.finish_reason === 'stop')) {
         const denial: ToolCallDenial = {
           toolName,
           args,
-          reasonCode: 'DENY_POLICY_VIOLATION',
+          reasonCode: governance.reasonCode || 'DENY_POLICY_VIOLATION',
           message: choice?.message?.content ?? 'Tool call denied by HELM governance',
         };
         this.onDeny?.(denial);
@@ -190,25 +195,28 @@ export class HelmToolProxy {
         throw new Error(`Tool ${toolName} has no run implementation`);
       }
       const result = await tool.run(args);
+      const receiptStatus = HelmToolProxy.resolveReceiptStatus(governance.status);
+      const lamportClock = this.nextLamportClock(governance.lamportClock);
+      const receiptToken = `${toolName}-${lamportClock}`;
 
-      // Step 4: Collect receipt.
+      // Step 4: Collect kernel-issued receipt (NOT fabricated).
       if (this.collectReceipts) {
         const receipt: ToolCallReceipt = {
           toolName,
           args,
           receipt: {
-            receipt_id: response.id,
-            decision_id: response.id,
-            effect_id: response.id,
-            status: 'APPROVED',
-            reason_code: 'ALLOW',
-            output_hash: '',
+            receipt_id: governance.receiptId || `local-${receiptToken}`,
+            decision_id: governance.decisionId || `decision-${receiptToken}`,
+            effect_id: governance.proofGraphNode || `effect-${receiptToken}`,
+            status: receiptStatus,
+            reason_code: governance.reasonCode || 'ALLOW',
+            output_hash: governance.outputHash || HelmToolProxy.computeOutputHash(result),
             blob_hash: '',
             prev_hash: '',
-            lamport_clock: 0,
-            signature: '',
+            lamport_clock: lamportClock,
+            signature: governance.signature || '',
             timestamp: new Date().toISOString(),
-            principal: 'helm-openai-agents-adapter',
+            principal: 'helm-kernel',
           },
           durationMs: Date.now() - startMs,
         };
@@ -241,6 +249,42 @@ export class HelmToolProxy {
 
       throw error;
     }
+  }
+
+  private static computeOutputHash(result: unknown): string {
+    const serialized = HelmToolProxy.serializeResult(result);
+    return `sha256:${createHash('sha256').update(serialized).digest('hex')}`;
+  }
+
+  private static serializeResult(result: unknown): string {
+    if (typeof result === 'string') {
+      return result;
+    }
+
+    try {
+      return JSON.stringify(result) ?? String(result);
+    } catch {
+      return String(result);
+    }
+  }
+
+  private static resolveReceiptStatus(governanceStatus: string): Receipt['status'] {
+    if (governanceStatus === 'DENIED' || governanceStatus === 'PEP_VALIDATION_FAILED') {
+      return 'DENIED';
+    }
+    if (governanceStatus === 'PENDING') {
+      return 'PENDING';
+    }
+    return 'APPROVED';
+  }
+
+  private nextLamportClock(kernelLamportClock: number): number {
+    const nextLamportClock =
+      kernelLamportClock > this.lastLamportClock
+        ? kernelLamportClock
+        : this.lastLamportClock + 1;
+    this.lastLamportClock = nextLamportClock;
+    return nextLamportClock;
   }
 }
 

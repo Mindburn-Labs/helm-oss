@@ -1,117 +1,108 @@
 # HELM Client Ecosystem Packaging
 
-> Configuration generators and installation guides for every major AI client.
+> MCP server configuration and installation for every major AI client.
 
 ## Supported Clients
 
-| Client            | Install Method | Config Format | Auth Mode    |
-| ----------------- | -------------- | ------------- | ------------ |
-| Claude Code       | MCP config     | JSON          | MCP header   |
-| Claude Desktop    | MCP config     | JSON          | MCP header   |
-| Gemini CLI        | Extension      | YAML          | Google OAuth |
-| Cursor            | MCP config     | JSON          | MCP header   |
-| Windsurf          | MCP config     | JSON          | MCP header   |
-| VS Code (Copilot) | Extension      | JSON          | MCP header   |
-| Continue.dev      | MCP config     | JSON          | MCP header   |
-| Zed               | Extension      | JSON          | MCP header   |
+| Client            | Install Method | CLI Command                                             | Auth Mode    |
+| ----------------- | -------------- | ------------------------------------------------------- | ------------ |
+| Claude Code       | Plugin install | `helm mcp install --client claude-code`                 | MCP header   |
+| Claude Desktop    | .mcpb bundle   | `helm mcp pack --client claude-desktop --out helm.mcpb` | MCP header   |
+| Cursor            | Print config   | `helm mcp print-config --client cursor`                 | MCP header   |
+| VS Code (Copilot) | Print config   | `helm mcp print-config --client vscode`                 | MCP header   |
+| Windsurf          | Print config   | `helm mcp print-config --client windsurf`               | MCP header   |
+| Codex CLI         | Print config   | `helm mcp print-config --client codex`                  | MCP header   |
+| Gemini CLI        | Print config   | (manual — see below)                                    | Google OAuth |
 
-## Quick Config Generator
+## Quick Start
 
 ```bash
-# Generate config for a specific client
-helm config generate --client claude-code
-helm config generate --client cursor
-helm config generate --client gemini-cli
+# Claude Code — generates plugin directory with plugin.json + .mcp.json
+helm mcp install --client claude-code
 
-# Generate .mcpb package
-helm config generate --format mcpb --output helm.mcpb
+# Claude Desktop — generates .mcpb zip bundle
+helm mcp pack --client claude-desktop --out helm.mcpb
+
+# Cursor / VS Code / Windsurf / Codex — prints config snippet to stdout
+helm mcp print-config --client cursor
+helm mcp print-config --client vscode
+helm mcp print-config --client windsurf
+helm mcp print-config --client codex
 ```
 
 ---
 
 ## Client Configurations
 
-### Claude Code / Claude Desktop
+### Claude Code
+
+```bash
+helm mcp install --client claude-code
+# Generates: helm-mcp-plugin/{plugin.json, .mcp.json}
+# Install:   claude plugin install ./helm-mcp-plugin
+```
+
+The MCP server auto-starts when the plugin is enabled:
 
 ```json
 {
   "mcpServers": {
-    "helm": {
+    "helm-governance": {
       "command": "helm",
-      "args": ["mcp-server", "--mode=governance"],
-      "env": {
-        "HELM_POLICY_DIR": "~/.helm/policies",
-        "HELM_LOG_LEVEL": "info"
-      }
+      "args": ["mcp", "serve", "--transport", "stdio"]
     }
   }
 }
 ```
 
-**Install**:
-
-```bash
-# Install HELM
-curl -fsSL https://helm.sh/install.sh | sh
-
-# Generate Claude config
-helm config generate --client claude-code >> ~/.claude/mcp.json
-```
-
 ---
 
-### Gemini CLI
-
-```yaml
-extensions:
-  helm:
-    command: helm
-    args: [mcp-server, --mode=governance]
-    auth:
-      type: google_oauth
-```
-
-**Install**:
+### Claude Desktop
 
 ```bash
-helm config generate --client gemini-cli >> ~/.gemini/extensions.yaml
+helm mcp pack --client claude-desktop --out helm.mcpb
+# Double-click or drag helm.mcpb into Claude Desktop to install.
 ```
 
 ---
 
 ### Cursor
 
+```bash
+helm mcp print-config --client cursor >> .cursor/mcp.json
+```
+
+Output:
+
 ```json
 {
   "mcpServers": {
-    "helm": {
+    "helm-governance": {
       "command": "helm",
-      "args": ["mcp-server"],
-      "env": {
-        "HELM_POLICY_DIR": "./policies"
-      }
+      "args": ["mcp", "serve", "--transport", "stdio"]
     }
   }
 }
-```
-
-**Install**:
-
-```bash
-helm config generate --client cursor >> .cursor/mcp.json
 ```
 
 ---
 
 ### VS Code with GitHub Copilot
 
+```bash
+helm mcp print-config --client vscode
+# Add the output to .vscode/settings.json
+```
+
+Output:
+
 ```json
 {
   "mcp": {
     "servers": {
-      "helm": {
+      "helm-governance": {
         "command": "helm",
-        "args": ["mcp-server"]
+        "args": ["mcp", "serve", "--transport", "stdio"]
       }
     }
   }
@@ -122,74 +113,8 @@ helm config generate --client cursor >> .cursor/mcp.json
 
 ### Windsurf
 
-```json
-{
-  "mcpServers": {
-    "helm": {
-      "command": "helm",
-      "args": ["mcp-server"]
-    }
-  }
-}
-```
-
----
-
-### Qwen Code
-
-```json
-{
-  "mcpServers": {
-    "helm": {
-      "command": "helm",
-      "args": ["mcp-server", "--mode=governance"],
-      "env": {
-        "HELM_POLICY_DIR": "~/.helm/policies"
-      }
-    }
-  }
-}
-```
-
-**Install**:
-
 ```bash
-helm config generate --client qwen-code >> ~/.qwen/mcp.json
-```
-
----
-
-### OpenAI Codex CLI
-
-```json
-{
-  "mcpServers": {
-    "helm": {
-      "command": "helm",
-      "args": ["mcp-server", "--mode=governance"]
-    }
-  }
-}
-```
-
-**Install**:
-
-```bash
-helm config generate --client codex >> ~/.codex/mcp.json
-```
-
----
-
-### Generic MCP Client
-
-For any MCP-compatible client not listed above:
-
-```bash
-# Generate a generic MCP config
-helm config generate --client generic --format json
-
-# Or as stdio transport:
-helm config generate --client generic --transport stdio
+helm mcp print-config --client windsurf
 ```
 
 Output:
@@ -199,12 +124,64 @@ Output:
   "mcpServers": {
     "helm-governance": {
       "command": "helm",
-      "args": ["mcp-server"],
+      "args": ["mcp", "serve", "--transport", "stdio"],
       "transport": "stdio"
     }
   }
 }
 ```
+
+For remote HTTP mode:
+
+```bash
+helm mcp serve --transport http --port 9100
+# URL: http://localhost:9100/mcp
+```
+
+---
+
+### Codex CLI
+
+```bash
+helm mcp print-config --client codex
+# Output: codex mcp add helm-governance -- helm mcp serve --transport stdio
+```
+
+---
+
+### Gemini CLI
+
+Manual configuration — add to `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "helm-governance": {
+      "command": "helm",
+      "args": ["mcp", "serve", "--transport", "stdio"]
+    }
+  }
+}
+```
+
+---
+
+### Generic MCP Client
+
+For any MCP-compatible client not listed above, the HELM MCP server
+uses standard stdio transport:
+
+```bash
+# Start server directly:
+helm mcp serve --transport stdio
+
+# Or start as HTTP server:
+helm mcp serve --transport http --port 9100
+```
+
+All clients use the same underlying command: `helm mcp serve --transport stdio`.
+The `print-config` and `install` commands are convenience wrappers that
+generate the correct config format for each client.
 
 ---
 
@@ -213,27 +190,17 @@ Output:
 HELM ships as a `.mcpb` (MCP Bundle) for easy distribution:
 
 ```
-helm-governance.mcpb
-├── manifest.json       # Package metadata
-├── helm                # Binary (platform-specific)
-├── default-policies/   # Default policy bundle
-└── README.md           # Quick start guide
+helm.mcpb (zip archive)
+├── manifest.json       # Package metadata (manifest_version, server config)
+└── server/
+    └── helm            # Binary (platform-specific)
 ```
 
-## Config Generator Implementation
-
-The `helm config generate` command:
-
-1. Detects the client from `--client` flag
-2. Generates the appropriate config format
-3. Uses sensible defaults (local mode, default policies)
-4. Supports `--preset` flag to embed a business preset
-5. Outputs to stdout (pipe to config file)
+Generate with:
 
 ```bash
-# Generate with a preset
-helm config generate --client claude-code --preset engineering
-
-# Generate with jurisdiction
-helm config generate --client cursor --preset engineering --jurisdiction eu-gdpr
+helm mcp pack --client claude-desktop --out helm.mcpb
 ```
+
+For cross-platform bundles, build for each target OS/arch and include
+all binaries in `server/` with `platform_overrides` in the manifest.

@@ -54,7 +54,7 @@ rules:
 ## Loading
 
 ```go
-import "github.com/Mindburn-Labs/helm/core/pkg/guardian"
+import "github.com/Mindburn-Labs/helm-oss/core/pkg/guardian"
 
 // Load at startup
 bundle, err := guardian.LoadPolicyBundle("policy-bundle.yaml")

@@ -20,6 +20,6 @@ ssh "$USER@$HOST" "cd $DIR && docker compose -f docker-compose.demo.yml up -d --
 
 # 3. Check Health
 echo "Checking health..."
-ssh "$USER@$HOST" "curl -s http://localhost:8081/health && echo ' OK'"
+ssh "$USER@$HOST" "curl -s http://localhost:8081/healthz && echo ' OK'"
 
 echo "✅ Deployed successfully!"

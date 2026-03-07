@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/auth"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/auth"
 )
 
 // TestChaosInjection_AdminOnly verifies CONSOLE-001: Chaos injection requires admin role.

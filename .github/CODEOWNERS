@@ -1,0 +1,31 @@
+# HELM OSS — Code Owners
+# Defines review requirements for critical paths.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# ── Global default ────────────────────────────────────
+* @Mindburn-Labs/helm-core
+
+# ── Kernel / Core (TCB) ──────────────────────────────
+/core/pkg/          @Mindburn-Labs/helm-core
+/core/cmd/helm/     @Mindburn-Labs/helm-core
+
+# ── Protocols & Specs ────────────────────────────────
+/protocols/         @Mindburn-Labs/helm-core
+/docs/specs/        @Mindburn-Labs/helm-core
+
+# ── CI & Release ─────────────────────────────────────
+/.github/workflows/ @Mindburn-Labs/helm-core
+/scripts/release/   @Mindburn-Labs/helm-core
+/.goreleaser.yml    @Mindburn-Labs/helm-core
+
+# ── SDKs ─────────────────────────────────────────────
+/sdk/ts/            @Mindburn-Labs/helm-sdk
+/sdk/python/        @Mindburn-Labs/helm-sdk
+/sdk/go/            @Mindburn-Labs/helm-sdk
+/sdk/java/          @Mindburn-Labs/helm-sdk
+/sdk/rust/          @Mindburn-Labs/helm-sdk
+
+# ── Security-sensitive paths ─────────────────────────
+/SECURITY.md        @Mindburn-Labs/helm-core
+/docs/SECURITY_MODEL.md @Mindburn-Labs/helm-core
+/docs/THREAT_MODEL.md   @Mindburn-Labs/helm-core

@@ -17,6 +17,25 @@ import type {
 
 export type { ReasonCode, HelmError };
 
+/** Governance metadata extracted from X-Helm-* response headers. */
+export interface GovernanceMetadata {
+  receiptId: string;
+  status: string;
+  outputHash: string;
+  lamportClock: number;
+  reasonCode: string;
+  decisionId: string;
+  proofGraphNode: string;
+  signature: string;
+  toolCalls: number;
+}
+
+/** Chat completion response with kernel-issued governance metadata. */
+export interface ChatCompletionWithReceipt {
+  response: ChatCompletionResponse;
+  governance: GovernanceMetadata;
+}
+
 /** Thrown when the HELM API returns a non-2xx response. */
 export class HelmApiError extends Error {
   readonly status: number;
@@ -76,6 +95,43 @@ export class HelmClient {
   // ── OpenAI Proxy ─────────────────────────────────
   async chatCompletions(req: ChatCompletionRequest): Promise<ChatCompletionResponse> {
     return this.request<ChatCompletionResponse>('POST', '/v1/chat/completions', req);
+  }
+
+  /**
+   * Send a chat completion request and extract kernel-issued governance metadata
+   * from X-Helm-* response headers. Use this instead of chatCompletions() when
+   * you need the kernel receipt.
+   */
+  async chatCompletionsWithReceipt(req: ChatCompletionRequest): Promise<ChatCompletionWithReceipt> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeout);
+    try {
+      const res = await fetch(`${this.baseUrl}/v1/chat/completions`, {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify(req),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        const err = (await res.json()) as HelmError;
+        throw new HelmApiError(res.status, err);
+      }
+      const response = (await res.json()) as ChatCompletionResponse;
+      const governance: GovernanceMetadata = {
+        receiptId: res.headers.get('X-Helm-Receipt-ID') ?? '',
+        status: res.headers.get('X-Helm-Status') ?? '',
+        outputHash: res.headers.get('X-Helm-Output-Hash') ?? '',
+        lamportClock: parseInt(res.headers.get('X-Helm-Lamport-Clock') ?? '0', 10),
+        reasonCode: res.headers.get('X-Helm-Reason-Code') ?? '',
+        decisionId: res.headers.get('X-Helm-Decision-ID') ?? '',
+        proofGraphNode: res.headers.get('X-Helm-ProofGraph-Node') ?? '',
+        signature: res.headers.get('X-Helm-Signature') ?? '',
+        toolCalls: parseInt(res.headers.get('X-Helm-Tool-Calls') ?? '0', 10),
+      };
+      return { response, governance };
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   // ── Approval Ceremony ────────────────────────────

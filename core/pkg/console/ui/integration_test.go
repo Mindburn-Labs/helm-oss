@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/artifacts"
-	"github.com/Mindburn-Labs/helm/core/pkg/console/ui"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/artifacts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/console/ui"
 )
 
 func TestAGUIAdapter(t *testing.T) {

@@ -132,7 +132,7 @@ ${result.hash_chain.failedEntries.length > 0
 
 <footer>
 HELM — Models propose. The kernel disposes.<br>
-<a href="https://github.com/Mindburn-Labs/helm">github.com/Mindburn-Labs/helm</a>
+<a href="https://github.com/Mindburn-Labs/helm-oss">github.com/Mindburn-Labs/helm-oss</a>
 </footer>
 </body>
 </html>`;

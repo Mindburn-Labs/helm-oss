@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	pkg_artifact "github.com/Mindburn-Labs/helm/core/pkg/artifacts"
+	pkg_artifact "github.com/Mindburn-Labs/helm-oss/core/pkg/artifacts"
 	"github.com/google/cel-go/cel"
 )
 

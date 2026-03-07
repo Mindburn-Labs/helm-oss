@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/canonicalize"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/canonicalize"
 )
 
 // HelmPDP is the default policy decision point using HELM's built-in

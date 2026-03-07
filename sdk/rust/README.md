@@ -6,7 +6,7 @@ Typed Rust client for the HELM kernel API. Deps: `reqwest` + `serde`.
 
 ```toml
 [dependencies]
-helm-sdk = { git = "https://github.com/Mindburn-Labs/helm", path = "sdk/rust" }
+helm-sdk = { git = "https://github.com/Mindburn-Labs/helm-oss", path = "sdk/rust" }
 ```
 
 Or when published:

@@ -11,12 +11,12 @@
 
     <name>HELM SDK</name>
     <description>Java SDK for HELM — fail-closed tool calling for AI agents</description>
-    <url>https://github.com/Mindburn-Labs/helm</url>
+    <url>https://github.com/Mindburn-Labs/helm-oss</url>
 
     <licenses>
         <license>
-            <name>Business Source License 1.1</name>
-            <url>https://mariadb.com/bsl11/</url>
+            <name>Apache License 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
@@ -32,9 +32,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/Mindburn-Labs/helm.git</connection>
-        <developerConnection>scm:git:ssh://github.com:Mindburn-Labs/helm.git</developerConnection>
-        <url>https://github.com/Mindburn-Labs/helm/tree/main</url>
+        <connection>scm:git:git://github.com/Mindburn-Labs/helm-oss.git</connection>
+        <developerConnection>scm:git:ssh://github.com:Mindburn-Labs/helm-oss.git</developerConnection>
+        <url>https://github.com/Mindburn-Labs/helm-oss/tree/main</url>
     </scm>
 
     <properties>
@@ -47,12 +47,12 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.10.1</version>
+            <version>2.11.0</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.9.2</version>
+            <version>5.11.4</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

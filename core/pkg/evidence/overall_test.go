@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	helmcrypto "github.com/Mindburn-Labs/helm/core/pkg/crypto"
-	"github.com/Mindburn-Labs/helm/core/pkg/evidence"
-	"github.com/Mindburn-Labs/helm/core/pkg/provenance"
+	helmcrypto "github.com/Mindburn-Labs/helm-oss/core/pkg/crypto"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/evidence"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/provenance"
 	"github.com/stretchr/testify/assert"
 )
 

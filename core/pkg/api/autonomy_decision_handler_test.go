@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/api"
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/api"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
 )
 
 // ──────────────────────────────────────────────────────────────

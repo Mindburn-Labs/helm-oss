@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/escalation/ceremony"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/escalation/ceremony"
 )
 
 // HandleApproval handles the POST /api/v1/kernel/approve endpoint.

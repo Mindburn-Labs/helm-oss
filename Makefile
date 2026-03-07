@@ -3,7 +3,7 @@
 # ── Build ──────────────────────────────────────────────
 build:
 	cd core && go build -o ../bin/helm ./cmd/helm/
-	go build -C apps/helm-node -o ../../bin/helm-node .
+	go build -C tools/helm-node -o ../../bin/helm-node .
 	@echo "✅ bin/helm + bin/helm-node"
 
 # ── Test ───────────────────────────────────────────────
@@ -24,7 +24,7 @@ test-cli:
 
 verify-fixtures:
 	@echo "Verifying golden fixtures..."
-	@cd packages/mindburn-helm-cli && npx tsx ../../../scripts/verify-fixture-roots.mts
+	@cd packages/mindburn-helm-cli && npx tsx ../../scripts/verify-fixture-roots.mts
 	@echo "Golden fixture roots verified"
 
 test-all: test test-sdk-ts test-sdk-py test-cli verify-fixtures
@@ -55,7 +55,7 @@ demo:
 	@echo ""
 	@echo "✅ HELM demo running"
 	@echo "   API:    http://localhost:8080"
-	@echo "   Health: http://localhost:8080/health"
+	@echo "   Health: http://localhost:8080/healthz"
 	@echo ""
 
 demo-down:
@@ -171,4 +171,3 @@ verify-boundary:
 # ── Clean ──────────────────────────────────────────────
 clean:
 	rm -rf bin/ dist/ sbom.json deps.txt helm-mcp-plugin/
-

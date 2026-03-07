@@ -8,8 +8,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/api"
-	"github.com/Mindburn-Labs/helm/core/pkg/auth"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/api"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/auth"
 )
 
 // Admin UI Handlers — JSON API with HTMX fallback.

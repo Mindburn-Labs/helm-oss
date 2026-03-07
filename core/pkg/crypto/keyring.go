@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
 )
 
 // KeyRing implements Signer/Verifier for multiple keys (Rotation support).

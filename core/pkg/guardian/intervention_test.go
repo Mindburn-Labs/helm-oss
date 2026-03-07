@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	pkg_artifact "github.com/Mindburn-Labs/helm/core/pkg/artifacts"
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
-	"github.com/Mindburn-Labs/helm/core/pkg/crypto"
-	"github.com/Mindburn-Labs/helm/core/pkg/guardian"
-	"github.com/Mindburn-Labs/helm/core/pkg/prg"
+	pkg_artifact "github.com/Mindburn-Labs/helm-oss/core/pkg/artifacts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/crypto"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/guardian"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/prg"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -138,7 +138,7 @@ func runInitCmd(args []string, stdout, stderr io.Writer) int {
 	configPath := dir + "/helm.yaml"
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		config := `# HELM Configuration
-# See: https://github.com/Mindburn-Labs/helm
+# See: https://github.com/Mindburn-Labs/helm-oss
 version: "0.1"
 kernel:
   profile: CORE

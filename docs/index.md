@@ -12,17 +12,17 @@ hero:
       icon: right-arrow
       variant: primary
     - text: View on GitHub
-      link: https://github.com/Mindburn-Labs/helm
+      link: https://github.com/Mindburn-Labs/helm-oss
       icon: external
 ---
 
 
 
-[![Build](https://github.com/Mindburn-Labs/helm/actions/workflows/helm_core_gates.yml/badge.svg)](https://github.com/Mindburn-Labs/helm/actions/workflows/helm_core_gates.yml)
+[![Build](https://github.com/Mindburn-Labs/helm-oss/actions/workflows/helm_core_gates.yml/badge.svg)](https://github.com/Mindburn-Labs/helm-oss/actions/workflows/helm_core_gates.yml)
 [![Conformance L1](https://img.shields.io/badge/conformance-L1%20pass-brightgreen)](docs/use_cases/UC-012_openai_proxy.sh)
 [![Conformance L2](https://img.shields.io/badge/conformance-L2%20pass-brightgreen)](docs/use_cases/UC-012_openai_proxy.sh)
 [![SBOM](https://img.shields.io/badge/SBOM-CycloneDX%201.5-blue)](sbom.json)
-[![Provenance](https://img.shields.io/badge/provenance-SLSA-blue)](https://github.com/Mindburn-Labs/helm/releases)
+[![Provenance](https://img.shields.io/badge/provenance-GitHub%20Attestation-blue)](https://github.com/Mindburn-Labs/helm-oss/releases)
 
 OpenAI-compatible proxy that enforces tool execution and emits verifiable cryptographic receipts.
 
@@ -45,9 +45,9 @@ docker compose up -d && curl -s localhost:8080/v1/chat/completions \
 ### Start from source
 
 ```bash
-git clone https://github.com/Mindburn-Labs/helm.git && cd helm
+git clone https://github.com/Mindburn-Labs/helm-oss.git && cd helm-oss
 docker compose up -d
-curl -s http://localhost:8080/health   # → OK
+curl -s http://localhost:8080/healthz   # → OK
 ```
 
 ### Run the proof loop
@@ -192,7 +192,7 @@ Typed clients for 5 languages. All generated from [api/openapi/helm.openapi.yaml
 |----------|---------|------|
 | TypeScript | `npm install @mindburn/helm-sdk` | [sdk/ts/README.md](sdk/ts/README.md) |
 | Python | `pip install helm-sdk` | [sdk/python/README.md](sdk/python/README.md) |
-| Go | `go get github.com/Mindburn-Labs/helm/sdk/go` | [sdk/go/README.md](sdk/go/README.md) |
+| Go | `go get github.com/Mindburn-Labs/helm-oss/sdk/go` | [sdk/go/README.md](sdk/go/README.md) |
 | Rust | `cargo add helm-sdk` | [sdk/rust/README.md](sdk/rust/README.md) |
 | Java | Maven `ai.mindburn.helm:helm-sdk:0.1.0` | [sdk/java/README.md](sdk/java/README.md) |
 

@@ -15,12 +15,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/api"
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
-	"github.com/Mindburn-Labs/helm/core/pkg/evidence"
-	"github.com/Mindburn-Labs/helm/core/pkg/guardian"
-	"github.com/Mindburn-Labs/helm/core/pkg/proofgraph"
-	"github.com/Mindburn-Labs/helm/core/pkg/store"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/api"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/evidence"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/guardian"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/proofgraph"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store"
 	"github.com/google/uuid"
 )
 
@@ -354,7 +354,7 @@ func (ds *DemoServer) handleDemoExport(w http.ResponseWriter, r *http.Request) {
 	// We mock envelopes for now as we don't have full provenance/envelope store wiring in demo.go
 	// In a real system, we'd fetch envelopes by receipt ID.
 
-	// evidence package has envelopes? "github.com/Mindburn-Labs/helm/core/pkg/provenance" imported in exporter.go
+	// evidence package has envelopes? "github.com/Mindburn-Labs/helm-oss/core/pkg/provenance" imported in exporter.go
 	// We'll skip complex envelope types and just pass nil to ExportSOC2 if allowed,
 	// or we need to import provenance.
 

@@ -116,7 +116,7 @@ func locateProfiles(t *testing.T) string {
 	candidates := []string{
 		"profiles",
 		"../config/profiles",
-		filepath.Join(os.Getenv("GOPATH"), "src/github.com/Mindburn-Labs/helm/core/pkg/config/profiles"),
+		filepath.Join(os.Getenv("GOPATH"), "src/github.com/Mindburn-Labs/helm-oss/core/pkg/config/profiles"),
 	}
 	for _, c := range candidates {
 		if _, err := os.Stat(c); err == nil {

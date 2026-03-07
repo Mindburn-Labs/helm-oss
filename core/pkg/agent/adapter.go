@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
-	"github.com/Mindburn-Labs/helm/core/pkg/crypto"
-	"github.com/Mindburn-Labs/helm/core/pkg/executor"
-	"github.com/Mindburn-Labs/helm/core/pkg/guardian"
-	"github.com/Mindburn-Labs/helm/core/pkg/kernel"
-	"github.com/Mindburn-Labs/helm/core/pkg/manifest"
-	"github.com/Mindburn-Labs/helm/core/pkg/mcp"
-	"github.com/Mindburn-Labs/helm/core/pkg/store/ledger"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/crypto"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/executor"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/guardian"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/kernel"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/manifest"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/mcp"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store/ledger"
 )
 
 // KernelBridge exposes the OS to the LLM.

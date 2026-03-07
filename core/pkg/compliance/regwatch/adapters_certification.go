@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/compliance/jkg"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/jkg"
 )
 
 // FedRAMPAdapter monitors the FedRAMP authorization ecosystem.

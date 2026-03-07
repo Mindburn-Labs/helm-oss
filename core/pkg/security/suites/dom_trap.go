@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/Mindburn-Labs/helm/core/pkg/trust"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/trust"
 )
 
 // RegisterDOMTrapSuite registers the DOM trap test suite with the lab.

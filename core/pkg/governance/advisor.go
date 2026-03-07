@@ -3,7 +3,7 @@ package governance
 import (
 	"context"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/artifacts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/artifacts"
 )
 
 // Advisor represents a module that can provide governance advice (artifacts).

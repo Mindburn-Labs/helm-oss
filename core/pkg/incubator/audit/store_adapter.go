@@ -1,7 +1,7 @@
 package audit
 
 import (
-	"github.com/Mindburn-Labs/helm/core/pkg/store"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store"
 )
 
 // PersistentStore is the interface for durable audit storage backends.

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/pack"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/pack"
 )
 
 func TestFSRegistry(t *testing.T) {

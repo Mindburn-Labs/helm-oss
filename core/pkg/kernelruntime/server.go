@@ -3,7 +3,7 @@ package kernelruntime
 import (
 	"net/http"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/config"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/config"
 )
 
 type Server struct{}

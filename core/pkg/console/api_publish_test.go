@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/manifest"
-	"github.com/Mindburn-Labs/helm/core/pkg/pack"
-	"github.com/Mindburn-Labs/helm/core/pkg/sdk"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/manifest"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/pack"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/sdk"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

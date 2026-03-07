@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/tape"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/tape"
 )
 
 // runReplayCmd implements `helm replay` per §2.1.

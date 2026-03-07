@@ -8,7 +8,7 @@ No trust required. Every step produces verifiable output.
 
 ```bash
 docker compose up -d
-curl -s http://localhost:8080/health   # → OK
+curl -s http://localhost:8080/healthz   # → OK
 ```
 
 ## 2. Swap base_url (Python)

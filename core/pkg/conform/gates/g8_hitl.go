@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/conform"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/conform"
 )
 
 // G8HITL validates human-in-the-loop controls per §G8.

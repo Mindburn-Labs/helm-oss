@@ -3,7 +3,7 @@ package console
 import (
 	"log/slog"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
 )
 
 // HandleEscalation processes a system-generated escalation intent.

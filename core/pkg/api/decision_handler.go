@@ -15,7 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
 )
 
 // DecisionStore is the interface for persisting DecisionRequests.

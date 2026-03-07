@@ -1,4 +1,4 @@
-module github.com/Mindburn-Labs/helm/core
+module github.com/Mindburn-Labs/helm-oss/core
 
 go 1.25.0
 

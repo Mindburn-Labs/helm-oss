@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/crypto"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/crypto"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 

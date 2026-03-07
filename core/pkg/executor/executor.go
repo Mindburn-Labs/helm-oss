@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/artifacts"
-	"github.com/Mindburn-Labs/helm/core/pkg/canonicalize"
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
-	"github.com/Mindburn-Labs/helm/core/pkg/crypto"
-	"github.com/Mindburn-Labs/helm/core/pkg/interfaces"
-	"github.com/Mindburn-Labs/helm/core/pkg/manifest"
-	"github.com/Mindburn-Labs/helm/core/pkg/metering"
-	"github.com/Mindburn-Labs/helm/core/pkg/receipts/policies"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/artifacts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/canonicalize"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/crypto"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/interfaces"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/manifest"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/metering"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/receipts/policies"
 )
 
 // Executor runs an effect if and only if it has a valid, notarized decision AND an execution intent.

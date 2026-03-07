@@ -55,7 +55,7 @@ RAW_LATENCY=$(measure "$PROVIDER_URL" "Raw OpenAI" "$OPENAI_API_KEY")
 
 # 2. Measure HELM
 # Ensure helm is running
-if ! curl -s http://localhost:8081/health > /dev/null; then
+if ! curl -s http://localhost:8081/healthz > /dev/null; then
     echo -e "${RED}Error: HELM server is not running on :8080/8081${NC}"
     exit 1
 fi

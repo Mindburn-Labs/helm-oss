@@ -5,11 +5,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/crypto"
-	"github.com/Mindburn-Labs/helm/core/pkg/executor"
-	"github.com/Mindburn-Labs/helm/core/pkg/kernel"
-	"github.com/Mindburn-Labs/helm/core/pkg/mcp"
-	"github.com/Mindburn-Labs/helm/core/pkg/store/ledger"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/crypto"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/executor"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/kernel"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/mcp"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store/ledger"
 )
 
 // MockDriver implements executor.ToolDriver

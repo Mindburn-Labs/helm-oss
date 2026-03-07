@@ -11,7 +11,7 @@ Goal: **prove HELM works without trusting us.** Every step is one command.
 ## Prerequisites
 
 - Docker + Docker Compose
-- Go 1.24+ (for building from source)
+- Go 1.25+ (for building from source)
 - `jq` (for JSON output)
 
 ---
@@ -19,13 +19,13 @@ Goal: **prove HELM works without trusting us.** Every step is one command.
 ## Step 1 — Start HELM
 
 ```bash
-git clone https://github.com/Mindburn-Labs/helm.git && cd helm
+git clone https://github.com/Mindburn-Labs/helm-oss.git && cd helm-oss
 docker compose up -d
 ```
 
 Wait for health:
 ```bash
-curl -s http://localhost:8080/health   # → OK
+curl -s http://localhost:8080/healthz   # → OK
 ```
 
 HELM is running with Postgres-backed ProofGraph, policy enforcement, and the OpenAI-compatible proxy.

@@ -7,7 +7,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/canonicalize"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/canonicalize"
 )
 
 const orgDNASchemaPath = "schemas/orgdna.schema.json"

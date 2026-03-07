@@ -31,14 +31,17 @@ HELM is a kernel-grade execution authority for AI agents. Every tool call, sandb
 ## Install
 
 ```bash
-# Homebrew
-brew install mindburn-labs/tap/helm
+# Script install (macOS / Linux)
+curl -fsSL https://raw.githubusercontent.com/Mindburn-Labs/helm-oss/main/install.sh | bash
 
 # Go
 go install github.com/Mindburn-Labs/helm-oss/core/cmd/helm@latest
 
 # Docker
-docker run --rm ghcr.io/mindburn-labs/helm-oss/helm:latest --help
+docker run --rm ghcr.io/mindburn-labs/helm-oss:latest --help
+
+# Homebrew (coming soon)
+# brew install mindburn-labs/tap/helm
 ```
 
 ## MCP One-Click Install
@@ -57,12 +60,14 @@ helm mcp print-config --client windsurf
 ## SDK Install
 
 ```bash
-# TypeScript adapters
-npm install @mindburn/helm-openai-agents @mindburn/helm-mastra
+# TypeScript SDK
+npm install @mindburn/helm-sdk
 
-# Python adapters
-pip install helm-openai-agents helm-agent-framework helm-langchain
+# Python SDK
+pip install helm-sdk
 ```
+
+Framework adapters currently ship in-repo under `sdk/ts/*` and `sdk/python/*`. Publishable adapter packages are not all available on public registries yet.
 
 📊 **[Latest Compatibility Matrix →](https://github.com/Mindburn-Labs/helm-oss/actions/workflows/compatibility_matrix.yml)**
 
@@ -210,7 +215,7 @@ Typed clients for 5 languages. All generated from [api/openapi/helm.openapi.yaml
 | :--- | :--- | :--- |
 | **TypeScript** | `npm install @mindburn/helm-sdk` | [npm/@mindburn/helm-sdk](https://www.npmjs.com/package/@mindburn/helm-sdk) |
 | **Python** | `pip install helm-sdk` | [pypi/helm-sdk](https://pypi.org/project/helm-sdk/) |
-| **Go** | `go get github.com/Mindburn-Labs/helm/sdk/go` | [pkg.go.dev](https://pkg.go.dev/github.com/Mindburn-Labs/helm/sdk/go) |
+| **Go** | `go get github.com/Mindburn-Labs/helm-oss/sdk/go` | [pkg.go.dev](https://pkg.go.dev/github.com/Mindburn-Labs/helm-oss/sdk/go) |
 | **Rust** | `cargo add helm-sdk` | [crates.io/helm-sdk](https://crates.io/crates/helm-sdk) |
 | **Java** | `implementation 'ai.mindburn.helm:helm-sdk:0.1.0'` | [Maven Central](https://central.sonatype.com/) |
 
@@ -336,8 +341,7 @@ docker compose -f docker-compose.demo.yml up -d
 helm/
 ├── api/openapi/         # OpenAPI 3.1 spec (single source of truth)
 ├── core/               # Go kernel (8-package TCB + executor + ProofGraph)
-│   ├── cmd/helm/       # CLI: proxy, export, verify, replay, conform, ...
-│   └── cmd/helm-node/  # Kernel API server
+│   └── cmd/helm/       # CLI: proxy, export, verify, replay, conform, ...
 ├── packages/
 │   └── mindburn-helm-cli/  # @mindburn/helm v3 (npm CLI)
 ├── sdk/                # Multi-language SDKs (TS, Python, Go, Rust, Java)

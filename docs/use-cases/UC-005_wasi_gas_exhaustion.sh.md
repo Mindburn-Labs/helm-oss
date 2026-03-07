@@ -20,4 +20,4 @@ echo "UC-005: PASS"
 
 ```
 
-[View on GitHub](https://github.com/Mindburn-Labs/helm/tree/main/docs/use_cases/UC-005_wasi_gas_exhaustion.sh)
+[View on GitHub](https://github.com/Mindburn-Labs/helm-oss/tree/main/docs/use_cases/UC-005_wasi_gas_exhaustion.sh)

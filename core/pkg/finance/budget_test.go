@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/finance"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/finance"
 )
 
 func TestBudget_TokenEnforcement(t *testing.T) {

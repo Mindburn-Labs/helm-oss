@@ -5,6 +5,9 @@ Step-by-step instructions for configuring trusted publishing across all SDK regi
 > [!IMPORTANT]
 > All publish jobs use GitHub Environments with required approvals. Create the environments before configuring registry connections.
 
+> [!IMPORTANT]
+> Channel truth lives in `docs/specs/RELEASE_CHANNEL_TRUTH.md`. Do not enable or advertise a channel that is marked `WITHHELD` or `BLOCKED` there.
+
 ---
 
 ## Prerequisites
@@ -14,6 +17,20 @@ Step-by-step instructions for configuring trusted publishing across all SDK regi
    - `npm-publish` — required reviewers, deployment branch `main`
    - `crates-publish` — required reviewers, deployment branch `main`
    - `maven-publish` — required reviewers, deployment branch `main`
+
+## Current Channel Status
+
+| Channel | Status | Notes |
+| --- | --- | --- |
+| GitHub Releases | `ACTIVE` | Core release artifacts only |
+| GHCR | `ACTIVE` | Container images published in release workflow |
+| npm core SDK + CLI | `ACTIVE` | `@mindburn/helm-sdk` and CLI only |
+| npm adapters | `WITHHELD` | Not yet clean standalone publish targets |
+| PyPI | `ACTIVE` | `helm-sdk` |
+| crates.io | `ACTIVE` | Rust SDK |
+| Maven Central | `ACTIVE` | Java SDK |
+| NuGet | `WITHHELD` | No `sdk/dotnet` package yet |
+| Go module tags | `ACTIVE` | Tag-driven, no registry upload step |
 
 ---
 
@@ -27,7 +44,7 @@ No password or token stored in GitHub. GitHub Actions authenticates directly wit
 2. Click "Add a new pending publisher" (first time) or "Add publisher"
 3. Fill in:
    - **Owner**: `Mindburn-Labs`
-   - **Repository**: `helm`
+   - **Repository**: `helm-oss`
    - **Workflow name**: `release.yml`
    - **Environment name**: `pypi-publish`
 4. Save
@@ -46,7 +63,7 @@ npm supports provenance attestations via OIDC.
 
 1. Go to https://www.npmjs.com → Package `@mindburn/helm-sdk` → Settings → Publishing access
 2. Under "Configure trusted publishing":
-   - **Repository**: `Mindburn-Labs/helm`
+   - **Repository**: `Mindburn-Labs/helm-oss`
    - **Workflow**: `release.yml`
    - **Environment**: `npm-publish`
 3. Save
@@ -64,7 +81,7 @@ The release workflow runs `npm publish --provenance --access public`. The `--pro
 1. Go to https://crates.io → `helm-sdk` → Settings → Trusted Publishing
 2. Add a new configuration:
    - **Owner**: `Mindburn-Labs`
-   - **Repository**: `helm`
+   - **Repository**: `helm-oss`
    - **Workflow**: `release.yml`
    - **Environment**: `crates-publish`
 3. Save
@@ -102,7 +119,7 @@ Maven Central does not support OIDC. Token-based authentication is required.
 <licenses>
   <license>
     <name>BSL-1.1</name>
-    <url>https://github.com/Mindburn-Labs/helm/blob/main/LICENSE</url>
+    <url>https://github.com/Mindburn-Labs/helm-oss/blob/main/LICENSE</url>
   </license>
 </licenses>
 <developers>
@@ -113,9 +130,9 @@ Maven Central does not support OIDC. Token-based authentication is required.
   </developer>
 </developers>
 <scm>
-  <connection>scm:git:git://github.com/Mindburn-Labs/helm.git</connection>
-  <developerConnection>scm:git:ssh://github.com/Mindburn-Labs/helm.git</developerConnection>
-  <url>https://github.com/Mindburn-Labs/helm</url>
+  <connection>scm:git:git://github.com/Mindburn-Labs/helm-oss.git</connection>
+  <developerConnection>scm:git:ssh://github.com/Mindburn-Labs/helm-oss.git</developerConnection>
+  <url>https://github.com/Mindburn-Labs/helm-oss</url>
 </scm>
 ```
 
@@ -136,6 +153,13 @@ Go modules are published by tagging a commit. No registry upload step needed.
 3. The Go module proxy (proxy.golang.org) automatically picks up the tag
 
 No secrets or environment setup required.
+
+## Withheld Channels
+
+These channels must remain unpublished and unclaimed until the corresponding packages exist and are tested:
+
+- npm adapters (`@mindburn/helm-openai-agents`, `@mindburn/helm-mastra`)
+- NuGet / `.NET`
 
 ---
 

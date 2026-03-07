@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/api"
-	"github.com/Mindburn-Labs/helm/core/pkg/guardian"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/api"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/guardian"
 )
 
 // RegisterSubsystemRoutes registers all subsystem API routes on the given mux.

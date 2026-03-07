@@ -3,11 +3,11 @@ package gates
 import (
 	"path/filepath"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/conform"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/conform"
 )
 
-// GXSDKDrift validates that OpenAPI spec, Go SDK, and CLI are in sync per §GX.
-// This gate checks for the presence of the openapi.yaml and verifies
+// GXSDKDrift validates that the canonical OpenAPI spec, SDKs, and CLI are in sync per §GX.
+// This gate checks for the presence of the canonical OpenAPI spec and verifies
 // that SDK wrapper files reference the same API version.
 type GXSDKDrift struct{}
 
@@ -25,12 +25,11 @@ func (g *GXSDKDrift) Run(ctx *conform.RunContext) *conform.GateResult {
 
 	root := ctx.ProjectRoot
 
-	// 1. Check openapi.yaml exists
+	// 1. Check canonical OpenAPI spec exists.
 	openapiPaths := []string{
-		filepath.Join(root, "openapi.yaml"),
-		filepath.Join(root, "openapi.yml"),
-		filepath.Join(root, "docs", "openapi.yaml"),
+		filepath.Join(root, "api", "openapi", "helm.openapi.yaml"),
 		filepath.Join(root, "api", "openapi.yaml"),
+		filepath.Join(root, "docs", "api", "openapi.yaml"),
 	}
 
 	openapiFound := false
@@ -52,7 +51,7 @@ func (g *GXSDKDrift) Run(ctx *conform.RunContext) *conform.GateResult {
 	// 2. Check SDK directories exist
 	sdkDirs := []string{
 		filepath.Join(root, "sdk", "python"),
-		filepath.Join(root, "sdk", "typescript"),
+		filepath.Join(root, "sdk", "ts"),
 		filepath.Join(root, "sdk", "go"),
 	}
 

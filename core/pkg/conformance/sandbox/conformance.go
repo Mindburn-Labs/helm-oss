@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/conformance"
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts/actuators"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/conformance"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts/actuators"
 )
 
 // RegisterSandboxTests registers all sandbox conformance tests into a Suite.

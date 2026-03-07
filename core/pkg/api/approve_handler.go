@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
 )
 
 // ApproveHandler handles POST /api/v1/kernel/approve

@@ -55,7 +55,7 @@ Output (add to Windsurf settings):
 }
 ```
 
-Windsurf supports stdio, remote HTTP, and SSE transports. For remote:
+Windsurf supports stdio and remote HTTP transports in the OSS runtime. For remote:
 
 ```bash
 helm mcp serve --transport http --port 9100
@@ -126,4 +126,4 @@ The HELM MCP server supports:
 
 - **None** (default) — local stdio, no auth needed
 - **Static headers** — `HELM_API_KEY` env var
-- **OAuth** — for remote HTTP/SSE deployments (see `helm mcp serve --auth oauth`)
+- **OAuth** — not implemented in the OSS runtime

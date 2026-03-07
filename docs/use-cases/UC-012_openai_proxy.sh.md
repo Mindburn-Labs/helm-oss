@@ -19,4 +19,4 @@ echo "UC-012: PASS (compile check; runtime test requires running server)"
 
 ```
 
-[View on GitHub](https://github.com/Mindburn-Labs/helm/tree/main/docs/use_cases/UC-012_openai_proxy.sh)
+[View on GitHub](https://github.com/Mindburn-Labs/helm-oss/tree/main/docs/use_cases/UC-012_openai_proxy.sh)

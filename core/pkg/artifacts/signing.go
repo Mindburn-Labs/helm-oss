@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/crypto"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/crypto"
 )
 
 var (

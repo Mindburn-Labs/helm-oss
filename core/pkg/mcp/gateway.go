@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/bridge"
-	"github.com/Mindburn-Labs/helm/core/pkg/manifest"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/bridge"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/manifest"
 )
 
 // GatewayConfig configures the MCP gateway server.
@@ -20,15 +20,26 @@ type Gateway struct {
 	catalog Catalog
 	config  GatewayConfig
 	bridge  *bridge.KernelBridge // governance bridge (optional)
+	exec    ToolExecutor
 }
 
 // GatewayOption configures optional Gateway settings.
 type GatewayOption func(*Gateway)
 
+// ToolExecutor runs an MCP tool call and returns the governed result.
+type ToolExecutor func(ctx context.Context, req ToolExecutionRequest) (ToolExecutionResponse, error)
+
 // WithBridge sets the KernelBridge for governance.
 func WithBridge(kb *bridge.KernelBridge) GatewayOption {
 	return func(g *Gateway) {
 		g.bridge = kb
+	}
+}
+
+// WithExecutor wires a concrete tool executor into the gateway.
+func WithExecutor(exec ToolExecutor) GatewayOption {
+	return func(g *Gateway) {
+		g.exec = exec
 	}
 }
 
@@ -58,20 +69,34 @@ type MCPToolCallResponse struct {
 	ReasonCode string `json:"reason_code,omitempty"`
 	ArgsHash   string `json:"args_hash,omitempty"`
 	PGNode     string `json:"proofgraph_node,omitempty"`
+	ReceiptID  string `json:"receipt_id,omitempty"`
 }
 
 // MCPCapabilityManifest describes the capabilities this server exposes.
 type MCPCapabilityManifest struct {
 	ServerName   string    `json:"server_name"`
 	Version      string    `json:"version"`
-	Capabilities []ToolRef `json:"capabilities"`
+	Tools        []ToolRef `json:"tools"`
+	Capabilities []ToolRef `json:"capabilities,omitempty"`
 	Governance   string    `json:"governance"` // "helm:pep:v1"
 }
 
 // RegisterRoutes registers MCP gateway HTTP routes.
 func (g *Gateway) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/mcp", g.handleIndex)
 	mux.HandleFunc("/mcp/v1/capabilities", g.handleCapabilities)
 	mux.HandleFunc("/mcp/v1/execute", g.handleExecute)
+}
+
+func (g *Gateway) handleIndex(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"server_name":      "helm-mcp-gateway",
+		"version":          "1.0.0",
+		"capabilities_url": "/mcp/v1/capabilities",
+		"execute_url":      "/mcp/v1/execute",
+		"governance":       "helm:pep:v1",
+	})
 }
 
 func (g *Gateway) handleCapabilities(w http.ResponseWriter, r *http.Request) {
@@ -86,6 +111,7 @@ func (g *Gateway) handleCapabilities(w http.ResponseWriter, r *http.Request) {
 	m := MCPCapabilityManifest{
 		ServerName:   "helm-mcp-gateway",
 		Version:      "1.0.0",
+		Tools:        tools,
 		Capabilities: tools,
 		Governance:   "helm:pep:v1",
 	}
@@ -107,10 +133,21 @@ func (g *Gateway) handleExecute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tool, ok := findToolRef(g.catalog, req.Method)
+	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(MCPToolCallResponse{
+			Error:      fmt.Sprintf("tool %q not found", req.Method),
+			ReasonCode: "DENY_TOOL_NOT_FOUND",
+		})
+		return
+	}
+
 	// 1. Validate and canonicalize args via PEP boundary
 	var argsHash string
 	if req.Params != nil {
-		result, err := manifest.ValidateAndCanonicalizeToolArgs(nil, req.Params)
+		result, err := manifest.ValidateAndCanonicalizeToolArgs(catalogSchemaToArgSchema(tool.Schema), req.Params)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
@@ -126,7 +163,35 @@ func (g *Gateway) handleExecute(w http.ResponseWriter, r *http.Request) {
 	// 2. Governance via KernelBridge (if configured)
 	resp := MCPToolCallResponse{ArgsHash: argsHash}
 
-	if g.bridge != nil {
+	if g.exec != nil {
+		execResp, execErr := g.exec(r.Context(), ToolExecutionRequest{
+			ToolName:  req.Method,
+			Arguments: req.Params,
+			SessionID: "mcp-http",
+		})
+		if execErr != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(MCPToolCallResponse{
+				Error:      execErr.Error(),
+				ReasonCode: "ERROR_INTERNAL",
+				ArgsHash:   argsHash,
+			})
+			return
+		}
+
+		resp.ReceiptID = execResp.ReceiptID
+		if execResp.IsError {
+			resp.Error = execResp.Content
+			resp.ReasonCode = "DENY_POLICY_VIOLATION"
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			_ = json.NewEncoder(w).Encode(resp)
+			return
+		}
+
+		resp.Result = execResp.Content
+	} else if g.bridge != nil {
 		govResult, govErr := g.bridge.Govern(context.Background(), req.Method, argsHash)
 		if govErr != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -168,4 +233,60 @@ func (g *Gateway) handleExecute(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func findToolRef(c Catalog, name string) (ToolRef, bool) {
+	tools, err := c.Search(context.Background(), name)
+	if err != nil {
+		return ToolRef{}, false
+	}
+	for _, tool := range tools {
+		if tool.Name == name {
+			return tool, true
+		}
+	}
+	return ToolRef{}, false
+}
+
+func catalogSchemaToArgSchema(raw any) *manifest.ToolArgSchema {
+	schemaMap, ok := raw.(map[string]any)
+	if !ok {
+		return nil
+	}
+	props, _ := schemaMap["properties"].(map[string]any)
+	if props == nil {
+		return nil
+	}
+	requiredList, _ := schemaMap["required"].([]string)
+	requiredSet := make(map[string]bool, len(requiredList))
+	for _, name := range requiredList {
+		requiredSet[name] = true
+	}
+	if len(requiredSet) == 0 {
+		if genericRequired, ok := schemaMap["required"].([]any); ok {
+			for _, rawName := range genericRequired {
+				if name, ok := rawName.(string); ok {
+					requiredSet[name] = true
+				}
+			}
+		}
+	}
+
+	fields := make(map[string]manifest.FieldSpec, len(props))
+	for name, propRaw := range props {
+		prop, _ := propRaw.(map[string]any)
+		fieldType, _ := prop["type"].(string)
+		if fieldType == "" {
+			fieldType = "any"
+		}
+		fields[name] = manifest.FieldSpec{
+			Type:     fieldType,
+			Required: requiredSet[name],
+		}
+	}
+
+	return &manifest.ToolArgSchema{
+		Fields:     fields,
+		AllowExtra: false,
+	}
 }

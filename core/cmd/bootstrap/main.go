@@ -11,13 +11,13 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/crypto"
-	"github.com/Mindburn-Labs/helm/core/pkg/manifest"
-	"github.com/Mindburn-Labs/helm/core/pkg/metering"
-	"github.com/Mindburn-Labs/helm/core/pkg/registry"
-	"github.com/Mindburn-Labs/helm/core/pkg/store/ledger"
-	"github.com/Mindburn-Labs/helm/core/pkg/tenants"
-	"github.com/Mindburn-Labs/helm/core/pkg/tiers"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/crypto"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/manifest"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/metering"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/registry"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store/ledger"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/tenants"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/tiers"
 )
 
 func main() {

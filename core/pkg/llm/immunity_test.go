@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/store"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store"
 )
 
 // MockClient (Redefined here if not exported, or reuse)

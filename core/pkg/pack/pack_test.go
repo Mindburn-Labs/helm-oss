@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/pack"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/pack"
 	// assuming testify is available, or use standard
 )
 

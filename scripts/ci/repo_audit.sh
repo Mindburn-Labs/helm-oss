@@ -235,7 +235,7 @@ audit_coverage_gate() {
     local no_test_pkgs=()
     while IFS= read -r pkg; do
         [[ -z "$pkg" ]] && continue
-        local rel="${pkg#github.com/Mindburn-Labs/helm/}"
+        local rel="${pkg#github.com/Mindburn-Labs/helm-oss/}"
         local dir="$REPO_ROOT/$rel"
         find "$dir" -maxdepth 1 -name "*_test.go" -type f 2>/dev/null | grep -q . || no_test_pkgs+=("$rel")
     done < <(go list ./core/pkg/... 2>/dev/null)
@@ -295,7 +295,7 @@ audit_structured_logging() {
     section_start "structured_logging" "Ban direct fmt.Print* and legacy log.* in runtime Go code"
     cd "$REPO_ROOT"
     local v; v=$(grep -rnE '(fmt\.Print(f|ln)?\(|log\.(Print(f|ln)?|Fatal(f|ln)?|Panic(f|ln)?)\()' \
-        --include="*.go" core/pkg/ apps/helm-node/ 2>/dev/null | grep -v "_test.go" | grep -v "// nolint" | grep -v "//nolint" || true)
+        --include="*.go" core/pkg/ tools/helm-node/ 2>/dev/null | grep -v "_test.go" | grep -v "// nolint" | grep -v "//nolint" || true)
     local c; c=$(printf '%s' "$v" | grep -c "\.go:" 2>/dev/null || true)
     c=${c:-0}
     [[ "$c" -eq 0 ]] && verdict PASS "No direct print/log calls in runtime code" || { echo "$v" | head -20; verdict FAIL "$c direct print/log calls detected"; }

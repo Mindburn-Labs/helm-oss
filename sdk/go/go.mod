@@ -1,3 +1,3 @@
-module github.com/Mindburn-Labs/helm/sdk/go
+module github.com/Mindburn-Labs/helm-oss/sdk/go
 
 go 1.22

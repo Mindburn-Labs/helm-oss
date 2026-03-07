@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
-	"github.com/Mindburn-Labs/helm/core/pkg/executor"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/executor"
 )
 
 func TestExecutor_DigestMismatch_I14(t *testing.T) {

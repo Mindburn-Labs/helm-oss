@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/compliance/jkg"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/jkg"
 )
 
 func TestNewEnforcementEngine(t *testing.T) {

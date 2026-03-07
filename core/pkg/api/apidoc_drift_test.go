@@ -7,12 +7,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// TestOpenAPISpec_Integrity verifies the OpenAPI spec loads and has required endpoints.
+// TestOpenAPISpec_Integrity verifies the canonical OpenAPI spec loads and has required endpoints.
 func TestOpenAPISpec_Integrity(t *testing.T) {
-	// Find openapi.yaml relative to repo root
+	// Find the canonical OpenAPI spec relative to repo root.
 	paths := []string{
-		"../../docs/api/openapi.yaml",
-		"../../../docs/api/openapi.yaml",
+		"../../api/openapi/helm.openapi.yaml",
+		"../../../api/openapi/helm.openapi.yaml",
 	}
 
 	var data []byte
@@ -24,24 +24,24 @@ func TestOpenAPISpec_Integrity(t *testing.T) {
 		}
 	}
 	if err != nil {
-		t.Skip("openapi.yaml not found (run from repo root)")
+		t.Skip("canonical OpenAPI spec not found (run from repo root)")
 		return
 	}
 
 	var spec map[string]interface{}
 	if err := yaml.Unmarshal(data, &spec); err != nil {
-		t.Fatalf("openapi.yaml parse error: %v", err)
+		t.Fatalf("canonical OpenAPI parse error: %v", err)
 	}
 
 	// Verify required paths exist
 	pathsMap, ok := spec["paths"].(map[string]interface{})
 	if !ok {
-		t.Fatal("openapi.yaml missing paths section")
+		t.Fatal("canonical OpenAPI spec missing paths section")
 	}
 
 	required := []string{
-		"/health",
-		"/api/v1/kernel/dispatch",
+		"/healthz",
+		"/version",
 		"/api/v1/kernel/approve",
 		"/api/v1/trust/keys/add",
 		"/api/v1/trust/keys/revoke",
@@ -52,7 +52,7 @@ func TestOpenAPISpec_Integrity(t *testing.T) {
 
 	for _, path := range required {
 		if _, exists := pathsMap[path]; !exists {
-			t.Errorf("openapi.yaml missing required path: %s", path)
+			t.Errorf("canonical OpenAPI spec missing required path: %s", path)
 		}
 	}
 }

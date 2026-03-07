@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/Mindburn-Labs/helm/core/pkg/governance"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/governance"
 )
 
 // Version is the current schema version.

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
 )
 
 func (k *KernelBridge) searchObligations(ctx context.Context, params map[string]any) (any, error) {

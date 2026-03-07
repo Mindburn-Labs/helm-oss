@@ -18,4 +18,4 @@ echo "UC-010: PASS"
 
 ```
 
-[View on GitHub](https://github.com/Mindburn-Labs/helm/tree/main/docs/use_cases/UC-010_trust_key_rotation.sh)
+[View on GitHub](https://github.com/Mindburn-Labs/helm-oss/tree/main/docs/use_cases/UC-010_trust_key_rotation.sh)

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/Mindburn-Labs/helm/core/pkg/tiers"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/tiers"
 )
 
 // Provisioner handles tenant lifecycle operations.

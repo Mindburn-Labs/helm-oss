@@ -1,0 +1,187 @@
+// HELM Wire Contracts — Protocol Buffers
+// Language-neutral interface definitions for the HELM governance kernel.
+// Use these to implement HELM in any language without reverse-engineering Go types.
+
+syntax = "proto3";
+
+package helm.v1;
+
+option go_package = "github.com/Mindburn-Labs/helm-oss/protocols/proto/v1;helmv1";
+option java_package = "ai.mindburn.helm.proto.v1";
+
+// ─── Effect Boundary ────────────────────────────────────
+
+// An effect submitted for governance evaluation.
+message Effect {
+  string effect_type = 1;  // e.g., file_read, api_call, exec
+  string effect_id = 2;    // unique per-submission
+  bytes  params = 3;       // JSON-encoded effect-specific parameters
+  string budget_id = 4;    // optional budget to charge against
+}
+
+// The boundary contract for submitting effects to the kernel.
+message EffectBoundary {
+  Effect effect = 1;
+  string principal = 2;    // e.g., agent:analyst
+  bytes  context = 3;      // JSON-encoded context (jurisdiction, industry, etc.)
+}
+
+// ─── Policy Decision Point ──────────────────────────────
+
+// Request to the Policy Decision Point.
+message PDPRequest {
+  EffectBoundary boundary = 1;
+}
+
+// PDP verdict enumeration.
+enum Verdict {
+  VERDICT_UNSPECIFIED = 0;
+  ALLOW = 1;
+  DENY = 2;
+  ESCALATE = 3;
+}
+
+// Response from the Policy Decision Point.
+message PDPResponse {
+  GovernanceDecision decision = 1;
+}
+
+// A governance decision for an effect.
+message GovernanceDecision {
+  string  decision_id = 1;
+  string  effect_id = 2;
+  Verdict verdict = 3;
+  string  reason_code = 4;   // null for ALLOW; registered code for DENY/ESCALATE
+  Receipt receipt = 5;
+  repeated string active_packs = 6;  // names of bundles active during evaluation
+}
+
+// ─── Receipt ────────────────────────────────────────────
+
+// A tamper-proof receipt for a governance decision.
+message Receipt {
+  string receipt_version = 1;   // e.g. "1.0"
+  string receipt_id = 2;        // SHA-256 of canonical payload
+  string decision_id = 3;
+  string effect_id = 4;
+  Verdict verdict = 5;
+  string reason_code = 6;
+  string principal = 7;
+  string tool = 8;
+  string action = 9;
+  string timestamp = 10;        // RFC 3339
+  uint64 lamport = 11;          // strictly increasing within ProofGraph
+  string proofgraph_node = 12;
+  string payload_hash = 13;     // SHA-256 of JCS-canonicalized JSON
+  bytes  signature = 14;        // Ed25519 signature
+  bytes  metadata = 15;         // JSON-encoded metadata
+}
+
+// ─── ProofGraph ─────────────────────────────────────────
+
+// A node in the append-only ProofGraph DAG.
+message ProofGraphNode {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    ATTESTATION = 1;
+    INTENT = 2;
+    EFFECT = 3;
+    MERGE = 4;
+  }
+
+  Kind   kind = 1;
+  uint64 lamport = 2;
+  bytes  payload = 3;           // JSON-encoded payload
+  string node_hash = 4;         // SHA-256 including parent hashes
+  repeated string parent_hashes = 5;
+}
+
+// ─── Policy Bundle ──────────────────────────────────────
+
+// A loaded policy bundle (jurisdiction, industry, or business pack).
+message PolicyBundle {
+  enum PackType {
+    PACK_TYPE_UNSPECIFIED = 0;
+    JURISDICTION = 1;
+    INDUSTRY = 2;
+    BUSINESS = 3;
+    CUSTOM = 4;
+  }
+
+  string   name = 1;
+  string   version = 2;
+  string   content_hash = 3;    // SHA-256 of bundle contents
+  bytes    signature = 4;       // Ed25519 signature over content_hash
+  PackType pack_type = 5;
+  bytes    rules = 6;           // JSON-encoded pack rules
+}
+
+// ─── EvidencePack ───────────────────────────────────────
+
+// A deterministic evidence pack for offline verification.
+message EvidencePack {
+  string schema_version = 1;
+  string session_id = 2;
+  repeated Receipt receipts = 3;
+  repeated GovernanceDecision decisions = 4;
+  repeated PolicyBundle active_bundles = 5;
+  string created_at = 6;       // RFC 3339
+  string content_hash = 7;     // SHA-256 of deterministic bundle contents
+}
+
+// ─── Service Definitions ────────────────────────────────
+
+// The HELM Governance Kernel service.
+service HelmKernel {
+  // Submit an effect for governance evaluation.
+  rpc EvaluateEffect(PDPRequest) returns (PDPResponse);
+
+  // Export an evidence pack for a session.
+  rpc ExportEvidence(ExportEvidenceRequest) returns (stream EvidenceChunk);
+
+  // Verify an evidence pack offline.
+  rpc VerifyEvidence(stream EvidenceChunk) returns (VerificationResult);
+
+  // Replay and verify execution from tapes.
+  rpc ReplayVerify(stream EvidenceChunk) returns (VerificationResult);
+
+  // Run conformance tests.
+  rpc RunConformance(ConformanceRequest) returns (ConformanceResult);
+}
+
+message ExportEvidenceRequest {
+  string session_id = 1;
+  string format = 2;  // "tar.gz"
+}
+
+message EvidenceChunk {
+  bytes data = 1;
+}
+
+message VerificationResult {
+  enum CheckVerdict {
+    CHECK_VERDICT_UNSPECIFIED = 0;
+    PASS = 1;
+    FAIL = 2;
+  }
+
+  CheckVerdict verdict = 1;
+  CheckVerdict signatures_check = 2;
+  CheckVerdict causal_chain_check = 3;
+  CheckVerdict policy_compliance_check = 4;
+  repeated string errors = 5;
+}
+
+message ConformanceRequest {
+  string level = 1;   // L1, L2, L3
+  string profile = 2; // full, minimal
+}
+
+message ConformanceResult {
+  string report_id = 1;
+  string level = 2;
+  string verdict = 3;  // PASS or FAIL
+  int32  gates = 4;
+  int32  failed = 5;
+  map<string, string> details = 6;
+}

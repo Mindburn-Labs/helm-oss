@@ -8,7 +8,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/incubator/audit"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/incubator/audit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

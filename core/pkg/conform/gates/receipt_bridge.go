@@ -3,7 +3,7 @@ package gates
 import (
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
 )
 
 // ToContractsReceipt converts a ReceiptEnvelope to a contracts.Receipt,

@@ -11,8 +11,8 @@ echo "HELM Demo Smoke Test: $BASE_URL"
 echo "-----------------------------------"
 
 # 1. Health Check
-echo -n "1. Checking /health... "
-resp=$(curl -s -k -L -o /dev/null -w "%{http_code}" "$BASE_URL/health")
+echo -n "1. Checking /healthz... "
+resp=$(curl -s -k -L -o /dev/null -w "%{http_code}" "$BASE_URL/healthz")
 if [ "$resp" != "200" ]; then
     echo "FAIL ($resp)"
     exit 1

@@ -43,26 +43,11 @@ const response = await client.chat.completions.create({
 
 ---
 
-## JavaScript — Responses WebSocket Mode
+## JavaScript — Current OSS Support
 
-For the OpenAI Agents SDK JS websocket transport:
+The OSS proxy currently supports the HTTP OpenAI-compatible surface at `/v1/chat/completions`.
 
-```bash
-# Start HELM proxy with Responses WebSocket mode
-helm proxy --websocket --upstream https://api.openai.com/v1
-```
-
-```typescript
-import { Agent, run } from "@openai/agents";
-
-// HELM serves /v1/responses over WebSocket
-process.env.OPENAI_WEBSOCKET_BASE_URL = "ws://localhost:9090";
-
-const agent = new Agent({ name: "researcher", model: "gpt-4o" });
-const result = await run(agent, "Search for HELM governance");
-```
-
-HELM intercepts Responses API events (`response.create`) over WebSocket, preserves `previous_response_id` chaining, and generates receipts per event.
+Responses WebSocket mode for `/v1/responses` is not shipped in the OSS runtime yet.
 
 ---
 
@@ -71,9 +56,6 @@ HELM intercepts Responses API events (`response.create`) over WebSocket, preserv
 ```bash
 # HTTP mode (default)
 helm proxy --upstream https://api.openai.com/v1 --port 9090
-
-# With Responses WebSocket
-helm proxy --websocket --upstream https://api.openai.com/v1
 
 # With budget enforcement
 helm proxy --upstream https://api.openai.com/v1 --daily-limit 10000 --monthly-limit 100000

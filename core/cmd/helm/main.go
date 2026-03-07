@@ -16,22 +16,22 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/agent"
-	"github.com/Mindburn-Labs/helm/core/pkg/artifacts"
-	"github.com/Mindburn-Labs/helm/core/pkg/auth"
-	"github.com/Mindburn-Labs/helm/core/pkg/console"
-	ui_pkg "github.com/Mindburn-Labs/helm/core/pkg/console/ui"
-	"github.com/Mindburn-Labs/helm/core/pkg/crypto"
-	"github.com/Mindburn-Labs/helm/core/pkg/executor"
-	"github.com/Mindburn-Labs/helm/core/pkg/guardian"
-	"github.com/Mindburn-Labs/helm/core/pkg/identity"
-	"github.com/Mindburn-Labs/helm/core/pkg/mcp"
-	"github.com/Mindburn-Labs/helm/core/pkg/metering"
-	"github.com/Mindburn-Labs/helm/core/pkg/pack"
-	"github.com/Mindburn-Labs/helm/core/pkg/prg"
-	"github.com/Mindburn-Labs/helm/core/pkg/registry"
-	"github.com/Mindburn-Labs/helm/core/pkg/store"
-	"github.com/Mindburn-Labs/helm/core/pkg/store/ledger"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/agent"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/artifacts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/auth"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/console"
+	ui_pkg "github.com/Mindburn-Labs/helm-oss/core/pkg/console/ui"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/crypto"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/executor"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/guardian"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/identity"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/mcp"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/metering"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/pack"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/prg"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/registry"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store/ledger"
 
 	_ "github.com/lib/pq" // Postgres Driver
 )
@@ -111,11 +111,12 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		printUsage(stdout)
 		return 0
 	case "version", "--version", "-v":
-		fmt.Fprintf(stdout, "%sHELM%s v0.2.0 (%s)\n", ColorBold, ColorReset, getBuildInfo())
+		fmt.Fprintf(stdout, "%sHELM%s %s (%s)\n", ColorBold, ColorReset, displayVersion(), displayCommit())
 		fmt.Fprintf(stdout, "  Report Schema:          %s\n", reportSchemaVersion)
 		fmt.Fprintf(stdout, "  EvidencePack Schema:    1\n")
 		fmt.Fprintf(stdout, "  Compatibility Schema:   1\n")
 		fmt.Fprintf(stdout, "  MCP Bundle Schema:      1\n")
+		fmt.Fprintf(stdout, "  Build Time:             %s\n", displayBuildTime())
 		return 0
 	default:
 		if args[1][0] == '-' {
@@ -144,7 +145,7 @@ const (
 
 func printUsage(w io.Writer) {
 	fmt.Fprintln(w, "")
-	fmt.Fprintf(w, "%sHELM Kernel %s%s\n", ColorBold+ColorBlue, "v0.2.0", ColorReset)
+	fmt.Fprintf(w, "%sHELM Kernel %s%s\n", ColorBold+ColorBlue, displayVersion(), ColorReset)
 	fmt.Fprintf(w, "%sModels propose. The kernel disposes.%s\n", ColorGray, ColorReset)
 	fmt.Fprintln(w, "")
 	fmt.Fprintf(w, "%sUSAGE:%s\n", ColorBold, ColorReset)
@@ -157,7 +158,7 @@ func printUsage(w io.Writer) {
 
 	printSection(w, "KERNEL")
 	printCommand(w, "server", "Run the HELM server (default)")
-	printCommand(w, "proxy", "OpenAI-compatible governance proxy (proxy --websocket)")
+	printCommand(w, "proxy", "OpenAI-compatible governance proxy")
 	printCommand(w, "sandbox", "Governed sandbox execution (exec, conform)")
 	printCommand(w, "doctor", "Check system health and configuration")
 	printCommand(w, "health", "Check server health (HTTP)")
@@ -180,7 +181,7 @@ func printUsage(w io.Writer) {
 	printCommand(w, "policy templates", "List available policy templates")
 
 	printSection(w, "MCP DISTRIBUTION")
-	printCommand(w, "mcp serve", "Start HELM MCP server (stdio/HTTP/SSE)")
+	printCommand(w, "mcp serve", "Start HELM MCP server (stdio or HTTP)")
 	printCommand(w, "mcp install", "Install MCP for Claude Code")
 	printCommand(w, "mcp pack", "Generate .mcpb for Claude Desktop")
 	printCommand(w, "mcp print-config", "Print config for Windsurf/Codex/VS Code/Cursor")
@@ -539,10 +540,12 @@ func runServer() {
 
 	// Health Server
 	healthMux := http.NewServeMux()
-	healthMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("OK"))
-	})
+	}
+	healthMux.HandleFunc("/health", healthHandler)
+	healthMux.HandleFunc("/healthz", healthHandler)
 
 	go func() {
 		log.Printf("[helm] health server: :8081")
@@ -563,7 +566,7 @@ func runServer() {
 }
 
 func runHealthCmd(out, errOut io.Writer) int {
-	resp, err := http.Get("http://localhost:8081/health")
+	resp, err := http.Get("http://localhost:8081/healthz")
 	if err != nil {
 		fmt.Fprintf(errOut, "Health check failed: %v\n", err)
 		return 1

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/canonicalize"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/canonicalize"
 )
 
 // Deterministic error codes for PEP boundary violations.

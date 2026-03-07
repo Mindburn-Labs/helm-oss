@@ -20,4 +20,4 @@ echo "UC-011: PASS"
 
 ```
 
-[View on GitHub](https://github.com/Mindburn-Labs/helm/tree/main/docs/use_cases/UC-011_island_mode.sh)
+[View on GitHub](https://github.com/Mindburn-Labs/helm-oss/tree/main/docs/use_cases/UC-011_island_mode.sh)

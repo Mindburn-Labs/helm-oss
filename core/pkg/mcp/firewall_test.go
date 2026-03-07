@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
-	"github.com/Mindburn-Labs/helm/core/pkg/guardian"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/guardian"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -3,7 +3,7 @@ package tiers_test
 import (
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/tiers"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/tiers"
 	"github.com/stretchr/testify/assert"
 )
 

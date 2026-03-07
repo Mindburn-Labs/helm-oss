@@ -15,20 +15,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/api"
-	"github.com/Mindburn-Labs/helm/core/pkg/audit"
-	"github.com/Mindburn-Labs/helm/core/pkg/auth"
-	"github.com/Mindburn-Labs/helm/core/pkg/compliance/csr"
-	"github.com/Mindburn-Labs/helm/core/pkg/console/ui"
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
-	"github.com/Mindburn-Labs/helm/core/pkg/governance" // Policy Engine
-	"github.com/Mindburn-Labs/helm/core/pkg/metering"
-	"github.com/Mindburn-Labs/helm/core/pkg/pack"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/api"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/audit"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/auth"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/csr"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/console/ui"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/governance" // Policy Engine
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/metering"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/pack"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/registry"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/registry"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/store"
-	"github.com/Mindburn-Labs/helm/core/pkg/store/ledger"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store/ledger"
 )
 
 // Server defines the HTTP server for the Console.
@@ -207,10 +207,12 @@ func Start(port int, ledger ledger.Ledger, reg registry.Registry, uiAdapter ui.U
 	mux.HandleFunc("/api/admin/audit-ui", srv.handleAdminAuditUI)
 
 	// Health endpoint on primary API port for quick checks and docs parity.
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("OK"))
-	})
+	}
+	mux.HandleFunc("/health", healthHandler)
+	mux.HandleFunc("/healthz", healthHandler)
 
 	// Static File Server (SPA Support)
 	if staticDir != "" {
@@ -253,6 +255,10 @@ func Start(port int, ledger ledger.Ledger, reg registry.Registry, uiAdapter ui.U
 		"/api/v1/export",
 		"/limits",
 		"/health",
+		"/healthz",
+		"/version",
+		"/mcp",
+		"/mcp/v1",
 	}
 
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

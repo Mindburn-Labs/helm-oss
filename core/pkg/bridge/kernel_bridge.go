@@ -8,12 +8,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/budget"
-	"github.com/Mindburn-Labs/helm/core/pkg/conform"
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
-	"github.com/Mindburn-Labs/helm/core/pkg/guardian"
-	"github.com/Mindburn-Labs/helm/core/pkg/prg"
-	"github.com/Mindburn-Labs/helm/core/pkg/proofgraph"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/budget"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/conform"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/guardian"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/prg"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/proofgraph"
 )
 
 // GovernResult captures the outcome of a governance decision.

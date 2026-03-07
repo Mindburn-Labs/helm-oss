@@ -7,14 +7,17 @@ Every claim is backed by a command you can run right now. Zero hidden steps.
 ## Install
 
 ```bash
-# Homebrew
-brew install mindburn-labs/tap/helm
+# Script install (macOS / Linux)
+curl -fsSL https://raw.githubusercontent.com/Mindburn-Labs/helm-oss/main/install.sh | bash
 
 # Go install
 go install github.com/Mindburn-Labs/helm-oss/core/cmd/helm@latest
 
 # Docker
-docker run --rm ghcr.io/mindburn-labs/helm-oss/helm:latest --help
+docker run --rm ghcr.io/mindburn-labs/helm-oss:latest --help
+
+# Homebrew (coming soon)
+# brew install mindburn-labs/tap/helm
 ```
 
 ---
@@ -82,11 +85,11 @@ helm brief daily
 
 ---
 
-## Proxy (HTTP + Responses WebSocket)
+## Proxy (HTTP)
 
 ```bash
 # Start proxy
-helm proxy --websocket --upstream https://api.openai.com/v1
+helm proxy --upstream https://api.openai.com/v1
 
 # Python client
 python -c "
@@ -94,11 +97,9 @@ import openai
 c = openai.OpenAI(base_url='http://localhost:9090/v1')
 print(c.chat.completions.create(model='gpt-4', messages=[{'role':'user','content':'hi'}]))
 "
-
-# JS Responses WebSocket mode
-OPENAI_WEBSOCKET_BASE_URL=ws://localhost:9090
-# SDK connects to /v1/responses over WS automatically
 ```
+
+Responses WebSocket mode is not shipped in the OSS proxy runtime. Use the HTTP surface at `/v1/chat/completions`.
 
 ---
 

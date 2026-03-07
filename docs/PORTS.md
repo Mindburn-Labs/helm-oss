@@ -3,7 +3,7 @@
 | Port | Service | Context |
 |------|---------|---------|
 | **8080** | Kernel API (OpenAI-compatible, MCP gateway) | All modes |
-| **8081** | Health endpoint (`/health`) | All modes |
+| **8081** | Health endpoint (`/healthz`, compat `/health`) | All modes |
 | **9090** | Standalone proxy (when running `helm proxy`) | Standalone only |
 
 ## Notes

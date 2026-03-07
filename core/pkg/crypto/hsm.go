@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/crypto/pqc"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/crypto/pqc"
 )
 
 // SoftHSM simulates a Hardware Security Module using file-backed keys.

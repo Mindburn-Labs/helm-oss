@@ -12,7 +12,7 @@ import (
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
 	"github.com/leanovate/gopter/prop"
-	"github.com/Mindburn-Labs/helm/core/pkg/kernel"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/kernel"
 )
 
 // TestMerkleTreeDeterminism verifies Merkle tree construction is deterministic.

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
-	"github.com/Mindburn-Labs/helm/core/pkg/guardian"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/guardian"
 )
 
 // ToolExecutionRequest represents a request to execute a tool via MCP.
@@ -21,6 +21,7 @@ type ToolExecutionResponse struct {
 	Content   string `json:"content"`
 	IsError   bool   `json:"is_error"`
 	Evaluated bool   `json:"evaluated"` // Whether policy was evaluated
+	ReceiptID string `json:"receipt_id,omitempty"`
 }
 
 // PolicyEvaluator abstracts the governance decision evaluation.
@@ -106,6 +107,7 @@ func (f *GovernanceFirewall) WrapToolHandler(handler ToolHandler) ToolHandler {
 					"receipt_id", receipt.ID,
 					"tool", receipt.ToolName,
 				)
+				resp.ReceiptID = receipt.ID
 			}
 		}
 

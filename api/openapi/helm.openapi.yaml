@@ -6,8 +6,8 @@ info:
     Deterministic execution kernel for AI tool calls.
     Drop-in OpenAI proxy + cryptographic receipts + offline-verifiable evidence packs.
   license:
-    name: BSL-1.1
-    url: https://github.com/Mindburn-Labs/helm/blob/main/LICENSE
+    name: Apache-2.0
+    url: https://github.com/Mindburn-Labs/helm-oss/blob/main/LICENSE
   contact:
     name: Mindburn Labs
     url: https://mindburn.org
@@ -142,6 +142,56 @@ paths:
         '400':
           $ref: '#/components/responses/HelmError'
         '403':
+          $ref: '#/components/responses/HelmError'
+
+  /api/v1/trust/keys/add:
+    post:
+      operationId: addTrustKey
+      tags: [system]
+      summary: Add a trusted signing key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddTrustKeyRequest'
+      responses:
+        '200':
+          description: Trust key added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  tenant_id: { type: string }
+                  key_id: { type: string }
+        '400':
+          $ref: '#/components/responses/HelmError'
+
+  /api/v1/trust/keys/revoke:
+    post:
+      operationId: revokeTrustKey
+      tags: [system]
+      summary: Revoke a trusted signing key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeTrustKeyRequest'
+      responses:
+        '200':
+          description: Trust key revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  tenant_id: { type: string }
+                  key_id: { type: string }
+        '400':
           $ref: '#/components/responses/HelmError'
 
   # ── ProofGraph ──────────────────────────────────────
@@ -353,6 +403,49 @@ paths:
         '404':
           $ref: '#/components/responses/HelmError'
 
+  # ── MCP Gateway ────────────────────────────────────
+  /mcp/v1/capabilities:
+    get:
+      operationId: listMCPCapabilities
+      tags: [proxy]
+      summary: List governed MCP tools
+      responses:
+        '200':
+          description: MCP capability manifest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPCapabilityManifest'
+
+  /mcp/v1/execute:
+    post:
+      operationId: executeMCPTool
+      tags: [proxy]
+      summary: Execute a governed MCP tool call
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MCPToolCallRequest'
+            example:
+              method: file_read
+              params:
+                path: /tmp/test.txt
+      responses:
+        '200':
+          description: Governed tool result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPToolCallResponse'
+        '400':
+          $ref: '#/components/responses/HelmError'
+        '403':
+          $ref: '#/components/responses/HelmError'
+        '404':
+          $ref: '#/components/responses/HelmError'
+
   # ── System ──────────────────────────────────────────
   /healthz:
     get:
@@ -487,7 +580,8 @@ components:
                 type: object
                 properties:
                   role: { type: string }
-                  content: { type: string, nullable: true }
+                  content:
+                    type: ['string', 'null']
                   tool_calls:
                     type: array
                     items:
@@ -524,6 +618,23 @@ components:
         challenge_response:
           type: string
           description: Optional challenge/response for ceremony
+
+    AddTrustKeyRequest:
+      type: object
+      required: [tenant_id, key_id, public_key]
+      properties:
+        tenant_id: { type: string }
+        key_id: { type: string }
+        public_key:
+          type: string
+          description: Hex-encoded Ed25519 public key
+
+    RevokeTrustKeyRequest:
+      type: object
+      required: [tenant_id, key_id]
+      properties:
+        tenant_id: { type: string }
+        key_id: { type: string }
 
     Receipt:
       type: object
@@ -608,6 +719,143 @@ components:
         commit: { type: string }
         build_time: { type: string }
         go_version: { type: string }
+
+    MCPToolRef:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        server_id: { type: string }
+        schema:
+          type: object
+          additionalProperties: true
+
+    MCPCapabilityManifest:
+      type: object
+      properties:
+        server_name: { type: string }
+        version: { type: string }
+        governance: { type: string }
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/MCPToolRef'
+
+    MCPToolCallRequest:
+      type: object
+      required: [method]
+      properties:
+        method: { type: string }
+        params:
+          type: object
+          additionalProperties: true
+
+    MCPToolCallResponse:
+      type: object
+      properties:
+        result:
+          description: Tool output payload
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties: true
+        error: { type: string }
+        reason_code: { type: string }
+        args_hash: { type: string }
+        proofgraph_node: { type: string }
+        receipt_id: { type: string }
+
+    # ── PDP / EffectBoundary Wire Types ────────────────
+    Effect:
+      type: object
+      description: An effect submitted for governance evaluation
+      required: [effect_type, effect_id, params]
+      properties:
+        effect_type:
+          type: string
+          description: Category of the effect (file_read, api_call, exec, etc.)
+        effect_id:
+          type: string
+          description: Unique identifier for this effect instance
+        params:
+          type: object
+          description: Effect-specific parameters
+          additionalProperties: true
+        budget_id:
+          type: string
+          description: Optional budget to charge against
+
+    GovernanceDecision:
+      type: object
+      description: PDP decision for an effect
+      required: [verdict, decision_id, effect_id]
+      properties:
+        decision_id:
+          type: string
+        effect_id:
+          type: string
+        verdict:
+          type: string
+          enum: [ALLOW, DENY, ESCALATE]
+        reason_code:
+          type: ['string', 'null']
+          description: "Null for ALLOW. Registered code from reason-codes-v1.json for DENY/ESCALATE."
+        receipt:
+          $ref: '#/components/schemas/Receipt'
+        active_packs:
+          type: array
+          items: { type: string }
+          description: Names of policy bundles active during evaluation
+
+    EffectBoundary:
+      type: object
+      description: The boundary contract for submitting effects to the kernel
+      required: [effect, principal]
+      properties:
+        effect:
+          $ref: '#/components/schemas/Effect'
+        principal:
+          type: string
+          description: "Agent/user identity (e.g. agent:analyst)"
+        context:
+          type: object
+          description: Additional context (jurisdiction, industry, budget state)
+          additionalProperties: true
+
+    PDPRequest:
+      type: object
+      description: Request to the Policy Decision Point
+      required: [boundary]
+      properties:
+        boundary:
+          $ref: '#/components/schemas/EffectBoundary'
+
+    PDPResponse:
+      type: object
+      description: Response from the Policy Decision Point
+      required: [decision]
+      properties:
+        decision:
+          $ref: '#/components/schemas/GovernanceDecision'
+
+    PolicyBundle:
+      type: object
+      description: A loaded policy bundle (jurisdiction, industry, or business pack)
+      required: [name, version, content_hash]
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        content_hash:
+          type: string
+          description: SHA-256 of the bundle contents
+        signature:
+          type: ['string', 'null']
+          description: Ed25519 signature over content_hash
+        pack_type:
+          type: string
+          enum: [jurisdiction, industry, business, custom]
 
   # ── Responses ───────────────────────────────────────
   responses:

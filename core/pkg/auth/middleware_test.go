@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/Mindburn-Labs/helm/core/pkg/auth"
-	"github.com/Mindburn-Labs/helm/core/pkg/identity"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/auth"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/identity"
 )
 
 // createTestToken generates a signed JWT for testing using the provided KeySet.

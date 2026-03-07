@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/compliance/jkg"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/jkg"
 )
 
 func validSource(id string) *ComplianceSource {

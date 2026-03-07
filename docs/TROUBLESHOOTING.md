@@ -12,7 +12,7 @@ The adapter cannot reach the HELM server.
 
 ```bash
 # Check HELM is running
-curl http://localhost:8080/health
+curl http://localhost:8080/healthz
 
 # Check the URL in your adapter config
 export HELM_URL=http://localhost:8080

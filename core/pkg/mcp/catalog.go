@@ -17,10 +17,10 @@ type Catalog interface {
 
 // ToolRef represents a tool reference for catalog search and definition.
 type ToolRef struct {
-	Name        string
-	Description string
-	ServerID    string
-	Schema      any // JSON schema (map[string]any or string)
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	ServerID    string `json:"server_id,omitempty"`
+	Schema      any    `json:"schema,omitempty"` // JSON schema (map[string]any or string)
 }
 
 // Validate checks that a ToolRef has a non-empty Name.
@@ -49,7 +49,37 @@ func NewInMemoryCatalog() *ToolCatalog {
 }
 
 func (c *ToolCatalog) RegisterCommonTools() {
-	// ... existing common tools ...
+	tools := []ToolRef{
+		{
+			Name:        "file_read",
+			Description: "Read a UTF-8 text file from disk",
+			ServerID:    "helm-governance",
+			Schema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"path": map[string]any{"type": "string"},
+				},
+				"required": []string{"path"},
+			},
+		},
+		{
+			Name:        "file_write",
+			Description: "Write UTF-8 text content to disk",
+			ServerID:    "helm-governance",
+			Schema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"path":    map[string]any{"type": "string"},
+					"content": map[string]any{"type": "string"},
+				},
+				"required": []string{"path", "content"},
+			},
+		},
+	}
+
+	for _, ref := range tools {
+		_ = c.Register(context.Background(), ref)
+	}
 }
 
 func (c *ToolCatalog) Register(ctx context.Context, ref ToolRef) error {
@@ -73,6 +103,13 @@ func (c *ToolCatalog) Search(ctx context.Context, query string) ([]ToolRef, erro
 		}
 	}
 	return results, nil
+}
+
+func (c *ToolCatalog) Lookup(name string) (ToolRef, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	ref, ok := c.tools[name]
+	return ref, ok
 }
 
 // ToolCallReceipt tracks the execution result (for Gap 10 audit).

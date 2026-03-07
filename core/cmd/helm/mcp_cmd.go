@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -8,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
+	"time"
 )
 
 // runMCPCmd implements `helm mcp` — MCP server distribution and management.
@@ -21,7 +24,7 @@ func runMCPCmd(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "Usage: helm mcp <serve|install|pack|print-config> [flags]")
 		fmt.Fprintln(stderr, "")
 		fmt.Fprintln(stderr, "Subcommands:")
-		fmt.Fprintln(stderr, "  serve         Start the HELM MCP server (stdio + remote HTTP + remote SSE)")
+		fmt.Fprintln(stderr, "  serve         Start the HELM MCP server (stdio or remote HTTP)")
 		fmt.Fprintln(stderr, "  install       Install HELM MCP server for a client")
 		fmt.Fprintln(stderr, "  pack          Generate a .mcpb bundle for desktop clients")
 		fmt.Fprintln(stderr, "  print-config  Print MCP config for a specific client")
@@ -41,7 +44,7 @@ func runMCPCmd(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stdout, "Usage: helm mcp <serve|install|pack|print-config> [flags]")
 		fmt.Fprintln(stdout, "")
 		fmt.Fprintln(stdout, "Subcommands:")
-		fmt.Fprintln(stdout, "  serve         Start the HELM MCP server (stdio + remote HTTP + remote SSE)")
+		fmt.Fprintln(stdout, "  serve         Start the HELM MCP server (stdio or remote HTTP)")
 		fmt.Fprintln(stdout, "  install       Install HELM MCP server for a client")
 		fmt.Fprintln(stdout, "  pack          Generate a .mcpb bundle for desktop clients")
 		fmt.Fprintln(stdout, "  print-config  Print MCP config for a specific client")
@@ -62,38 +65,43 @@ func runMCPServe(args []string, stdout, stderr io.Writer) int {
 		authMode  string
 	)
 
-	cmd.StringVar(&transport, "transport", "stdio", "Transport: stdio, http, sse")
-	cmd.IntVar(&port, "port", 9100, "Port for HTTP/SSE transport")
+	cmd.StringVar(&transport, "transport", "stdio", "Transport: stdio, http")
+	cmd.IntVar(&port, "port", 9100, "Port for HTTP transport")
 	cmd.StringVar(&authMode, "auth", "none", "Auth mode: none, static-header, oauth")
 
 	if err := cmd.Parse(args); err != nil {
 		return 2
 	}
 
-	fmt.Fprintf(stdout, "\n%s🔌 HELM MCP Server%s\n", ColorBold+ColorBlue, ColorReset)
-	fmt.Fprintf(stdout, "   Transport: %s\n", transport)
-
 	switch transport {
 	case "stdio":
-		fmt.Fprintf(stdout, "   Mode: stdio (for Claude Code, Cursor, VS Code)\n")
-		fmt.Fprintf(stdout, "   Auth: %s\n\n", authMode)
-		fmt.Fprintln(stdout, "Listening on stdin/stdout...")
-		fmt.Fprintln(stdout, "(HELM MCP server implements GovernanceFirewall for tool-call interception)")
-		// In production, this would enter the stdio read loop using core/pkg/mcp
-		// For now, signal readiness
-		select {} // Block forever for stdio mode
+		if authMode != "none" {
+			fmt.Fprintln(stderr, "Error: stdio transport only supports --auth none")
+			return 2
+		}
+		if err := serveLocalMCPStdio(os.Stdin, stdout); err != nil {
+			fmt.Fprintf(stderr, "Error: MCP stdio server failed: %v\n", err)
+			return 2
+		}
+		return 0
 	case "http":
+		server, err := newLocalMCPHTTPServer(port, authMode)
+		if err != nil {
+			fmt.Fprintf(stderr, "Error: %v\n", err)
+			return 2
+		}
+		fmt.Fprintf(stdout, "\n%s🔌 HELM MCP Server%s\n", ColorBold+ColorBlue, ColorReset)
+		fmt.Fprintf(stdout, "   Transport: %s\n", transport)
 		fmt.Fprintf(stdout, "   Port: %d\n", port)
 		fmt.Fprintf(stdout, "   Auth: %s\n\n", authMode)
 		fmt.Fprintf(stdout, "Serving remote HTTP MCP at http://localhost:%d/mcp\n", port)
-		select {}
-	case "sse":
-		fmt.Fprintf(stdout, "   Port: %d\n", port)
-		fmt.Fprintf(stdout, "   Auth: %s\n\n", authMode)
-		fmt.Fprintf(stdout, "Serving remote SSE MCP at http://localhost:%d/sse\n", port)
-		select {}
+		if err := server.ListenAndServe(); err != nil && err.Error() != "http: Server closed" {
+			fmt.Fprintf(stderr, "Error: %v\n", err)
+			return 2
+		}
+		return 0
 	default:
-		fmt.Fprintf(stderr, "Error: unknown transport %q (valid: stdio, http, sse)\n", transport)
+		fmt.Fprintf(stderr, "Error: unknown transport %q (valid: stdio, http)\n", transport)
 		return 2
 	}
 }
@@ -140,7 +148,7 @@ func generateClaudeCodePlugin(stdout, stderr io.Writer) int {
 	// plugin.json — Claude Code plugin manifest
 	pluginJSON := map[string]any{
 		"name":        "helm-governance",
-		"version":     "0.2.0",
+		"version":     strings.TrimPrefix(displayVersion(), "v"),
 		"description": "HELM Execution Authority — governed tool execution with receipts and EvidencePack",
 		"author":      "Mindburn Labs",
 		"homepage":    "https://github.com/Mindburn-Labs/helm-oss",
@@ -231,7 +239,7 @@ func generateMCPBundle(outPath string, stdout, stderr io.Writer) int {
 	manifest := map[string]any{
 		"manifest_version": "1.0",
 		"name":             "helm-governance",
-		"version":          "0.2.0",
+		"version":          strings.TrimPrefix(displayVersion(), "v"),
 		"description":      "HELM Execution Authority — governed tool execution with receipts and EvidencePack",
 		"author": map[string]string{
 			"name":    "Mindburn Labs",
@@ -276,10 +284,34 @@ func generateMCPBundle(outPath string, stdout, stderr io.Writer) int {
 		return 2
 	}
 
-	// Create .mcpb (zip with .mcpb extension)
-	// For now, create a tarball — proper mcpb toolchain would use the official packer
+	if err := os.MkdirAll(filepath.Dir(outPath), 0750); err != nil && filepath.Dir(outPath) != "." {
+		fmt.Fprintf(stderr, "Error preparing bundle output: %v\n", err)
+		return 2
+	}
+
+	outFile, err := os.Create(outPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "Error creating bundle: %v\n", err)
+		return 2
+	}
+	defer outFile.Close()
+
+	zipWriter := zip.NewWriter(outFile)
+	if err := writeBundleZipEntry(zipWriter, "manifest.json", manifestData, 0644); err != nil {
+		fmt.Fprintf(stderr, "Error writing manifest to bundle: %v\n", err)
+		return 2
+	}
+	if err := writeBundleZipEntry(zipWriter, filepath.ToSlash(filepath.Join("server", binaryName)), binData, 0755); err != nil {
+		fmt.Fprintf(stderr, "Error writing binary to bundle: %v\n", err)
+		return 2
+	}
+	if err := zipWriter.Close(); err != nil {
+		fmt.Fprintf(stderr, "Error finalizing bundle: %v\n", err)
+		return 2
+	}
+
 	fmt.Fprintf(stdout, "%s✅ MCPB bundle generated%s\n\n", ColorBold+ColorGreen, ColorReset)
-	fmt.Fprintf(stdout, "  Bundle:    %s (directory)\n", bundleDir)
+	fmt.Fprintf(stdout, "  Bundle:    %s\n", outPath)
 	fmt.Fprintf(stdout, "  Manifest:  manifest.json\n")
 	fmt.Fprintf(stdout, "  Server:    server/%s (type=binary)\n", binaryName)
 	fmt.Fprintf(stdout, "  Platform:  %s/%s (+ win32 override)\n\n", runtime.GOOS, runtime.GOARCH)
@@ -289,10 +321,23 @@ func generateMCPBundle(outPath string, stdout, stderr io.Writer) int {
 	fmt.Fprintln(stdout, "  and include all binaries in server/ with platform_overrides.")
 	fmt.Fprintln(stdout, "")
 
-	// Note: In production, use the official MCPB toolchain to create the zip
-	// For now, the directory structure is correct per the MCPB manifest spec
-
 	return 0
+}
+
+func writeBundleZipEntry(zw *zip.Writer, name string, data []byte, mode os.FileMode) error {
+	header := &zip.FileHeader{
+		Name:   name,
+		Method: zip.Deflate,
+	}
+	header.SetMode(mode)
+	header.Modified = time.Unix(0, 0)
+
+	writer, err := zw.CreateHeader(header)
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write(data)
+	return err
 }
 
 func runMCPPrintConfig(args []string, stdout, stderr io.Writer) int {

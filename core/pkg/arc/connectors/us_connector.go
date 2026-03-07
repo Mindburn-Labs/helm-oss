@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/arc"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/arc"
 	"golang.org/x/time/rate"
 )
 

@@ -5,7 +5,7 @@ package tenants
 import (
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/tiers"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/tiers"
 )
 
 // Status represents the current status of a tenant.

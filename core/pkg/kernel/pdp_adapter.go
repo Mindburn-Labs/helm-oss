@@ -5,7 +5,7 @@ package kernel
 import (
 	"context"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/governance"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/governance"
 )
 
 // GovernancePDPAdapter adapts the governance.PolicyDecisionPoint to kernel.PDPEvaluator.

@@ -13,7 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/orgdna/types"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/orgdna/types"
 )
 
 // SwarmConfig configures the agent swarm orchestrator.

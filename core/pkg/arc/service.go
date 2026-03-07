@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/Mindburn-Labs/helm/core/pkg/artifacts"
-	"github.com/Mindburn-Labs/helm/core/pkg/metering"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/artifacts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/metering"
 )
 
 // IngestionService orchestrates the ingestion of authoritative sources.

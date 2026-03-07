@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sort"
 
-	pkg_artifact "github.com/Mindburn-Labs/helm/core/pkg/artifacts"
+	pkg_artifact "github.com/Mindburn-Labs/helm-oss/core/pkg/artifacts"
 )
 
 // LogicOperator defines how requirements are combined.

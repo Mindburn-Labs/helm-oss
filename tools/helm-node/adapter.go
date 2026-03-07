@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/store"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store"
 )
 
 // EmbedderAdapter adapts store.Embedder to llm.Embedder

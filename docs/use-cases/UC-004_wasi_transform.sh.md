@@ -18,4 +18,4 @@ echo "UC-004: PASS"
 
 ```
 
-[View on GitHub](https://github.com/Mindburn-Labs/helm/tree/main/docs/use_cases/UC-004_wasi_transform.sh)
+[View on GitHub](https://github.com/Mindburn-Labs/helm-oss/tree/main/docs/use_cases/UC-004_wasi_transform.sh)

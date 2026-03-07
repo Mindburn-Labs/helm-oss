@@ -21,14 +21,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/artifacts"
-	"github.com/Mindburn-Labs/helm/core/pkg/bridge"
-	"github.com/Mindburn-Labs/helm/core/pkg/budget"
-	helmcrypto "github.com/Mindburn-Labs/helm/core/pkg/crypto"
-	"github.com/Mindburn-Labs/helm/core/pkg/guardian"
-	"github.com/Mindburn-Labs/helm/core/pkg/manifest"
-	"github.com/Mindburn-Labs/helm/core/pkg/prg"
-	"github.com/Mindburn-Labs/helm/core/pkg/proofgraph"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/artifacts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/bridge"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/budget"
+	helmcrypto "github.com/Mindburn-Labs/helm-oss/core/pkg/crypto"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/guardian"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/manifest"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/prg"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/proofgraph"
 )
 
 // proxyReceipt is the governance receipt attached to every proxied request.
@@ -173,9 +173,15 @@ func runProxyCmd(args []string, stdout, stderr io.Writer) int {
 	cmd.Int64Var(&monthlyLimit, "monthly-limit", 1000000, "Monthly budget limit in cents (0=unlimited)")
 	cmd.IntVar(&maxIterations, "max-iterations", 10, "Max tool call rounds per session (0=unlimited)")
 	cmd.DurationVar(&maxWallclock, "max-wallclock", 120*time.Second, "Max session wallclock duration (0=unlimited)")
-	cmd.BoolVar(&websocket, "websocket", false, "Enable Responses WebSocket mode at /v1/responses")
+	cmd.BoolVar(&websocket, "websocket", false, "Request Responses WebSocket mode (unsupported in OSS runtime)")
 
 	if err := cmd.Parse(args); err != nil {
+		return 2
+	}
+
+	if websocket {
+		_, _ = fmt.Fprintln(stderr, "Error: --websocket is not supported in the OSS proxy runtime")
+		_, _ = fmt.Fprintln(stderr, "Use the HTTP proxy surface at /v1/chat/completions until Responses WebSocket support is implemented.")
 		return 2
 	}
 
@@ -308,7 +314,7 @@ func runProxyCmd(args []string, stdout, stderr io.Writer) int {
 			var argsValid []bool
 			var toolNames []string
 			var model string
-			status := "PASS"
+			status := "APPROVED"
 			var reasonCode string
 			var decisionID string
 			var pgNodeID string
@@ -473,10 +479,12 @@ func runProxyCmd(args []string, stdout, stderr io.Writer) int {
 	mux := http.NewServeMux()
 
 	// Health endpoint
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"status":"ok","mode":"proxy","upstream":"` + upstream + `"}`))
-	})
+	}
+	mux.HandleFunc("/health", healthHandler)
+	mux.HandleFunc("/healthz", healthHandler)
 
 	// Receipts endpoint — serve the JSONL file
 	mux.HandleFunc("/helm/receipts", func(w http.ResponseWriter, r *http.Request) {
@@ -553,7 +561,7 @@ func runProxyCmd(args []string, stdout, stderr io.Writer) int {
 	_, _ = fmt.Fprintf(stdout, "══════════════════\n")
 	_, _ = fmt.Fprintf(stdout, "  Upstream:    %s\n", upstream)
 	_, _ = fmt.Fprintf(stdout, "  Listen:      http://localhost%s\n", addr)
-	_, _ = fmt.Fprintf(stdout, "  Health:      http://localhost%s/health\n", addr)
+	_, _ = fmt.Fprintf(stdout, "  Health:      http://localhost%s/healthz\n", addr)
 	_, _ = fmt.Fprintf(stdout, "  Receipts:    %s\n", receiptPath)
 	_, _ = fmt.Fprintf(stdout, "  Tenant:      %s\n", tenantID)
 	if websocket {

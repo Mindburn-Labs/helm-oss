@@ -8,7 +8,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/conform"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/conform"
 )
 
 // profilesJSON mirrors the structure of profiles.json

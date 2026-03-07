@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/manifest"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/manifest"
 )
 
 var ErrModuleNotFound = errors.New("module not found")

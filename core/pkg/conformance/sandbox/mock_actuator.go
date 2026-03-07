@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts/actuators"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts/actuators"
 )
 
 // MockActuator is an in-memory SandboxActuator for conformance testing.

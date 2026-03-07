@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/crypto"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/crypto"
 )
 
 func newTestKernel(t *testing.T, reg *ComponentRegistry) *AGUIKernel {

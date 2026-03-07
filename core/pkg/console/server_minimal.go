@@ -3,13 +3,13 @@ package console
 import (
 	"net/http"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/auth"
-	"github.com/Mindburn-Labs/helm/core/pkg/console/ui"
-	"github.com/Mindburn-Labs/helm/core/pkg/metering"
-	"github.com/Mindburn-Labs/helm/core/pkg/pack"
-	"github.com/Mindburn-Labs/helm/core/pkg/registry"
-	"github.com/Mindburn-Labs/helm/core/pkg/store"
-	"github.com/Mindburn-Labs/helm/core/pkg/store/ledger"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/auth"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/console/ui"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/metering"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/pack"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/registry"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store/ledger"
 )
 
 // NewMinimalServer constructs a console.Server with only the dependencies required

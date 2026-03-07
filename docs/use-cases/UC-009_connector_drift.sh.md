@@ -18,4 +18,4 @@ echo "UC-009: PASS"
 
 ```
 
-[View on GitHub](https://github.com/Mindburn-Labs/helm/tree/main/docs/use_cases/UC-009_connector_drift.sh)
+[View on GitHub](https://github.com/Mindburn-Labs/helm-oss/tree/main/docs/use_cases/UC-009_connector_drift.sh)

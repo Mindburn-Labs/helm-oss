@@ -6,7 +6,7 @@ RUN apk add --no-cache git ca-certificates
 
 WORKDIR /src
 COPY core/ ./core/
-COPY apps/ ./apps/
+COPY tools/ ./tools/
 
 # Build Kernel CLI
 WORKDIR /src/core
@@ -14,7 +14,7 @@ RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /helm ./cmd/helm/
 
 # Build Node Daemon
-WORKDIR /src/apps/helm-node
+WORKDIR /src/tools/helm-node
 RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /helm-node .
 

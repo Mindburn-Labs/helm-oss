@@ -247,6 +247,20 @@ describe('HelmMastraSandbox', () => {
       const sandbox = makeSandbox();
       await expect(sandbox.exec({ command: ['echo'] })).rejects.toThrow('ECONNREFUSED');
     });
+
+    it('marks fail-open execution as pending instead of approved', async () => {
+      fetchSpy
+        .mockResolvedValueOnce(createSandboxResponse())
+        .mockResolvedValueOnce(helmApiErrorResponse(500))
+        .mockResolvedValueOnce(execResponse('ok', 0));
+
+      const sandbox = makeSandbox({ failClosed: false });
+      const result = await sandbox.exec({ command: ['echo', 'ok'] });
+
+      expect(result.stdout).toBe('ok');
+      expect(result.receipt.receipt.status).toBe('PENDING');
+      expect(result.receipt.receipt.principal).toBe('helm-fail-open');
+    });
   });
 
   // ── Receipt collection ─────────────────────────────────

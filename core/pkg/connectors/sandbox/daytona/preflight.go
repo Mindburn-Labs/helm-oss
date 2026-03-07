@@ -1,7 +1,7 @@
 package daytona
 
 import (
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts/actuators"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts/actuators"
 )
 
 // runPreflightChecks performs Daytona-specific preflight checks.

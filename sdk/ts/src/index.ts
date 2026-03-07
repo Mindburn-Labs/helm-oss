@@ -1,5 +1,5 @@
 export { HelmClient, HelmApiError } from './client.js';
-export type { HelmClientConfig, ReasonCode, HelmError } from './client.js';
+export type { HelmClientConfig, ReasonCode, HelmError, GovernanceMetadata, ChatCompletionWithReceipt } from './client.js';
 export type {
   ChatCompletionRequest,
   ChatCompletionResponse,

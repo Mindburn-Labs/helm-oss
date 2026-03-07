@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts/schemas"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts/schemas"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

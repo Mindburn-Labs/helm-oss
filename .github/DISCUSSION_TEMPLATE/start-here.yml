@@ -11,9 +11,9 @@ body:
         ## 1. Run HELM (30 seconds)
 
         ```bash
-        git clone https://github.com/Mindburn-Labs/helm.git && cd helm
+        git clone https://github.com/Mindburn-Labs/helm-oss.git && cd helm-oss
         docker compose up -d
-        curl -s http://localhost:8080/health   # → OK
+        curl -s http://localhost:8080/healthz   # → OK
         ```
 
         ## 2. See It Work — OpenAI Proxy Wedge
@@ -46,4 +46,4 @@ body:
 
         ---
 
-        📖 **Full docs**: [README](https://github.com/Mindburn-Labs/helm#readme) · [Security](docs/SECURITY_MODEL.md) · [Deploy](deploy/README.md)
+        📖 **Full docs**: [README](https://github.com/Mindburn-Labs/helm-oss#readme) · [Security](docs/SECURITY_MODEL.md) · [Deploy](deploy/README.md)

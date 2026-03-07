@@ -34,23 +34,18 @@ python your_app.py
 ### TypeScript / JavaScript
 
 ```bash
-npm install @mindburn/helm-openai-agents
+npm install @mindburn/helm-sdk
 ```
 
 ```typescript
-import { HelmGovernanceAdapter } from "@mindburn/helm-openai-agents";
+// The OpenAI Agents adapter currently ships from source in sdk/ts/openai-agents/.
+import { HelmGovernanceAdapter } from "../../sdk/ts/openai-agents/src";
 
 const adapter = new HelmGovernanceAdapter({ helmUrl: "http://localhost:8080" });
 const result = await adapter.execute("search_web", { query: "HELM" });
 ```
 
-**Responses WebSocket mode:**
-
-```bash
-helm proxy --websocket --upstream https://api.openai.com/v1
-export OPENAI_WEBSOCKET_BASE_URL=ws://localhost:9090
-# HELM serves /v1/responses over WebSocket
-```
+Responses WebSocket mode is not shipped in the OSS proxy runtime yet. Use the HTTP proxy surface for current OSS deployments.
 
 See [sdk/ts/openai-agents/](../../sdk/ts/openai-agents/) for full docs.
 
@@ -77,7 +72,7 @@ See [sdk/python/microsoft_agents/](../../sdk/python/microsoft_agents/) for full 
 ### .NET (Minimal Example)
 
 ```csharp
-// Add NuGet: Mindburn.Helm.Governance
+// Source example only. No public NuGet package is currently published.
 using Mindburn.Helm;
 
 var helm = new HelmGovernance("http://localhost:8080");
@@ -107,7 +102,8 @@ See [sdk/python/langchain/](../../sdk/python/langchain/) for full docs.
 ## Mastra
 
 ```typescript
-import { HelmMastraAdapter } from "@mindburn/helm-mastra";
+// The Mastra adapter currently ships from source in sdk/ts/mastra/.
+import { HelmMastraAdapter } from "../../sdk/ts/mastra/src";
 
 const adapter = new HelmMastraAdapter({
   helmUrl: "http://localhost:8080",

@@ -10,7 +10,7 @@ Imagine your AI agent has a credit card and access to your terminal. HELM is the
 
 ### 2. How do I install it?
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Mindburn-Labs/helm/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Mindburn-Labs/helm-oss/main/install.sh | bash
 helm server
 ```
 That's it. It starts a local server. You then point your Python/Node.js OpenAI client to `http://localhost:8080/v1`.

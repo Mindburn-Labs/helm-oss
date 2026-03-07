@@ -9,7 +9,7 @@ import (
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/decls"
 	"github.com/google/cel-go/common/types"
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
 )
 
 // PolicyEngine is the single point of truth for all "Allow/Deny" decisions.

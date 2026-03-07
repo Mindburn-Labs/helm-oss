@@ -82,8 +82,14 @@ node_modules/
 dist/
 *.tsbuildinfo
 __pycache__/
+.pytest_cache/
+.ruff_cache/
 *.egg-info/
+sdk/python/build/
+sdk/python/dist/
 sdk/java/target/
+sdk/ts/src/*.js
+sdk/ts/src/*.d.ts
 
 # ─── SDK generator temp ──────────────────────────────────────────────────────
 .gen_tmp/

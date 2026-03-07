@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.24'
       - name: Go vet
         run: cd core && go vet ./...
       - name: Go fmt check
@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.24'
       - name: Run tests
         run: cd core && go test ./pkg/... -count=1 -race -timeout 120s
       - name: Build binary
@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.24'
       - name: Build
         run: cd core && go build -o ../bin/helm ./cmd/helm/
       - name: Onboard
@@ -122,7 +122,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.24'
       - name: Build
         run: cd core && go build -o ../bin/helm ./cmd/helm/
       - name: Generate MCPB
@@ -143,7 +143,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.24'
       - name: Build
         run: cd core && go build -o ../bin/helm ./cmd/helm/
       - name: Run demo and validate artifacts

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/kernel/ui"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/kernel/ui"
 )
 
 // MockMemoryAdapter confirms interface satisfaction

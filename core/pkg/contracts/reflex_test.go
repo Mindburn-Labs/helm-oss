@@ -3,7 +3,7 @@ package contracts_test
 import (
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
 )
 
 // ──────────────────────────────────────────────────────────────

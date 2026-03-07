@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/kernel"
-	"github.com/Mindburn-Labs/helm/core/pkg/llm"
-	"github.com/Mindburn-Labs/helm/core/pkg/store"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/kernel"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/llm"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store"
 )
 
 func initLimiterStoreFromEnv() kernel.LimiterStore {

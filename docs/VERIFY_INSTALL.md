@@ -55,11 +55,11 @@ cosign verify-blob \
 
 ```bash
 # Download SBOM
-curl -fsSL "https://github.com/Mindburn-Labs/helm-oss/releases/download/${VERSION}/helm.sbom.json" \
-  -o /tmp/helm.sbom.json
+curl -fsSL "https://github.com/Mindburn-Labs/helm-oss/releases/download/${VERSION}/sbom.json" \
+  -o /tmp/sbom.json
 
 # Inspect with syft
-syft parse /tmp/helm.sbom.json
+syft parse /tmp/sbom.json
 ```
 
 ## Container Image Verification
@@ -76,6 +76,6 @@ cosign verify ghcr.io/mindburn-labs/helm:latest \
 ```
 GitHub Actions (OIDC) → cosign keyless signing → SHA256SUMS.txt.sig
 Binary → SHA-256 → SHA256SUMS.txt
-SBOM → CycloneDX / SPDX-JSON → helm.sbom.json
+SBOM → CycloneDX JSON → sbom.json
 Container → cosign image signing → GHCR attestation
 ```

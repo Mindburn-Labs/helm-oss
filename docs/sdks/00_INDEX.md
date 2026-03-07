@@ -32,7 +32,7 @@ examples/  examples/  examples/ examples/  examples/
 |----------|---------|---------|
 | TypeScript | `@mindburn/helm-sdk` | `npm install @mindburn/helm-sdk` |
 | Python | `helm-sdk` | `pip install helm-sdk` |
-| Go | `github.com/Mindburn-Labs/helm/sdk/go` | `go get ...` |
+| Go | `github.com/Mindburn-Labs/helm-oss/sdk/go` | `go get ...` |
 | Rust | `helm-sdk` | `cargo add helm-sdk` |
 | Java | `ai.mindburn.helm:helm-sdk` | Maven |
 

@@ -13,5 +13,5 @@
   ],
   "attestation_pattern": "helm-{version}.attestation.json",
   "signature_pattern": "helm-{version}.attestation.sig",
-  "source_repo": "Mindburn-Labs/helm"
+  "source_repo": "Mindburn-Labs/helm-oss"
 }

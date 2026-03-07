@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/store/objstore"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/store/objstore"
 )
 
 // Policy defines retention rules for evidence packs.

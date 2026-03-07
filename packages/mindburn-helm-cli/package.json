@@ -29,13 +29,16 @@
         "typescript": "^5.4.0",
         "vitest": "^4.0.18"
     },
+    "overrides": {
+        "rollup": "^4.59.0"
+    },
     "engines": {
         "node": ">=18"
     },
     "license": "BSL-1.1",
     "repository": {
         "type": "git",
-        "url": "https://github.com/Mindburn-Labs/helm",
+        "url": "https://github.com/Mindburn-Labs/helm-oss",
         "directory": "packages/mindburn-helm-cli"
     },
     "keywords": [

@@ -1,7 +1,7 @@
 // Package gates provides the gate implementations and a default registry.
 package gates
 
-import "github.com/Mindburn-Labs/helm/core/pkg/conform"
+import "github.com/Mindburn-Labs/helm-oss/core/pkg/conform"
 
 // DefaultEngine returns a conformance engine pre-loaded with all gates
 // in canonical registration order (G0 → G12, GX_TENANT, GX_ENVELOPE).

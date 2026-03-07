@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
+set -o pipefail
 
 # HELM Installer
 # Installs the latest release of the HELM CLI.
 
-REPO="Mindburn-Labs/helm"
+REPO="Mindburn-Labs/helm-oss"
 BIN_NAME="helm"
 INSTALL_DIR="/usr/local/bin"
 
@@ -51,12 +52,12 @@ echo -e "  • Downloading... (${BINARY_URL})"
 curl -L -o "$DOWNLOAD_PATH" "$BINARY_URL" --progress-bar
 
 # 4. Verify Checksum
-CHECKSUM_URL="${BINARY_URL}.sha256"
+CHECKSUM_URL="https://github.com/$REPO/releases/download/$LATEST_RELEASE/SHA256SUMS.txt"
 CHECKSUM_PATH="${DOWNLOAD_PATH}.sha256"
 
 echo -e "  • Verifying checksum..."
 if ! curl -fsSL -o "$CHECKSUM_PATH" "$CHECKSUM_URL" 2>/dev/null; then
-    echo -e "${RED}❌ Checksum file not found at ${CHECKSUM_URL}${NC}"
+	echo -e "${RED}❌ Checksum file not found at ${CHECKSUM_URL}${NC}"
     echo -e "   HELM enforces supply-chain trust. Cannot install without checksum verification."
     echo -e "   If this is a pre-release or local build, use: HELM_SKIP_VERIFY=1"
     rm -f "$DOWNLOAD_PATH"
@@ -65,9 +66,14 @@ if ! curl -fsSL -o "$CHECKSUM_PATH" "$CHECKSUM_URL" 2>/dev/null; then
     fi
     echo -e "${BLUE}  ⚠️  HELM_SKIP_VERIFY set — proceeding without verification.${NC}"
 else
-    EXPECTED=$(cat "$CHECKSUM_PATH" | awk '{print $1}')
-    ACTUAL=$(shasum -a 256 "$DOWNLOAD_PATH" | awk '{print $1}')
-    if [ "$EXPECTED" != "$ACTUAL" ]; then
+	EXPECTED=$(grep " ${BIN_NAME}-${OS}-${ARCH}\$" "$CHECKSUM_PATH" | awk '{print $1}')
+	if [ -z "$EXPECTED" ]; then
+		echo -e "${RED}❌ No checksum entry found for ${BIN_NAME}-${OS}-${ARCH}.${NC}"
+		rm -f "$DOWNLOAD_PATH" "$CHECKSUM_PATH"
+		exit 1
+	fi
+	ACTUAL=$(shasum -a 256 "$DOWNLOAD_PATH" | awk '{print $1}')
+	if [ "$EXPECTED" != "$ACTUAL" ]; then
         echo -e "${RED}❌ Checksum verification FAILED.${NC}"
         echo -e "   Expected: $EXPECTED"
         echo -e "   Got:      $ACTUAL"

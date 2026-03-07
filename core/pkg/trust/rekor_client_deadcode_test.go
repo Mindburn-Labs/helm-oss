@@ -3,7 +3,7 @@ package trust_test
 import (
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/trust"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/trust"
 )
 
 func TestRekorClient_VerifyEntry_IsReachable(t *testing.T) {

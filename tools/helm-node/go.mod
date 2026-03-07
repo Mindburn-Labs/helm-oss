@@ -1,9 +1,9 @@
-module github.com/Mindburn-Labs/helm/apps/helm-node
+module github.com/Mindburn-Labs/helm-oss/tools/helm-node
 
 go 1.25.0
 
 require (
-	github.com/Mindburn-Labs/helm/core v0.0.0
+	github.com/Mindburn-Labs/helm-oss/core v0.0.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.11.2
 	github.com/stretchr/testify v1.11.1
@@ -102,4 +102,4 @@ require (
 	modernc.org/sqlite v1.45.0 // indirect
 )
 
-replace github.com/Mindburn-Labs/helm/core => ../../core
+replace github.com/Mindburn-Labs/helm-oss/core => ../../core

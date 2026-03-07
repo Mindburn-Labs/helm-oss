@@ -3,7 +3,7 @@ package csr
 import (
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/compliance/jkg"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/jkg"
 )
 
 // DefaultComplianceSources returns the canonical set of all compliance sources

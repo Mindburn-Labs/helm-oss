@@ -11,9 +11,9 @@ Share this page. Every command below produces verifiable output.
 ## Start
 
 ```bash
-git clone https://github.com/Mindburn-Labs/helm.git && cd helm
+git clone https://github.com/Mindburn-Labs/helm-oss.git && cd helm-oss
 docker compose up -d
-curl -s http://localhost:8080/health
+curl -s http://localhost:8080/healthz
 ```
 **Expected:** `OK`
 

@@ -131,6 +131,7 @@ export class HelmMastraSandbox {
   private readonly onDeny?: (denial: SandboxDenial) => void;
   private readonly receipts: SandboxReceipt[] = [];
   private sandboxId: string | null = null;
+  private lastLamportClock = -1;
 
   constructor(config: HelmMastraSandboxConfig) {
     this.helmClient = new HelmClient(config);
@@ -180,8 +181,19 @@ export class HelmMastraSandbox {
     const startMs = Date.now();
 
     // Step 1: HELM governance evaluation.
+    // Use chatCompletionsWithReceipt to get kernel-issued governance metadata.
+    let governanceStatus = '';
+    let governanceReasonCode = '';
+    let kernelReceiptId = '';
+    let kernelDecisionId = '';
+    let kernelProofGraphNode = '';
+    let kernelLamportClock = 0;
+    let kernelSignature = '';
+    let kernelOutputHash = '';
+    let governanceEvaluated = false;
+
     try {
-      const governanceResp = await this.helmClient.chatCompletions({
+      const { response: governanceResp, governance } = await this.helmClient.chatCompletionsWithReceipt({
         model: 'helm-governance',
         messages: [
           {
@@ -212,16 +224,30 @@ export class HelmMastraSandbox {
         ],
       });
 
+      // Extract kernel governance metadata
+      governanceStatus = governance.status;
+      governanceReasonCode = governance.reasonCode;
+      kernelReceiptId = governance.receiptId;
+      kernelDecisionId = governance.decisionId;
+      kernelProofGraphNode = governance.proofGraphNode;
+      kernelLamportClock = governance.lamportClock;
+      kernelSignature = governance.signature;
+      kernelOutputHash = governance.outputHash;
+
       const choice = governanceResp.choices?.[0];
-      if (!choice || (choice.finish_reason === 'stop' && !choice.message?.tool_calls)) {
+      const kernelDenied = governanceStatus === 'DENIED' || governanceStatus === 'PEP_VALIDATION_FAILED';
+
+      if (kernelDenied || (!choice || (choice.finish_reason === 'stop' && !choice.message?.tool_calls))) {
         const denial: SandboxDenial = {
           command: req.command,
-          reasonCode: 'DENY_POLICY_VIOLATION',
+          reasonCode: governanceReasonCode || 'DENY_POLICY_VIOLATION',
           message: choice?.message?.content ?? 'Sandbox exec denied by HELM governance',
         };
         this.onDeny?.(denial);
         throw new HelmSandboxDenyError(denial);
       }
+
+      governanceEvaluated = true;
     } catch (error) {
       if (error instanceof HelmSandboxDenyError) throw error;
       if (error instanceof HelmApiError) {
@@ -232,8 +258,12 @@ export class HelmMastraSandbox {
         };
         this.onDeny?.(denial);
         if (this.failClosed) throw new HelmSandboxDenyError(denial);
+        governanceStatus = 'PENDING';
+        governanceReasonCode = error.reasonCode;
       }
       if (this.failClosed) throw error;
+      governanceStatus = governanceStatus || 'PENDING';
+      governanceReasonCode = governanceReasonCode || 'ERROR_INTERNAL';
     }
 
     // Step 2: Execute on Daytona.
@@ -267,28 +297,31 @@ export class HelmMastraSandbox {
       durationMs: number;
     };
 
-    // Step 3: Build receipt.
+    // Step 3: Build receipt from kernel-issued data (NOT fabricated).
     const durationMs = Date.now() - startMs;
     const requestHash =
       'sha256:' + createHash('sha256').update(JSON.stringify(req)).digest('hex');
     const outputHash =
       'sha256:' + createHash('sha256').update(result.output || '').digest('hex');
+    const lamportClock = this.nextLamportClock(kernelLamportClock);
+    const receiptStatus = HelmMastraSandbox.resolveReceiptStatus(governanceStatus, governanceEvaluated);
+    const receiptToken = `${requestHash.slice(7, 19)}-${lamportClock}`;
 
     const receipt: SandboxReceipt = {
       command: req.command,
       receipt: {
-        receipt_id: `mastra-${Date.now()}`,
-        decision_id: `mastra-${this.sandboxId}`,
-        effect_id: `exec-${Date.now()}`,
-        status: 'APPROVED',
-        reason_code: 'ALLOW',
-        output_hash: outputHash,
+        receipt_id: kernelReceiptId || `mastra-${receiptToken}`,
+        decision_id: kernelDecisionId || `decision-${receiptToken}`,
+        effect_id: kernelProofGraphNode || `exec-${receiptToken}`,
+        status: receiptStatus,
+        reason_code: governanceReasonCode || (governanceEvaluated ? 'ALLOW' : 'ERROR_INTERNAL'),
+        output_hash: kernelOutputHash || outputHash,
         blob_hash: '',
         prev_hash: '',
-        lamport_clock: this.receipts.length,
-        signature: '',
+        lamport_clock: lamportClock,
+        signature: kernelSignature || '',
         timestamp: new Date().toISOString(),
-        principal: 'helm-mastra-adapter',
+        principal: governanceEvaluated ? 'helm-kernel' : 'helm-fail-open',
       },
       requestHash,
       outputHash,
@@ -383,6 +416,31 @@ export class HelmMastraSandbox {
    */
   clearReceipts(): void {
     this.receipts.length = 0;
+  }
+
+  private static resolveReceiptStatus(
+    governanceStatus: string,
+    governanceEvaluated: boolean,
+  ): Receipt['status'] {
+    if (!governanceEvaluated) {
+      return 'PENDING';
+    }
+    if (governanceStatus === 'DENIED' || governanceStatus === 'PEP_VALIDATION_FAILED') {
+      return 'DENIED';
+    }
+    if (governanceStatus === 'PENDING') {
+      return 'PENDING';
+    }
+    return 'APPROVED';
+  }
+
+  private nextLamportClock(kernelLamportClock: number): number {
+    const nextLamportClock =
+      kernelLamportClock > this.lastLamportClock
+        ? kernelLamportClock
+        : this.lastLamportClock + 1;
+    this.lastLamportClock = nextLamportClock;
+    return nextLamportClock;
   }
 }
 

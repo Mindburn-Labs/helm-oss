@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
 )
 
 // MockLedger

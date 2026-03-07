@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/Mindburn-Labs/helm/core/pkg/arc"
-	"github.com/Mindburn-Labs/helm/core/pkg/rir"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/arc"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/rir"
 )
 
 func TestBundleHashingDeterminism(t *testing.T) {

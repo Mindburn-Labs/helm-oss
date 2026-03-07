@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts/swarm"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts/swarm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

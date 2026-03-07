@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/contracts"
-	"github.com/Mindburn-Labs/helm/core/pkg/replay"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/replay"
 )
 
 // MockReplayEngine implements replay.ReplayEngine for testing.

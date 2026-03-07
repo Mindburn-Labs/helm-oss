@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/Mindburn-Labs/helm/core/pkg/canonicalize"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/canonicalize"
 )
 
 // DecisionCardType defines the category of decision being captured.

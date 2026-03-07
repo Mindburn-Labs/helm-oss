@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/pack"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/pack"
 )
 
 // PackBuilder is a fluent helper for constructing Helm Packs.

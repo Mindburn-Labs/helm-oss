@@ -3,8 +3,8 @@ package governance_test
 import (
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/governance"
-	"github.com/Mindburn-Labs/helm/core/pkg/provenance"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/governance"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/provenance"
 	"github.com/stretchr/testify/assert"
 )
 

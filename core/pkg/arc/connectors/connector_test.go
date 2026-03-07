@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/arc/connectors"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/arc/connectors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

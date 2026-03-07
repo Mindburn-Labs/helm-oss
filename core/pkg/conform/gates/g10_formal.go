@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/conform"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/conform"
 )
 
 // G10Formal validates formal verification export per §G10.

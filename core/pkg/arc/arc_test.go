@@ -5,10 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/arc"
-	"github.com/Mindburn-Labs/helm/core/pkg/arc/connectors"
-	"github.com/Mindburn-Labs/helm/core/pkg/artifacts"
-	"github.com/Mindburn-Labs/helm/core/pkg/metering"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/arc"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/arc/connectors"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/artifacts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/metering"
 )
 
 // MockMeter implements metering.Meter for testing.

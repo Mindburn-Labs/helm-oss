@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/auth"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/auth"
 )
 
 // TEST-004: Chaos testing scenarios for the console server.

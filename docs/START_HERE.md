@@ -7,9 +7,9 @@ Everything you need to go from zero to verified HELM in under 5 minutes.
 ## Step 1 — Run HELM (30 seconds)
 
 ```bash
-git clone https://github.com/Mindburn-Labs/helm.git && cd helm
+git clone https://github.com/Mindburn-Labs/helm-oss.git && cd helm-oss
 docker compose up -d
-curl -s http://localhost:8080/health   # → OK
+curl -s http://localhost:8080/healthz   # → OK
 ```
 
 ## Step 2 — Trigger a Tool Call
@@ -74,7 +74,7 @@ Every step produced signed, append-only, replayable proof.
 
 ## Next Steps
 
-- 📖 [README](https://github.com/Mindburn-Labs/helm#readme) — full architecture + comparison
+- 📖 [README](https://github.com/Mindburn-Labs/helm-oss#readme) — full architecture + comparison
 - 🔒 [Security Model](../docs/SECURITY_MODEL.md) — TCB, threat model, crypto chain
 - 🐳 [Deploy your own](../deploy/README.md) — 3-minute DigitalOcean deploy
 - 📦 [SDK](../sdk/) — Python + TypeScript client libraries
@@ -88,4 +88,4 @@ Every step produced signed, append-only, replayable proof.
 ./bin/helm doctor   # Diagnoses common problems
 ```
 
-File an issue: [github.com/Mindburn-Labs/helm/issues](https://github.com/Mindburn-Labs/helm/issues)
+File an issue: [github.com/Mindburn-Labs/helm-oss/issues](https://github.com/Mindburn-Labs/helm-oss/issues)

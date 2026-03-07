@@ -20,4 +20,4 @@ echo "UC-001: PASS"
 
 ```
 
-[View on GitHub](https://github.com/Mindburn-Labs/helm/tree/main/docs/use_cases/UC-001_pep_allow_safe.sh)
+[View on GitHub](https://github.com/Mindburn-Labs/helm-oss/tree/main/docs/use_cases/UC-001_pep_allow_safe.sh)

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/trust"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/trust"
 )
 
 func TestWASISandbox_DenyByDefault(t *testing.T) {

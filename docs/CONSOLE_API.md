@@ -12,7 +12,7 @@ Endpoints are protected by JWT authentication middleware. Public endpoints (heal
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| GET | `/health` | Health check | Public |
+| GET | `/healthz` | Health check | Public |
 | POST | `/v1/tools/execute` | Execute tool via PEP boundary | Public |
 | POST | `/v1/chat/completions` | OpenAI-compatible proxy | API Key |
 

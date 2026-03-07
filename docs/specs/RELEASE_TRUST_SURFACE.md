@@ -1,88 +1,79 @@
 # HELM Release Trust Surface
 
-> Ensuring every release is verifiable, reproducible, and auditable.
+> Actual trust-bearing release surface for the current OSS distribution.
 
 ## Trust Chain
 
 ```
-Source Code → CI Build → Signed Binary → SBOM → Transparency Log
-    ↓            ↓           ↓            ↓          ↓
-  git tag    attestation   cosign      CycloneDX    Rekor
+Source Code → GitHub Actions build → release artifacts → checksum signature → build provenance
+    ↓                 ↓                    ↓                    ↓                  ↓
+   git tag      workflow gates       binaries + SBOM      cosign keyless      attestation
 ```
 
 ## Release Artifacts
 
-Every HELM release publishes:
+Current release workflow publishes:
 
-| Artifact              | Format           | Purpose                      |
-| --------------------- | ---------------- | ---------------------------- |
-| Binary (per-platform) | ELF/Mach-O/PE    | Executable                   |
-| SHA256SUMS            | Text             | Checksum verification        |
-| SHA256SUMS.sig        | Cosign signature | Signature over checksums     |
-| SBOM                  | CycloneDX JSON   | Software Bill of Materials   |
-| SLSA Provenance       | In-toto JSON     | Build provenance attestation |
-| Transparency entry    | Rekor            | Immutable record of release  |
+| Artifact | Format | Purpose |
+| --- | --- | --- |
+| `helm-<os>-<arch>` | ELF/Mach-O/PE | Executable binary |
+| `SHA256SUMS.txt` | Text | Binary checksum verification |
+| `SHA256SUMS.txt.sig` | Cosign signature | Signature over `SHA256SUMS.txt` |
+| `sbom.json` | CycloneDX JSON | Software bill of materials |
+| `helm-evidence-*` | Bundle | Release evidence artifacts |
+| `helm-attestation-*` | Bundle | Additional release attestations |
+| `golden-evidencepack.tar` | Tar | Golden verification artifact |
+| `golden-run-report.html` | HTML | Golden report artifact |
+| `helm.mcpb` | Zip | MCP bundle artifact |
 
 ## Verification Flow
 
 ```bash
-# 1. Download binary and checksums
+# 1. Download binary and release metadata
 curl -LO https://github.com/Mindburn-Labs/helm-oss/releases/download/v1.0.0/helm-darwin-arm64
-curl -LO https://github.com/Mindburn-Labs/helm-oss/releases/download/v1.0.0/SHA256SUMS
-curl -LO https://github.com/Mindburn-Labs/helm-oss/releases/download/v1.0.0/SHA256SUMS.sig
+curl -LO https://github.com/Mindburn-Labs/helm-oss/releases/download/v1.0.0/SHA256SUMS.txt
+curl -LO https://github.com/Mindburn-Labs/helm-oss/releases/download/v1.0.0/SHA256SUMS.txt.sig
+curl -LO https://github.com/Mindburn-Labs/helm-oss/releases/download/v1.0.0/sbom.json
 
 # 2. Verify checksum
-sha256sum --check SHA256SUMS
+shasum -a 256 -c SHA256SUMS.txt
 
-# 3. Verify signature
-cosign verify-blob --key https://helm.sh/keys/release.pub \
-  --signature SHA256SUMS.sig SHA256SUMS
-
-# 4. Verify SBOM
-helm verify sbom --release v1.0.0
-
-# 5. Verify SLSA provenance
-slsa-verifier verify-artifact helm-darwin-arm64 \
-  --source-uri github.com/Mindburn-Labs/helm-oss \
-  --source-tag v1.0.0
+# 3. Verify signature (keyless GitHub Actions identity)
+cosign verify-blob \
+  --signature SHA256SUMS.txt.sig \
+  --certificate-identity-regexp ".*@mindburn.io" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+  SHA256SUMS.txt
 ```
 
-## GoReleaser Pipeline
+## Release Pipeline
 
-```yaml
-# .goreleaser.yml integration
-signs:
-  - cmd: cosign
-    args:
-      [
-        "sign-blob",
-        "--key=env://COSIGN_KEY",
-        "--output-signature=${signature}",
-        "${artifact}",
-      ]
-    artifacts: checksum
+The canonical release surface is `.github/workflows/release.yml`, not GoReleaser.
 
-sboms:
-  - cmd: syft
-    args: ["${artifact}", "--output", "cyclonedx-json=${document}"]
-    artifacts: binary
-```
+Current workflow truth:
+
+- cross-compiles release binaries
+- generates `SHA256SUMS.txt`
+- generates `sbom.json`
+- signs checksums with `cosign sign-blob`
+- attaches build provenance via `actions/attest-build-provenance@v2`
+- publishes only channels that are currently supported
 
 ## Provenance
 
-SLSA Level 3 provenance is generated via GitHub Actions:
+Build provenance is generated in GitHub Actions and attached to release outputs.
 
-- `slsa-framework/slsa-github-generator` reusable workflow
-- Provenance stored in Sigstore Rekor transparency log
-- Build is hermetic and reproducible
+- attestation action: `actions/attest-build-provenance@v2`
+- checksum signatures: keyless cosign via GitHub OIDC
+- container images: keyless cosign signing in the release workflow
 
-## Key Management
+## Key Material
 
-| Key                       | Purpose                | Storage        |
-| ------------------------- | ---------------------- | -------------- |
-| Cosign release key        | Sign release checksums | GitHub Secrets |
-| Policy bundle signing key | Sign policy bundles    | HSM / Vault    |
-| OIDC identity             | Keyless signing (CI)   | GitHub OIDC    |
+| Material | Purpose | Current source |
+| --- | --- | --- |
+| GitHub OIDC identity | Keyless signing for checksums and images | GitHub Actions |
+| `HELM_SIGNING_KEY` | Evidence bundle signing | Release environment secret |
+| Registry credentials | Publish authenticated artifacts | Protected GitHub environments |
 
 ## Automation Lifecycle
 

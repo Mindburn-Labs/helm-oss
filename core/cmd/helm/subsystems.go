@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"runtime"
 	"time"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/api"
-	"github.com/Mindburn-Labs/helm/core/pkg/guardian"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/api"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/guardian"
+	trustregistry "github.com/Mindburn-Labs/helm-oss/core/pkg/trust/registry"
 )
 
 // RegisterSubsystemRoutes registers all subsystem API routes on the given mux.
@@ -21,6 +24,12 @@ func RegisterSubsystemRoutes(mux *http.ServeMux, svc *Services) {
 	log.Println("[helm] routes: Registering API routes...")
 
 	ctx := context.Background()
+	versionInfo := map[string]any{
+		"version":    displayVersion(),
+		"commit":     displayCommit(),
+		"build_time": displayBuildTime(),
+		"go_version": runtime.Version(),
+	}
 
 	// --- OpenAI-Compatible Proxy (governed inference) ---
 	mux.HandleFunc("/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +58,7 @@ func RegisterSubsystemRoutes(mux *http.ServeMux, svc *Services) {
 				api.WriteInternal(w, err)
 				return
 			}
-			if decision.Verdict != "PASS" {
+			if contracts.Verdict(decision.Verdict) != contracts.VerdictAllow {
 				api.WriteError(w, http.StatusForbidden, "Governance Blocked", decision.Reason)
 				return
 			}
@@ -149,11 +158,17 @@ func RegisterSubsystemRoutes(mux *http.ServeMux, svc *Services) {
 	})
 
 	// --- Version ---
-	mux.HandleFunc("/api/v1/version", func(w http.ResponseWriter, r *http.Request) {
+	versionHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(versionInfo)
+	}
+	mux.HandleFunc("/api/v1/version", versionHandler)
+	mux.HandleFunc("/version", versionHandler)
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"registry": "active",
-			"status":   "ready",
+			"status":  "ok",
+			"version": displayVersion(),
 		})
 	})
 
@@ -220,6 +235,20 @@ func RegisterSubsystemRoutes(mux *http.ServeMux, svc *Services) {
 	if svc.Creds != nil {
 		svc.Creds.RegisterRoutes(mux)
 		log.Println("[helm] routes: Credential management routes registered")
+	}
+
+	// --- Trust Keys ---
+	trustKeys := &api.TrustKeyHandler{Registry: trustregistry.NewTrustRegistry()}
+	mux.HandleFunc("/api/v1/trust/keys/add", trustKeys.HandleAddKey)
+	mux.HandleFunc("/api/v1/trust/keys/revoke", trustKeys.HandleRevokeKey)
+
+	// --- MCP Gateway ---
+	mcpGateway, err := newLocalMCPGateway()
+	if err != nil {
+		log.Printf("[helm] routes: MCP gateway unavailable: %v", err)
+	} else {
+		mcpGateway.RegisterRoutes(mux)
+		log.Println("[helm] routes: MCP gateway routes registered")
 	}
 
 	// Suppress unused variable

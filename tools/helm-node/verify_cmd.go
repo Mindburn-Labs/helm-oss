@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Mindburn-Labs/helm/core/pkg/verifier"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/verifier"
 )
 
 // runVerifyCmd implements `helm verify` per §2.1.
