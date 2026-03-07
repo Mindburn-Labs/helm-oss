@@ -55,7 +55,16 @@ CHECKSUM_URL="${BINARY_URL}.sha256"
 CHECKSUM_PATH="${DOWNLOAD_PATH}.sha256"
 
 echo -e "  • Verifying checksum..."
-if curl -fsSL -o "$CHECKSUM_PATH" "$CHECKSUM_URL" 2>/dev/null; then
+if ! curl -fsSL -o "$CHECKSUM_PATH" "$CHECKSUM_URL" 2>/dev/null; then
+    echo -e "${RED}❌ Checksum file not found at ${CHECKSUM_URL}${NC}"
+    echo -e "   HELM enforces supply-chain trust. Cannot install without checksum verification."
+    echo -e "   If this is a pre-release or local build, use: HELM_SKIP_VERIFY=1"
+    rm -f "$DOWNLOAD_PATH"
+    if [ "${HELM_SKIP_VERIFY:-0}" != "1" ]; then
+        exit 1
+    fi
+    echo -e "${BLUE}  ⚠️  HELM_SKIP_VERIFY set — proceeding without verification.${NC}"
+else
     EXPECTED=$(cat "$CHECKSUM_PATH" | awk '{print $1}')
     ACTUAL=$(shasum -a 256 "$DOWNLOAD_PATH" | awk '{print $1}')
     if [ "$EXPECTED" != "$ACTUAL" ]; then
@@ -68,9 +77,6 @@ if curl -fsSL -o "$CHECKSUM_PATH" "$CHECKSUM_URL" 2>/dev/null; then
     fi
     echo -e "  • Checksum: ${GREEN}✔ verified${NC}"
     rm -f "$CHECKSUM_PATH"
-else
-    echo -e "${BLUE}  ⚠️  No checksum file found. Skipping verification.${NC}"
-    echo -e "     For production use, ensure checksum files are published with releases."
 fi
 
 # 5. Install

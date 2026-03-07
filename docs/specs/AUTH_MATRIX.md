@@ -69,3 +69,54 @@ auth:
 2. Auth errors MUST NOT leak key material
 3. Token refresh MUST be automatic for OAuth/enterprise modes
 4. All auth modes MUST work with fail-closed governance
+
+## Auth Smoke Tests
+
+Each auth mode MUST pass the following automated smoke tests:
+
+### API Key Mode
+
+```bash
+# Verify: API key flows through → effect evaluated → receipt issued
+HELM_API_KEY=test-key helm smoke-test --auth api_key --expect verdict:ALLOW
+# Verify: Missing key → fail-closed DENY
+helm smoke-test --auth api_key --expect verdict:DENY --expect reason:PDP_ERROR
+```
+
+### Google OAuth Mode
+
+```bash
+# One-command Gemini CLI demo via Google OAuth
+helm demo gemini --auth google_oauth --client-id $HELM_GOOGLE_CLIENT_ID
+# One-command Gemini CLI demo via API key
+GEMINI_API_KEY=test helm demo gemini --auth api_key
+```
+
+### MCP Header Mode
+
+```bash
+# Verify: Valid token → ALLOW
+helm smoke-test --auth mcp_header --token test-token --expect verdict:ALLOW
+# Verify: Invalid token → DENY
+helm smoke-test --auth mcp_header --token invalid --expect verdict:DENY
+```
+
+### Smoke Test Output
+
+Each smoke test MUST produce:
+
+- A valid receipt (verifiable offline)
+- A pass/fail status
+- Auth mode exercised in metadata
+
+### CI Integration
+
+```yaml
+# .github/workflows/auth-smoke.yml
+jobs:
+  auth-smoke:
+    steps:
+      - run: make build
+      - run: helm smoke-test --auth api_key
+      - run: helm smoke-test --auth mcp_header
+```

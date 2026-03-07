@@ -3,10 +3,10 @@ name: HELM SDK Gates
 on:
   push:
     branches: [main]
-    paths: ['sdk/**', 'api/**', 'examples/**', 'scripts/sdk/**', 'scripts/ci/sdk_*']
+    paths: ['sdk/**', 'api/**', 'examples/**', 'scripts/sdk/**', 'scripts/ci/sdk_*', 'protocols/proto/**', 'protocols/specs/effects/openapi.yaml']
   pull_request:
     branches: [main]
-    paths: ['sdk/**', 'api/**', 'examples/**', 'scripts/sdk/**', 'scripts/ci/sdk_*']
+    paths: ['sdk/**', 'api/**', 'examples/**', 'scripts/sdk/**', 'scripts/ci/sdk_*', 'protocols/proto/**', 'protocols/specs/effects/openapi.yaml']
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

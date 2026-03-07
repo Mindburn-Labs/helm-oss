@@ -135,6 +135,79 @@ helm config generate --client cursor >> .cursor/mcp.json
 
 ---
 
+### Qwen Code
+
+```json
+{
+  "mcpServers": {
+    "helm": {
+      "command": "helm",
+      "args": ["mcp-server", "--mode=governance"],
+      "env": {
+        "HELM_POLICY_DIR": "~/.helm/policies"
+      }
+    }
+  }
+}
+```
+
+**Install**:
+
+```bash
+helm config generate --client qwen-code >> ~/.qwen/mcp.json
+```
+
+---
+
+### OpenAI Codex CLI
+
+```json
+{
+  "mcpServers": {
+    "helm": {
+      "command": "helm",
+      "args": ["mcp-server", "--mode=governance"]
+    }
+  }
+}
+```
+
+**Install**:
+
+```bash
+helm config generate --client codex >> ~/.codex/mcp.json
+```
+
+---
+
+### Generic MCP Client
+
+For any MCP-compatible client not listed above:
+
+```bash
+# Generate a generic MCP config
+helm config generate --client generic --format json
+
+# Or as stdio transport:
+helm config generate --client generic --transport stdio
+```
+
+Output:
+
+```json
+{
+  "mcpServers": {
+    "helm-governance": {
+      "command": "helm",
+      "args": ["mcp-server"],
+      "transport": "stdio"
+    }
+  }
+}
+```
+
+---
+
 ## .mcpb Package Format
 
 HELM ships as a `.mcpb` (MCP Bundle) for easy distribution:

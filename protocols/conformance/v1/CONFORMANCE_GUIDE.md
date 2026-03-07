@@ -92,3 +92,42 @@ Implementations passing Level 4 conformance may display:
 ```
 [![HELM Conformant](https://helm.sh/badges/conformant-v1.svg)](https://helm.sh/conformance)
 ```
+
+## 8. Compatibility Tiers
+
+Beyond conformance levels, HELM defines **compatibility tiers** for ecosystem
+participants (runtimes, frameworks, clients):
+
+| Tier           | Requirements                                                                     | Verification                                                                       |
+| -------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| **Compatible** | Passes core verdict vectors (Level 1–2). Self-certified.                         | Self-reported; not independently verified.                                         |
+| **Verified**   | Passes all Level 4 conformance vectors against published fixtures. CI-exercised. | Verified via published CI workflow. Artifacts published to compatibility registry. |
+| **Sovereign**  | Verified + full TLA+ invariant alignment + independent verifier passes.          | Third-party audit confirms invariant coverage. Eligible for HELM Sovereign badge.  |
+
+### 8.1 Required Fixture Sets by Tier
+
+| Fixture Set                     | Compatible | Verified | Sovereign |
+| ------------------------------- | ---------- | -------- | --------- |
+| `vectors` (ALLOW/DENY/ESCALATE) | ✅         | ✅       | ✅        |
+| `receipt_invariants`            | —          | ✅       | ✅        |
+| `hash_chain_vectors`            | —          | ✅       | ✅        |
+| `golden_receipts`               | —          | ✅       | ✅        |
+| `lifecycle_fixtures`            | —          | ✅       | ✅        |
+| `jurisdiction_fixtures`         | —          | —        | ✅        |
+| `evidence_bundle_fixture`       | —          | —        | ✅        |
+
+### 8.2 Claiming a Tier
+
+1. Run conformance vectors against your implementation.
+2. Publish results to `compatibility-registry.json` (or submit PR).
+3. CI artifact must include: tier, date, HELM spec version, vector version, pass/fail summary.
+
+## 9. Lifecycle Fixtures
+
+Conformant implementations MUST handle the effect lifecycle state machine:
+
+- **Happy path**: SUBMITTED → APPROVED → EXECUTING → COMPLETED
+- **Deny path**: SUBMITTED → DENIED
+- **Escalation path**: SUBMITTED → ESCALATED → APPROVED or DENIED
+
+See `lifecycle_fixtures` in `test-vectors.json` for exact transition definitions.

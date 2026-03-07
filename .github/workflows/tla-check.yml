@@ -31,11 +31,14 @@ jobs:
           java -cp /tmp/tlaplus/tla2tools.jar tla2sany.SANY \
             protocols/specs/tla/HelmKernel.tla
 
-      - name: Check Safety Invariants
+      - name: Run TLC Model Check
+        working-directory: protocols/specs/tla
         run: |
-          echo "--- TLA+ Model Check: HelmKernel ---"
-          echo "Invariants: FailClosed, MonotonicLamport, ReceiptCompleteness, PrincipalBinding, HashChainIntegrity"
-          # TLC requires a .cfg file to specify the model. Parse-only for now.
-          # Full model checking requires a HelmKernel.cfg with INIT/NEXT/INVARIANT.
-          echo "✅ SANY parse succeeded — spec is syntactically valid."
-          echo "⚠️  Full TLC model checking requires a .cfg file (see protocols/specs/tla/README.md)"
+          echo "--- TLC Model Check: HelmKernel ---"
+          echo "Invariants: FailClosed, MonotonicLamport, ReceiptCompleteness, PrincipalBinding, HashChainIntegrity, TypeInvariant"
+          java -cp /tmp/tlaplus/tla2tools.jar tlc2.TLC \
+            -config HelmKernel.cfg \
+            -workers auto \
+            -deadlock \
+            HelmKernel.tla
+          echo "✅ TLC model check passed — all invariants hold."

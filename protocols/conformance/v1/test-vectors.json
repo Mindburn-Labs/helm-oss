@@ -152,5 +152,103 @@
         "Removing any node breaks the chain verification"
       ]
     }
-  ]
+  ],
+  "golden_receipts": [
+    {
+      "id": "GOLDEN-RECEIPT-001",
+      "description": "Golden receipt for ALLOW verdict — offline verification reference",
+      "receipt": {
+        "receipt_version": "1.0",
+        "receipt_id": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "decision_id": "dec-golden-001",
+        "effect_id": "eff-golden-001",
+        "verdict": "ALLOW",
+        "principal": "agent:test-principal",
+        "tool": "file_read",
+        "action": "read /data/test.csv",
+        "timestamp": "2026-01-01T00:00:00Z",
+        "lamport": 1,
+        "proofgraph_node": "pgnode-golden-001",
+        "payload_hash": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        "metadata": {"environment": "test", "spec_version": "1.0.0"}
+      },
+      "verification_steps": [
+        "Recompute receipt_id from all fields except receipt_id itself",
+        "Verify receipt_id matches SHA-256 of canonical JSON",
+        "Verify verdict is a canonical enum value",
+        "Verify lamport is a positive integer",
+        "Verify timestamp is RFC 3339"
+      ]
+    }
+  ],
+  "lifecycle_fixtures": [
+    {
+      "id": "LIFECYCLE-001",
+      "description": "Happy path: SUBMITTED → APPROVED → EXECUTING → COMPLETED",
+      "transitions": [
+        {"from": null, "to": "SUBMITTED", "trigger": "Submit(effect)"},
+        {"from": "SUBMITTED", "to": "APPROVED", "trigger": "PDP returns ALLOW"},
+        {"from": "APPROVED", "to": "EXECUTING", "trigger": "Execute(effectId)"},
+        {"from": "EXECUTING", "to": "COMPLETED", "trigger": "Complete(effectId, evidencePackId)"}
+      ]
+    },
+    {
+      "id": "LIFECYCLE-002",
+      "description": "Deny path: SUBMITTED → DENIED",
+      "transitions": [
+        {"from": null, "to": "SUBMITTED", "trigger": "Submit(effect)"},
+        {"from": "SUBMITTED", "to": "DENIED", "trigger": "PDP returns DENY"}
+      ]
+    },
+    {
+      "id": "LIFECYCLE-003",
+      "description": "Escalation path: SUBMITTED → ESCALATED → APPROVED or DENIED",
+      "transitions": [
+        {"from": null, "to": "SUBMITTED", "trigger": "Submit(effect)"},
+        {"from": "SUBMITTED", "to": "ESCALATED", "trigger": "PDP returns ESCALATE"},
+        {"from": "ESCALATED", "to": "APPROVED", "trigger": "Human approves"},
+        {"from": "ESCALATED", "to": "DENIED", "trigger": "Human denies or timeout"}
+      ]
+    }
+  ],
+  "jurisdiction_fixtures": [
+    {
+      "id": "JURISDICTION-001",
+      "description": "EU GDPR jurisdiction deny with extended reason code",
+      "input": {
+        "effect": {"effect_type": "data_export", "effect_id": "eff-j001", "params": {"destination": "us-east-1", "data_class": "personal"}},
+        "principal": "agent:exporter",
+        "context": {"jurisdiction": "EU"}
+      },
+      "expected": {
+        "verdict": "DENY",
+        "reason_code": "JURISDICTION_VIOLATION",
+        "receipt_present": true,
+        "active_packs": ["eu-gdpr"]
+      }
+    }
+  ],
+  "evidence_bundle_fixture": {
+    "id": "EVIDENCE-001",
+    "description": "Minimal valid EvidencePack structure",
+    "required_fields": [
+      "schema_version",
+      "session_id",
+      "receipts",
+      "decisions",
+      "active_bundles",
+      "created_at"
+    ],
+    "sample": {
+      "schema_version": "1.0.0",
+      "session_id": "ses-golden-001",
+      "receipts": ["urn:helm:receipt:e3b0c44298fc1c..."],
+      "decisions": ["urn:helm:decision:dec-golden-001"],
+      "active_bundles": [
+        {"name": "corporate-baseline", "version": "1.0.0", "content_hash": "sha256:abc123"}
+      ],
+      "created_at": "2026-01-01T00:00:00Z",
+      "spec_version": "1.0.0"
+    }
+  }
 }

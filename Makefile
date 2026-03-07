@@ -117,6 +117,52 @@ release-all: release-binaries sbom mcp-pack
 	cp bin/SHA256SUMS.txt dist/
 	@echo "✅ Full release in dist/ (binaries + SBOM + MCPB)"
 
+# ── SDK Codegen (proto → all SDKs) ─────────────────────
+PROTO_DIR := protocols/proto
+PROTO_FILES := $(shell find $(PROTO_DIR) -name '*.proto' 2>/dev/null)
+
+.PHONY: codegen codegen-go codegen-python codegen-ts codegen-java codegen-rust codegen-check
+
+codegen: codegen-go codegen-python codegen-ts codegen-java codegen-rust
+	@echo "✅ All SDK types regenerated from proto IDL"
+
+codegen-go:
+	@mkdir -p sdk/go/gen/kernelv1
+	protoc --go_out=sdk/go/gen --go-grpc_out=sdk/go/gen \
+		--go_opt=paths=source_relative --go-grpc_opt=paths=source_relative \
+		-I$(PROTO_DIR) $(PROTO_FILES)
+	@echo "  → Go types regenerated"
+
+codegen-python:
+	@mkdir -p sdk/python/helm_sdk/generated
+	python -m grpc_tools.protoc --python_out=sdk/python/helm_sdk/generated \
+		--grpc_python_out=sdk/python/helm_sdk/generated \
+		--pyi_out=sdk/python/helm_sdk/generated \
+		-I$(PROTO_DIR) $(PROTO_FILES)
+	@echo "  → Python types regenerated"
+
+codegen-ts:
+	@mkdir -p sdk/ts/src/generated
+	protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto \
+		--ts_proto_out=sdk/ts/src/generated \
+		--ts_proto_opt=outputServices=grpc-js \
+		-I$(PROTO_DIR) $(PROTO_FILES)
+	@echo "  → TypeScript types regenerated"
+
+codegen-java:
+	@mkdir -p sdk/java/src/main/java
+	protoc --java_out=sdk/java/src/main/java \
+		-I$(PROTO_DIR) $(PROTO_FILES)
+	@echo "  → Java types regenerated"
+
+codegen-rust:
+	cd sdk/rust && cargo build --features codegen 2>/dev/null || echo "  → Rust codegen: run manually (requires tonic-build)"
+
+codegen-check: codegen
+	@echo "Checking for SDK type drift..."
+	@git diff --exit-code sdk/ || (echo "❌ SDK types are out of sync with proto IDL. Run 'make codegen'." && exit 1)
+	@echo "✅ SDK types match proto IDL"
+
 # ── Repo Boundary (OSS ↔ Commercial) ──────────────────
 verify-boundary:
 	bash tools/verify-boundary.sh

@@ -133,10 +133,23 @@
 | `memory/*.json`              | L3          | normative | Memory retrieval schemas       |
 | `packs/*.schema.json`        | L2          | normative | Pack manifest and type schemas |
 
+### Reason Codes (`reason-codes/`)
+
+| Schema                        | Conformance | Status    | Description                   |
+| ----------------------------- | ----------- | --------- | ----------------------------- |
+| `reason-codes-v1.schema.json` | L1          | normative | Reason code validation schema |
+| `reason-codes-v1.json`        | L1          | normative | Reason code registry data     |
+
+### API Surface (`effects/`)
+
+| Schema         | Conformance | Status    | Description                       |
+| -------------- | ----------- | --------- | --------------------------------- |
+| `openapi.yaml` | L1          | normative | EffectBoundary REST API (OAS 3.1) |
+
 ---
 
-**Total schemas**: 124 files across 22 domains.
-**L1 (Core)**: 38 schemas  
-**L2 (Extended)**: 62 schemas  
-**L3 (Optional)**: 18 schemas  
+**Total schemas**: 127 files across 24 domains.
+**L1 (Core)**: 41 schemas
+**L2 (Extended)**: 62 schemas
+**L3 (Optional)**: 18 schemas
 **Informational**: 6 schemas

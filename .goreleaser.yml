@@ -60,6 +60,14 @@ signs:
       - "${artifact}"
     artifacts: checksum
 
+docker_signs:
+  - cmd: cosign
+    args:
+      - "sign"
+      - "--yes"
+      - "${artifact}"
+    artifacts: manifests
+
 brews:
   - name: helm
     repository:
