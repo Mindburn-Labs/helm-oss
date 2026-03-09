@@ -1,0 +1,127 @@
+# ═══════════════════════════════════════════════════════
+#  HELM Demo — Caddy Edge Proxy
+#  - Automatic TLS via Let's Encrypt
+#  - Rate limiting: Per-endpoint differentiation
+#  - Max request body: 64KB
+#  - Reverse proxy to HELM kernel on :8080
+# ═══════════════════════════════════════════════════════
+
+{$DEMO_DOMAIN:localhost} {
+	# ── Rate Limiting ─────────────────────────────────
+	# Requires caddy-ratelimit plugin
+	# /v1/chat/completions: 10/min
+	# /v1/tools/execute: 30/min
+	# /api/v1/export: 2/min
+	# Default: 60/min
+	
+	@chat {
+		path /v1/chat/completions
+	}
+	rate_limit @chat {
+		zone chat_limit {
+			key    {remote_host}
+			events 10
+			window 1m
+		}
+	}
+
+	@tools {
+		path /v1/tools/execute
+	}
+	rate_limit @tools {
+		zone tools_limit {
+			key    {remote_host}
+			events 30
+			window 1m
+		}
+	}
+
+	@export {
+		path /api/v1/export
+	}
+	rate_limit @export {
+		zone export_limit {
+			key    {remote_host}
+			events 10
+			window 1m
+		}
+	}
+
+	# Default limit for everything else
+	rate_limit {
+		zone default_limit {
+			key    {remote_host}
+			events 60
+			window 1m
+		}
+	}
+
+	# ── Request Size Cap ──────────────────────────────
+	request_body {
+		max_size 64KB
+	}
+
+	# ── Security Headers ─────────────────────────────
+	header {
+		# HSTS: 1 year, include subdomains
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		
+		# CSP: default-src self, unsafe-inline for demo UI styles/scripts
+		Content-Security-Policy "default-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://mindburn.org https://demo.mindburn.org;"
+		
+		X-Content-Type-Options    nosniff
+		X-Frame-Options           DENY
+		Referrer-Policy           strict-origin-when-cross-origin
+		X-Helm-Demo              "true"
+		-Server
+	}
+
+	# ── CORS ──────────────────────────────────────────
+	# Allow Mindburn domains
+	@origin header_regexp Origin ^https://(demo\.)?mindburn\.org$
+	header @origin Access-Control-Allow-Origin "{header.Origin}"
+	header @origin Access-Control-Allow-Methods "GET, POST, OPTIONS"
+	header @origin Access-Control-Allow-Headers "Content-Type, Authorization"
+
+	# Handle OPTIONS for CORS preflight
+	handle_errors {
+		@options {
+			method OPTIONS
+		}
+		respond @options 204
+	}
+
+	# ── Health Endpoint (no rate limit) ───────────────
+	handle /health {
+		reverse_proxy helm:8081
+	}
+
+	# ── API Proxy ─────────────────────────────────────
+	handle /v1/* {
+		reverse_proxy helm:8080
+	}
+
+	handle /api/* {
+		reverse_proxy helm:8080
+	}
+	
+	handle /demo {
+		reverse_proxy helm:8080
+	}
+	
+	handle /limits {
+		reverse_proxy helm:8080
+	}
+
+	# ── Root / catch-all ──────────────────────────────
+	# If nothing matches, send to dashboard (which handles 404/SPA)
+	handle {
+		reverse_proxy helm:8080
+	}
+
+	# ── Logging ───────────────────────────────────────
+	log {
+		output stdout
+		format json
+	}
+}

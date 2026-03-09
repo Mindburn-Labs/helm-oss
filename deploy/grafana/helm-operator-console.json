@@ -1,0 +1,168 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "HELM Operator Console — Key Runtime Metrics",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "Request Rate (req/s)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(helm_http_requests_total[5m])",
+          "legendFormat": "{{method}} {{path}} {{status}}"
+        }
+      ]
+    },
+    {
+      "title": "Request Latency (p50/p95/p99)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, rate(helm_http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(helm_http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, rate(helm_http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "title": "Error Rate",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(helm_http_requests_total{status=~\"5..\"}[5m])) / sum(rate(helm_http_requests_total[5m])) * 100",
+          "legendFormat": "Error %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Guardian Decisions",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "rate(helm_guardian_decisions_total[5m])",
+          "legendFormat": "{{verdict}}"
+        }
+      ]
+    },
+    {
+      "title": "Active Budget Usage",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "expr": "helm_budget_used_ratio",
+          "legendFormat": "{{budget_id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "SLO Error Budget Remaining",
+      "type": "gauge",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 12 },
+      "targets": [
+        {
+          "expr": "helm_slo_error_budget_remaining",
+          "legendFormat": "{{slo_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.1 },
+              { "color": "green", "value": 0.5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "KMS Key Version",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 },
+      "targets": [
+        {
+          "expr": "helm_kms_active_key_version",
+          "legendFormat": "Active Key Version"
+        }
+      ]
+    },
+    {
+      "title": "WASM Sandbox Executions",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "targets": [
+        {
+          "expr": "rate(helm_sandbox_executions_total[5m])",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["helm", "governance", "ai-safety"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "HELM Operator Console",
+  "uid": "helm-operator-console",
+  "version": 1
+}

@@ -1,0 +1,76 @@
+name: Spec Vocabulary
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - "core/pkg/contracts/**"
+      - "core/pkg/pdp/**"
+      - "core/pkg/mcp/**"
+      - "core/pkg/bridge/**"
+      - "core/pkg/guardian/**"
+      - "core/cmd/helm/proxy_cmd.go"
+      - "protocols/json-schemas/reason-codes/**"
+      - "protocols/json-schemas/policy/pdp_response.schema.json"
+      - "docs/GOVERNANCE_SPEC.md"
+      - "docs/OBSERVABILITY.md"
+      - "docs/index.md"
+      - "docs/ARCHITECTURE.md"
+      - "docs/specs/SDK_CODEGEN.md"
+      - "docs/specs/PACK_COMPOSITION.md"
+      - ".github/workflows/spec-vocabulary.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "core/pkg/contracts/**"
+      - "core/pkg/pdp/**"
+      - "core/pkg/mcp/**"
+      - "core/pkg/bridge/**"
+      - "core/pkg/guardian/**"
+      - "core/cmd/helm/proxy_cmd.go"
+      - "protocols/json-schemas/reason-codes/**"
+      - "protocols/json-schemas/policy/pdp_response.schema.json"
+      - "docs/GOVERNANCE_SPEC.md"
+      - "docs/OBSERVABILITY.md"
+      - "docs/index.md"
+      - "docs/ARCHITECTURE.md"
+      - "docs/specs/SDK_CODEGEN.md"
+      - "docs/specs/PACK_COMPOSITION.md"
+      - ".github/workflows/spec-vocabulary.yml"
+  workflow_dispatch:
+
+jobs:
+  vocabulary-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+      - name: Runtime Vocabulary Tests
+        run: |
+          cd core
+          GOWORK=off go test ./pkg/contracts ./pkg/pdp ./pkg/mcp ./pkg/bridge ./pkg/guardian -count=1
+      - name: Grep Guard
+        run: |
+          set -euo pipefail
+
+          DOC_FILES=(
+            docs/GOVERNANCE_SPEC.md
+            docs/OBSERVABILITY.md
+            docs/index.md
+            docs/ARCHITECTURE.md
+            docs/specs/SDK_CODEGEN.md
+            docs/specs/PACK_COMPOSITION.md
+            protocols/json-schemas/policy/pdp_response.schema.json
+          )
+
+          if rg -n '17 core codes|17 normative codes|DENY_BUDGET_EXCEEDED|DENY_SCHEMA_MISMATCH|ALLOW\|BLOCK\|ESCALATE|REQUIRE_APPROVAL|REQUIRE_EVIDENCE|DEFER' "${DOC_FILES[@]}"; then
+            echo "ERROR: stale public vocabulary detected"
+            exit 1
+          fi
+
+          if rg -n 'ReasonCode:\s*"ALLOW"|ReasonCode\s*==\s*"ALLOW"|reason_code.*ALLOW' core/pkg/pdp core/pkg/mcp core/pkg/bridge -g'*.go'; then
+            echo "ERROR: allow-path reason codes must stay empty"
+            exit 1
+          fi

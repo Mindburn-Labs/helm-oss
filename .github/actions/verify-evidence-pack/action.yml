@@ -1,0 +1,78 @@
+name: HELM Verify EvidencePack
+description: Verify HELM EvidencePack integrity in CI
+author: Mindburn Labs
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  evidence-pack:
+    description: Path to EvidencePack tar file
+    required: true
+  level:
+    description: Conformance level to verify (1-4)
+    required: false
+    default: '2'
+  fail-on-deny:
+    description: Fail the action if any DENY receipts found
+    required: false
+    default: 'false'
+  helm-version:
+    description: HELM CLI version to install
+    required: false
+    default: 'latest'
+
+outputs:
+  verdict:
+    description: Overall verification verdict (PASS/FAIL)
+  receipts:
+    description: Number of receipts verified
+  chain-valid:
+    description: Whether the receipt chain is valid (true/false)
+  summary:
+    description: JSON summary of verification results
+
+runs:
+  using: composite
+  steps:
+    - name: Install HELM CLI
+      shell: bash
+      run: |
+        if ! command -v helm &> /dev/null; then
+          curl -fsSL https://helm.sh/install.sh | HELM_VERSION=${{ inputs.helm-version }} sh
+        fi
+
+    - name: Verify EvidencePack
+      shell: bash
+      id: verify
+      run: |
+        RESULT=$(helm verify \
+          --evidence-pack "${{ inputs.evidence-pack }}" \
+          --level ${{ inputs.level }} \
+          --format json)
+
+        echo "verdict=$(echo $RESULT | jq -r '.verdict')" >> $GITHUB_OUTPUT
+        echo "receipts=$(echo $RESULT | jq -r '.receipts_verified')" >> $GITHUB_OUTPUT
+        echo "chain-valid=$(echo $RESULT | jq -r '.chain_valid')" >> $GITHUB_OUTPUT
+        echo "summary=$RESULT" >> $GITHUB_OUTPUT
+
+    - name: Check for DENY receipts
+      shell: bash
+      if: inputs.fail-on-deny == 'true'
+      run: |
+        DENIALS=$(echo '${{ steps.verify.outputs.summary }}' | jq '.deny_count // 0')
+        if [ "$DENIALS" -gt 0 ]; then
+          echo "❌ Found $DENIALS DENY receipts"
+          exit 1
+        fi
+
+    - name: Report
+      shell: bash
+      run: |
+        echo "## HELM EvidencePack Verification" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Verdict | ${{ steps.verify.outputs.verdict }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Receipts | ${{ steps.verify.outputs.receipts }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Chain Valid | ${{ steps.verify.outputs.chain-valid }} |" >> $GITHUB_STEP_SUMMARY

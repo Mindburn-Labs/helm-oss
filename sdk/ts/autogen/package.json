@@ -1,0 +1,18 @@
+{
+  "name": "@mindburn/helm-autogen",
+  "version": "0.9.0",
+  "description": "HELM governance adapter for AutoGen",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mindburn-Labs/helm-oss.git",
+    "directory": "sdk/ts/autogen"
+  },
+  "license": "Apache-2.0",
+  "keywords": ["helm", "governance", "autogen", "ai-safety"]
+}

@@ -1,0 +1,873 @@
+openapi: "3.1.0"
+info:
+  title: HELM Kernel API
+  version: 0.1.1
+  description: |
+    Deterministic execution kernel for AI tool calls.
+    Drop-in OpenAI proxy + cryptographic receipts + offline-verifiable evidence packs.
+  license:
+    name: Apache-2.0
+    url: https://github.com/Mindburn-Labs/helm-oss/blob/main/LICENSE
+  contact:
+    name: Mindburn Labs
+    url: https://mindburn.org
+
+servers:
+  - url: http://localhost:8080
+    description: Local development (Docker Compose)
+  - url: http://localhost:9090
+    description: Standalone proxy mode
+
+tags:
+  - name: proxy
+    description: OpenAI-compatible proxy (viral adoption wedge)
+  - name: approval
+    description: RFC-005 approval ceremonies
+  - name: proofgraph
+    description: ProofGraph DAG access
+  - name: evidence
+    description: EvidencePack export and verification
+  - name: conformance
+    description: Conformance testing
+  - name: system
+    description: Health and version
+
+x-helm-reason-codes:
+  description: Deterministic reason codes returned by the kernel
+  enum:
+    - ALLOW
+    - DENY_TOOL_NOT_FOUND
+    - DENY_SCHEMA_MISMATCH
+    - DENY_OUTPUT_DRIFT
+    - DENY_BUDGET_EXCEEDED
+    - DENY_APPROVAL_REQUIRED
+    - DENY_APPROVAL_TIMEOUT
+    - DENY_SANDBOX_TRAP
+    - DENY_GAS_EXHAUSTION
+    - DENY_TIME_LIMIT
+    - DENY_MEMORY_LIMIT
+    - DENY_POLICY_VIOLATION
+    - DENY_TRUST_KEY_REVOKED
+    - DENY_IDEMPOTENCY_DUPLICATE
+    - ERROR_INTERNAL
+
+paths:
+  # ── OpenAI Proxy ────────────────────────────────────
+  /v1/chat/completions:
+    post:
+      operationId: chatCompletions
+      tags: [proxy]
+      summary: OpenAI-compatible chat completions
+      description: |
+        Drop-in replacement for OpenAI /v1/chat/completions.
+        Tool calls are intercepted, schema-validated, and receipted.
+        Response includes X-Helm-Receipt-ID, X-Helm-Output-Hash, X-Helm-Lamport-Clock headers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatCompletionRequest'
+            example:
+              model: gpt-4
+              messages:
+                - role: user
+                  content: "List files in /tmp"
+              tools:
+                - type: function
+                  function:
+                    name: file_read
+                    parameters:
+                      type: object
+                      properties:
+                        path:
+                          type: string
+      responses:
+        '200':
+          description: Chat completion with optional tool calls
+          headers:
+            X-Helm-Receipt-ID:
+              schema: { type: string }
+              description: Unique receipt ID for this execution
+            X-Helm-Output-Hash:
+              schema: { type: string }
+              description: SHA-256 of the response body
+            X-Helm-Lamport-Clock:
+              schema: { type: integer }
+              description: Causal ordering clock
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatCompletionResponse'
+        '400':
+          $ref: '#/components/responses/HelmError'
+        '403':
+          $ref: '#/components/responses/HelmError'
+        '500':
+          $ref: '#/components/responses/HelmError'
+
+  # ── Kernel Approval ─────────────────────────────────
+  /api/v1/kernel/approve:
+    post:
+      operationId: approveIntent
+      tags: [approval]
+      summary: Submit an approval for a pending intent
+      description: |
+        RFC-005 approval ceremony endpoint.
+        Requires intent_hash, Ed25519 signature, and public key.
+        Returns an approval receipt with causal chain linkage.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRequest'
+            example:
+              intent_hash: "sha256:abc123..."
+              signature_b64: "base64-encoded-ed25519-signature"
+              public_key_b64: "base64-encoded-public-key"
+      responses:
+        '200':
+          description: Approval receipt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Receipt'
+              example:
+                receipt_id: "rec_a1b2c3"
+                status: "APPROVED"
+                reason_code: "ALLOW"
+                lamport_clock: 42
+                output_hash: "sha256:7f83b1..."
+        '400':
+          $ref: '#/components/responses/HelmError'
+        '403':
+          $ref: '#/components/responses/HelmError'
+
+  /api/v1/trust/keys/add:
+    post:
+      operationId: addTrustKey
+      tags: [system]
+      summary: Add a trusted signing key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddTrustKeyRequest'
+      responses:
+        '200':
+          description: Trust key added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  tenant_id: { type: string }
+                  key_id: { type: string }
+        '400':
+          $ref: '#/components/responses/HelmError'
+
+  /api/v1/trust/keys/revoke:
+    post:
+      operationId: revokeTrustKey
+      tags: [system]
+      summary: Revoke a trusted signing key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeTrustKeyRequest'
+      responses:
+        '200':
+          description: Trust key revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  tenant_id: { type: string }
+                  key_id: { type: string }
+        '400':
+          $ref: '#/components/responses/HelmError'
+
+  # ── ProofGraph ──────────────────────────────────────
+  /api/v1/proofgraph/sessions:
+    get:
+      operationId: listSessions
+      tags: [proofgraph]
+      summary: List ProofGraph sessions
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Session'
+
+  /api/v1/proofgraph/sessions/{session_id}/receipts:
+    get:
+      operationId: getSessionReceipts
+      tags: [proofgraph]
+      summary: Get receipts for a specific session
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of receipts in session
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Receipt'
+        '404':
+          $ref: '#/components/responses/HelmError'
+
+  /api/v1/proofgraph/receipts/{receipt_hash}:
+    get:
+      operationId: getReceipt
+      tags: [proofgraph]
+      summary: Get a single receipt by hash
+      parameters:
+        - name: receipt_hash
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Receipt details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Receipt'
+        '404':
+          $ref: '#/components/responses/HelmError'
+
+  # ── EvidencePack ────────────────────────────────────
+  /api/v1/evidence/export:
+    post:
+      operationId: exportEvidence
+      tags: [evidence]
+      summary: Export an EvidencePack
+      description: |
+        Exports a deterministic .tar.gz containing all receipts, ProofGraph nodes, and metadata.
+        Same content always produces same SHA-256.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+            example:
+              session_id: "sess_abc123"
+              format: "tar.gz"
+      responses:
+        '200':
+          description: EvidencePack binary
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/HelmError'
+
+  /api/v1/evidence/verify:
+    post:
+      operationId: verifyEvidence
+      tags: [evidence]
+      summary: Verify an EvidencePack
+      description: |
+        Verifies signatures, causal chain, and policy compliance.
+        Works offline — no network calls made during verification.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                bundle:
+                  type: string
+                  format: binary
+                  description: EvidencePack .tar.gz file
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResult'
+              example:
+                verdict: "PASS"
+                checks:
+                  signatures: "PASS"
+                  causal_chain: "PASS"
+                  policy_compliance: "PASS"
+                errors: []
+        '400':
+          $ref: '#/components/responses/HelmError'
+
+  /api/v1/replay/verify:
+    post:
+      operationId: replayVerify
+      tags: [evidence]
+      summary: Replay and verify execution from tapes
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                bundle:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Replay verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationResult'
+        '400':
+          $ref: '#/components/responses/HelmError'
+
+  # ── Conformance ─────────────────────────────────────
+  /api/v1/conformance/run:
+    post:
+      operationId: runConformance
+      tags: [conformance]
+      summary: Run conformance tests
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConformanceRequest'
+            example:
+              level: "L2"
+              profile: "full"
+      responses:
+        '200':
+          description: Conformance result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConformanceResult'
+              example:
+                report_id: "conf_abc123"
+                level: "L2"
+                verdict: "PASS"
+                gates: 12
+                failed: 0
+                details:
+                  jcs_canonicalization: "PASS"
+                  pep_boundary: "PASS"
+                  wasi_sandbox: "PASS"
+        '400':
+          $ref: '#/components/responses/HelmError'
+
+  /api/v1/conformance/reports/{report_id}:
+    get:
+      operationId: getConformanceReport
+      tags: [conformance]
+      summary: Get a conformance report by ID
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Conformance report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConformanceResult'
+        '404':
+          $ref: '#/components/responses/HelmError'
+
+  # ── MCP Gateway ────────────────────────────────────
+  /mcp/v1/capabilities:
+    get:
+      operationId: listMCPCapabilities
+      tags: [proxy]
+      summary: List governed MCP tools
+      responses:
+        '200':
+          description: MCP capability manifest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPCapabilityManifest'
+
+  /mcp/v1/execute:
+    post:
+      operationId: executeMCPTool
+      tags: [proxy]
+      summary: Execute a governed MCP tool call
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MCPToolCallRequest'
+            example:
+              method: file_read
+              params:
+                path: /tmp/test.txt
+      responses:
+        '200':
+          description: Governed tool result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPToolCallResponse'
+        '400':
+          $ref: '#/components/responses/HelmError'
+        '403':
+          $ref: '#/components/responses/HelmError'
+        '404':
+          $ref: '#/components/responses/HelmError'
+
+  # ── System ──────────────────────────────────────────
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [system]
+      summary: Health check
+      responses:
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: "ok" }
+                  version: { type: string, example: "0.1.0" }
+
+  /version:
+    get:
+      operationId: getVersion
+      tags: [system]
+      summary: Version information
+      responses:
+        '200':
+          description: Version details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionInfo'
+              example:
+                version: "0.1.0"
+                commit: "abc123"
+                build_time: "2026-02-15T00:00:00Z"
+                go_version: "go1.24.0"
+
+components:
+  # ── Schemas ─────────────────────────────────────────
+  schemas:
+    HelmError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [message, type, code, reason_code]
+          properties:
+            message:
+              type: string
+              description: Human-readable error message
+            type:
+              type: string
+              enum: [invalid_request, authentication_error, permission_denied, not_found, internal_error]
+            code:
+              type: string
+              description: Machine-readable error code
+            reason_code:
+              type: string
+              description: HELM-specific reason code
+              enum:
+                - DENY_TOOL_NOT_FOUND
+                - DENY_SCHEMA_MISMATCH
+                - DENY_OUTPUT_DRIFT
+                - DENY_BUDGET_EXCEEDED
+                - DENY_APPROVAL_REQUIRED
+                - DENY_APPROVAL_TIMEOUT
+                - DENY_SANDBOX_TRAP
+                - DENY_GAS_EXHAUSTION
+                - DENY_TIME_LIMIT
+                - DENY_MEMORY_LIMIT
+                - DENY_POLICY_VIOLATION
+                - DENY_TRUST_KEY_REVOKED
+                - DENY_IDEMPOTENCY_DUPLICATE
+                - ERROR_INTERNAL
+            details:
+              type: object
+              description: Additional error context
+              additionalProperties: true
+
+    ChatCompletionRequest:
+      type: object
+      required: [model, messages]
+      properties:
+        model:
+          type: string
+        messages:
+          type: array
+          items:
+            type: object
+            required: [role, content]
+            properties:
+              role:
+                type: string
+                enum: [system, user, assistant, tool]
+              content:
+                type: string
+              tool_call_id:
+                type: string
+        tools:
+          type: array
+          items:
+            type: object
+            properties:
+              type: { type: string, enum: [function] }
+              function:
+                type: object
+                properties:
+                  name: { type: string }
+                  description: { type: string }
+                  parameters: { type: object }
+        temperature:
+          type: number
+        max_tokens:
+          type: integer
+        stream:
+          type: boolean
+          default: false
+
+    ChatCompletionResponse:
+      type: object
+      properties:
+        id: { type: string }
+        object: { type: string, default: "chat.completion" }
+        created: { type: integer }
+        model: { type: string }
+        choices:
+          type: array
+          items:
+            type: object
+            properties:
+              index: { type: integer }
+              message:
+                type: object
+                properties:
+                  role: { type: string }
+                  content:
+                    type: ['string', 'null']
+                  tool_calls:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        type: { type: string }
+                        function:
+                          type: object
+                          properties:
+                            name: { type: string }
+                            arguments: { type: string }
+              finish_reason: { type: string }
+        usage:
+          type: object
+          properties:
+            prompt_tokens: { type: integer }
+            completion_tokens: { type: integer }
+            total_tokens: { type: integer }
+
+    ApprovalRequest:
+      type: object
+      required: [intent_hash, signature_b64, public_key_b64]
+      properties:
+        intent_hash:
+          type: string
+          description: SHA-256 hash of the intent to approve
+        signature_b64:
+          type: string
+          description: Base64-encoded Ed25519 signature
+        public_key_b64:
+          type: string
+          description: Base64-encoded Ed25519 public key
+        challenge_response:
+          type: string
+          description: Optional challenge/response for ceremony
+
+    AddTrustKeyRequest:
+      type: object
+      required: [tenant_id, key_id, public_key]
+      properties:
+        tenant_id: { type: string }
+        key_id: { type: string }
+        public_key:
+          type: string
+          description: Hex-encoded Ed25519 public key
+
+    RevokeTrustKeyRequest:
+      type: object
+      required: [tenant_id, key_id]
+      properties:
+        tenant_id: { type: string }
+        key_id: { type: string }
+
+    Receipt:
+      type: object
+      properties:
+        receipt_id: { type: string }
+        decision_id: { type: string }
+        effect_id: { type: string }
+        status:
+          type: string
+          enum: [APPROVED, DENIED, PENDING]
+        reason_code: { type: string }
+        output_hash: { type: string }
+        blob_hash: { type: string }
+        prev_hash: { type: string }
+        lamport_clock: { type: integer }
+        signature: { type: string }
+        timestamp: { type: string, format: date-time }
+        principal: { type: string }
+
+    Session:
+      type: object
+      properties:
+        session_id: { type: string }
+        created_at: { type: string, format: date-time }
+        receipt_count: { type: integer }
+        last_lamport_clock: { type: integer }
+
+    ExportRequest:
+      type: object
+      properties:
+        session_id:
+          type: string
+          description: Session to export (omit for all)
+        format:
+          type: string
+          enum: [tar.gz]
+          default: tar.gz
+
+    VerificationResult:
+      type: object
+      properties:
+        verdict:
+          type: string
+          enum: [PASS, FAIL]
+        checks:
+          type: object
+          properties:
+            signatures: { type: string, enum: [PASS, FAIL] }
+            causal_chain: { type: string, enum: [PASS, FAIL] }
+            policy_compliance: { type: string, enum: [PASS, FAIL] }
+        errors:
+          type: array
+          items: { type: string }
+
+    ConformanceRequest:
+      type: object
+      required: [level]
+      properties:
+        level:
+          type: string
+          enum: [L1, L2]
+        profile:
+          type: string
+          default: full
+
+    ConformanceResult:
+      type: object
+      properties:
+        report_id: { type: string }
+        level: { type: string }
+        verdict: { type: string, enum: [PASS, FAIL] }
+        gates: { type: integer }
+        failed: { type: integer }
+        details:
+          type: object
+          additionalProperties: { type: string }
+
+    VersionInfo:
+      type: object
+      properties:
+        version: { type: string }
+        commit: { type: string }
+        build_time: { type: string }
+        go_version: { type: string }
+
+    MCPToolRef:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        server_id: { type: string }
+        schema:
+          type: object
+          additionalProperties: true
+
+    MCPCapabilityManifest:
+      type: object
+      properties:
+        server_name: { type: string }
+        version: { type: string }
+        governance: { type: string }
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/MCPToolRef'
+
+    MCPToolCallRequest:
+      type: object
+      required: [method]
+      properties:
+        method: { type: string }
+        params:
+          type: object
+          additionalProperties: true
+
+    MCPToolCallResponse:
+      type: object
+      properties:
+        result:
+          description: Tool output payload
+          oneOf:
+            - type: string
+            - type: object
+              additionalProperties: true
+        error: { type: string }
+        reason_code: { type: string }
+        args_hash: { type: string }
+        proofgraph_node: { type: string }
+        receipt_id: { type: string }
+
+    # ── PDP / EffectBoundary Wire Types ────────────────
+    Effect:
+      type: object
+      description: An effect submitted for governance evaluation
+      required: [effect_type, effect_id, params]
+      properties:
+        effect_type:
+          type: string
+          description: Category of the effect (file_read, api_call, exec, etc.)
+        effect_id:
+          type: string
+          description: Unique identifier for this effect instance
+        params:
+          type: object
+          description: Effect-specific parameters
+          additionalProperties: true
+        budget_id:
+          type: string
+          description: Optional budget to charge against
+
+    GovernanceDecision:
+      type: object
+      description: PDP decision for an effect
+      required: [verdict, decision_id, effect_id]
+      properties:
+        decision_id:
+          type: string
+        effect_id:
+          type: string
+        verdict:
+          type: string
+          enum: [ALLOW, DENY, ESCALATE]
+        reason_code:
+          type: ['string', 'null']
+          description: "Null for ALLOW. Registered code from reason-codes-v1.json for DENY/ESCALATE."
+        receipt:
+          $ref: '#/components/schemas/Receipt'
+        active_packs:
+          type: array
+          items: { type: string }
+          description: Names of policy bundles active during evaluation
+
+    EffectBoundary:
+      type: object
+      description: The boundary contract for submitting effects to the kernel
+      required: [effect, principal]
+      properties:
+        effect:
+          $ref: '#/components/schemas/Effect'
+        principal:
+          type: string
+          description: "Agent/user identity (e.g. agent:analyst)"
+        context:
+          type: object
+          description: Additional context (jurisdiction, industry, budget state)
+          additionalProperties: true
+
+    PDPRequest:
+      type: object
+      description: Request to the Policy Decision Point
+      required: [boundary]
+      properties:
+        boundary:
+          $ref: '#/components/schemas/EffectBoundary'
+
+    PDPResponse:
+      type: object
+      description: Response from the Policy Decision Point
+      required: [decision]
+      properties:
+        decision:
+          $ref: '#/components/schemas/GovernanceDecision'
+
+    PolicyBundle:
+      type: object
+      description: A loaded policy bundle (jurisdiction, industry, or business pack)
+      required: [name, version, content_hash]
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        content_hash:
+          type: string
+          description: SHA-256 of the bundle contents
+        signature:
+          type: ['string', 'null']
+          description: Ed25519 signature over content_hash
+        pack_type:
+          type: string
+          enum: [jurisdiction, industry, business, custom]
+
+  # ── Responses ───────────────────────────────────────
+  responses:
+    HelmError:
+      description: HELM error response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HelmError'
+          example:
+            error:
+              message: "Tool not found: unknown_tool"
+              type: "invalid_request"
+              code: "tool_not_found"
+              reason_code: "DENY_TOOL_NOT_FOUND"

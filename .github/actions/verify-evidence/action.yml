@@ -1,0 +1,82 @@
+name: 'HELM Evidence Verification'
+description: 'Verify a HELM evidence pack in CI. Installs HELM if needed, then runs offline verification.'
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  evidence-path:
+    description: 'Path to evidence pack (.tar or directory)'
+    required: true
+  helm-version:
+    description: 'HELM version to install (tag name, e.g. v0.2.0)'
+    default: 'latest'
+  fail-on-unverified:
+    description: 'Fail the step if evidence is unverified'
+    default: 'true'
+
+outputs:
+  verdict:
+    description: 'Verification verdict: verified, partial, or unverified'
+    value: ${{ steps.verify.outputs.verdict }}
+  receipt-count:
+    description: 'Number of receipts in the evidence pack'
+    value: ${{ steps.verify.outputs.receipt_count }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install HELM
+      shell: bash
+      run: |
+        if command -v helm &>/dev/null; then
+          echo "HELM already available: $(helm --version 2>/dev/null || echo 'unknown')"
+        else
+          VERSION="${{ inputs.helm-version }}"
+          if [ "$VERSION" = "latest" ]; then
+            DOWNLOAD_URL="https://github.com/Mindburn-Labs/helm-oss/releases/latest/download"
+          else
+            DOWNLOAD_URL="https://github.com/Mindburn-Labs/helm-oss/releases/download/${VERSION}"
+          fi
+          OS=$(uname -s | tr A-Z a-z)
+          ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+          curl -sSLf "${DOWNLOAD_URL}/helm-${OS}-${ARCH}" -o /usr/local/bin/helm || {
+            echo "::error::Failed to download HELM binary"
+            exit 1
+          }
+          chmod +x /usr/local/bin/helm
+          echo "Installed HELM $(helm --version 2>/dev/null || echo 'unknown')"
+        fi
+
+    - name: Verify evidence
+      id: verify
+      shell: bash
+      run: |
+        EVIDENCE_PATH="${{ inputs.evidence-path }}"
+        if [ ! -e "$EVIDENCE_PATH" ]; then
+          echo "::error::Evidence path not found: $EVIDENCE_PATH"
+          exit 1
+        fi
+
+        # Run verification
+        OUTPUT=$(helm verify --bundle "$EVIDENCE_PATH" 2>&1) || VERIFY_EXIT=$?
+        echo "$OUTPUT"
+
+        # Parse verdict
+        if echo "$OUTPUT" | grep -qi "verified"; then
+          echo "verdict=verified" >> $GITHUB_OUTPUT
+        elif echo "$OUTPUT" | grep -qi "partial"; then
+          echo "verdict=partial" >> $GITHUB_OUTPUT
+        else
+          echo "verdict=unverified" >> $GITHUB_OUTPUT
+        fi
+
+        # Count receipts if possible
+        RECEIPT_COUNT=$(echo "$OUTPUT" | grep -oP '\d+ receipts' | grep -oP '\d+' || echo "0")
+        echo "receipt_count=${RECEIPT_COUNT}" >> $GITHUB_OUTPUT
+
+        # Fail if configured to do so
+        if [ "${{ inputs.fail-on-unverified }}" = "true" ] && [ "${VERIFY_EXIT:-0}" -ne 0 ]; then
+          echo "::error::Evidence verification failed"
+          exit 1
+        fi

@@ -1,0 +1,219 @@
+package crypto
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+	"sync"
+
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
+)
+
+// KeyRing implements Signer/Verifier for multiple keys (Rotation support).
+type KeyRing struct {
+	mu      sync.RWMutex
+	signers map[string]Signer // map keyID -> Verifier
+}
+
+// NewKeyRing creates a new empty KeyRing.
+func NewKeyRing() *KeyRing {
+	return &KeyRing{
+		signers: make(map[string]Signer),
+	}
+}
+
+// AddKey adds a signer to the keyring.
+func (k *KeyRing) AddKey(s Signer) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	// In a real impl, we'd extract KeyID from Signer interface or cast
+	if ed, ok := s.(*Ed25519Signer); ok {
+		k.signers[ed.KeyID] = s
+	}
+}
+
+// RevokeKey removes a key from the keyring by ID.
+func (k *KeyRing) RevokeKey(keyID string) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	delete(k.signers, keyID)
+}
+
+// SignDecision signs with the LATEST added key (implied active).
+// For proving rotation, checking verification is more important.
+func (k *KeyRing) SignDecision(d *contracts.DecisionRecord) error {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+	// Just pick one for now, or last added.
+	// In this proof, we usually sign with the specific Ed25519Signer instance,
+	// and use KeyRing ONLY for verification in the Executor.
+	// So this can be a stub or pick random.
+	// Deterministic selection: Pick the lexicographically last key (assuming it's the latest/active)
+	var keys []string
+	for k := range k.signers {
+		keys = append(keys, k)
+	}
+	if len(keys) == 0 {
+		return fmt.Errorf("no keyring keys available")
+	}
+	sort.Strings(keys)
+	selectedKey := keys[len(keys)-1]
+
+	return k.signers[selectedKey].SignDecision(d)
+}
+
+// VerifyKey verifies signature for a specific key
+func (k *KeyRing) VerifyKey(keyID string, message []byte, signature []byte) (bool, error) {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	signer, exists := k.signers[keyID]
+	if !exists {
+		return false, fmt.Errorf("unknown key: %s", keyID)
+	}
+
+	if v, ok := signer.(*Ed25519Signer); ok {
+		return v.Verify(message, signature), nil
+	}
+
+	return false, fmt.Errorf("signer %s does not support raw verification", keyID)
+}
+
+// VerifyDecision verifies a decision against the keyring.
+func (k *KeyRing) VerifyDecision(d *contracts.DecisionRecord) (bool, error) {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	// Parse 'ed25519:key-id'
+	parts := strings.Split(d.SignatureType, SigSeparator)
+	if len(parts) != 2 {
+		return false, fmt.Errorf("invalid signature type format: %s", d.SignatureType)
+	}
+	keyID := parts[1]
+
+	signer, exists := k.signers[keyID]
+	if !exists {
+		return false, fmt.Errorf("unknown or revoked key: %s", keyID)
+	}
+
+	//nolint:wrapcheck // internal delegation
+	if v, ok := signer.(Verifier); ok {
+		return v.VerifyDecision(d)
+	}
+	return false, fmt.Errorf("key %s does not implement Verifier", keyID)
+}
+
+// Sign signs data with the first available key.
+func (k *KeyRing) Sign(data []byte) (string, error) {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	// Deterministic selection
+	var keys []string
+	for k := range k.signers {
+		keys = append(keys, k)
+	}
+	if len(keys) == 0 {
+		return "", fmt.Errorf("no keyring keys available")
+	}
+	sort.Strings(keys)
+	selectedKey := keys[len(keys)-1]
+
+	return k.signers[selectedKey].Sign(data)
+}
+
+func (k *KeyRing) VerifyIntent(i *contracts.AuthorizedExecutionIntent) (bool, error) {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	// Intent signature is just hex usually?
+	// We verify against all keys since we don't have KeyID in intent signature structure yet.
+	for _, s := range k.signers {
+		if v, ok := s.(Verifier); ok {
+			if verified, err := v.VerifyIntent(i); verified && err == nil {
+				return true, nil
+			}
+		}
+	}
+	// Fallback/Fail
+	return false, fmt.Errorf("no key verified the intent")
+}
+
+func (k *KeyRing) Verify(message []byte, signature []byte) bool {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+	// Try all keys
+	for _, s := range k.signers {
+		if v, ok := s.(Verifier); ok {
+			if v.Verify(message, signature) {
+				return true
+			}
+		}
+		// Or if Signer is not Verifier? Signer extends Verifier usually.
+	}
+	return false
+}
+
+func (k *KeyRing) PublicKey() string {
+	// KeyRing doesn't have a single public key.
+	// We returns a marker to indicate this is a keyring.
+	return "keyring-aggregate"
+}
+
+// PublicKeyBytes returns nil for a KeyRing since it is an aggregate of multiple keys.
+func (k *KeyRing) PublicKeyBytes() []byte {
+	return nil
+}
+
+// SignIntent signs an intent with the first available key.
+func (k *KeyRing) SignIntent(i *contracts.AuthorizedExecutionIntent) error {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	// Deterministic selection
+	var keys []string
+	for k := range k.signers {
+		keys = append(keys, k)
+	}
+	if len(keys) == 0 {
+		return fmt.Errorf("no keyring keys available")
+	}
+	sort.Strings(keys)
+	selectedKey := keys[len(keys)-1]
+
+	return k.signers[selectedKey].SignIntent(i)
+}
+
+// SignReceipt signs a receipt with the first available key.
+func (k *KeyRing) SignReceipt(r *contracts.Receipt) error {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+
+	// Deterministic selection
+	var keys []string
+	for k := range k.signers {
+		keys = append(keys, k)
+	}
+	if len(keys) == 0 {
+		return fmt.Errorf("no keyring keys available")
+	}
+	sort.Strings(keys)
+	selectedKey := keys[len(keys)-1]
+
+	return k.signers[selectedKey].SignReceipt(r)
+}
+
+// VerifyReceipt verifies a receipt against the keyring.
+func (k *KeyRing) VerifyReceipt(r *contracts.Receipt) (bool, error) {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+	// Try all keys since receipt doesn't have key ID
+	for _, s := range k.signers {
+		if v, ok := s.(Verifier); ok {
+			if verified, err := v.VerifyReceipt(r); verified && err == nil {
+				return true, nil
+			}
+		}
+	}
+	return false, fmt.Errorf("no key verified the receipt")
+}
