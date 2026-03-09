@@ -1,0 +1,102 @@
+# HELM Demo Deployment
+
+# ═══════════════════════════════════════════════════════
+#  HELM Demo Deployment
+#  - Stub tools only (no real connectors)
+#  - Ephemeral demo signing keys
+#  - Daily state reset via cron
+#  - Caddy edge proxy with rate limiting + TLS
+# ═══════════════════════════════════════════════════════
+
+services:
+  # ── Edge Proxy ──────────────────────────────────────
+  caddy:
+    build:
+      context: ./deploy
+      dockerfile: Dockerfile.caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      helm:
+        condition: service_healthy
+    environment:
+      DEMO_DOMAIN: "${DEMO_DOMAIN:-localhost}"
+
+  # ── Database ────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: helm_demo
+      POSTGRES_USER: helm_demo
+      POSTGRES_PASSWORD: helm-demo-only
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U helm_demo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── HELM Kernel ─────────────────────────────────────
+  helm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://helm_demo:helm-demo-only@postgres:5432/helm_demo?sslmode=disable"
+      HELM_REGION: "demo"
+      HELM_ENABLE_OPENAI_PROXY: "1"
+      HELM_DEMO_MODE: "1"
+      EVIDENCE_SIGNING_KEY: "demo-ephemeral-key"
+      # ⚠️  Demo-only keys. NEVER reuse in production.
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/helm", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── Daily Reset Cron ────────────────────────────────
+  reset:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: helm-demo-only
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        echo "Demo reset cron: every 24h at 04:00 UTC"
+        while true; do
+          # Sleep until 04:00 UTC
+          CURRENT=$$(date +%s)
+          TARGET=$$(date -d "tomorrow 04:00" +%s 2>/dev/null || date -v+1d -v4H -v0M -v0S +%s 2>/dev/null || echo $$((CURRENT + 86400)))
+          SLEEP=$$((TARGET - CURRENT))
+          if [ "$$SLEEP" -le 0 ]; then SLEEP=86400; fi
+          echo "[reset] next reset in $${SLEEP}s"
+          sleep "$$SLEEP"
+          echo "[reset] dropping and recreating demo database..."
+          psql -h postgres -U helm_demo -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='helm_demo' AND pid <> pg_backend_pid();" 2>/dev/null || true
+          dropdb -h postgres -U helm_demo --if-exists helm_demo 2>/dev/null || true
+          createdb -h postgres -U helm_demo helm_demo 2>/dev/null || true
+          echo "[reset] ✅ demo state cleared"
+        done
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

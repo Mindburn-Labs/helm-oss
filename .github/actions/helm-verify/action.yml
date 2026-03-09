@@ -1,0 +1,93 @@
+name: 'HELM Verify'
+description: 'Verify HELM conformance via @mindburn/helm CLI'
+inputs:
+  bundle:
+    description: 'Path to local evidence bundle (optional; defaults to latest release)'
+    required: false
+  level:
+    description: 'Conformance level: L1 or L2'
+    required: false
+    default: 'L2'
+  report:
+    description: 'Path to write HTML report (optional)'
+    required: false
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '20'
+outputs:
+  verdict:
+    description: 'Verification verdict: PASS or FAIL'
+    value: ${{ steps.verify.outputs.verdict }}
+  bundle-root:
+    description: 'Bundle root hash'
+    value: ${{ steps.verify.outputs.bundle_root }}
+  merkle-root:
+    description: 'Merkle root hash'
+    value: ${{ steps.verify.outputs.merkle_root }}
+  json:
+    description: 'Full JSON output'
+    value: ${{ steps.verify.outputs.json }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Run HELM Verify
+      id: verify
+      shell: bash
+      run: |
+        ARGS="--ci"
+        if [ -n "${{ inputs.bundle }}" ]; then
+          ARGS="$ARGS --bundle ${{ inputs.bundle }}"
+        fi
+        if [ -n "${{ inputs.level }}" ]; then
+          ARGS="$ARGS --level ${{ inputs.level }}"
+        fi
+        if [ -n "${{ inputs.report }}" ]; then
+          ARGS="$ARGS --report ${{ inputs.report }}"
+        fi
+
+        JSON=$(npx @mindburn/helm $ARGS 2>/dev/null || true)
+        VERDICT=$(echo "$JSON" | jq -r '.verdict // "ERROR"')
+        BUNDLE_ROOT=$(echo "$JSON" | jq -r '.roots.manifest_root_hash // ""')
+        MERKLE_ROOT=$(echo "$JSON" | jq -r '.roots.merkle_root // ""')
+
+        echo "verdict=$VERDICT" >> "$GITHUB_OUTPUT"
+        echo "bundle_root=$BUNDLE_ROOT" >> "$GITHUB_OUTPUT"
+        echo "merkle_root=$MERKLE_ROOT" >> "$GITHUB_OUTPUT"
+        echo "json=$JSON" >> "$GITHUB_OUTPUT"
+
+        # Write badge to job summary
+        if [ "$VERDICT" = "PASS" ]; then
+          BADGE_COLOR="brightgreen"
+        else
+          BADGE_COLOR="red"
+        fi
+        BADGE_URL="https://img.shields.io/badge/HELM-${VERDICT}-${BADGE_COLOR}"
+        ROOT_SHORT="${BUNDLE_ROOT:0:12}"
+        echo "![HELM ${VERDICT}](${BADGE_URL})" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
+        echo "|-------|-------|" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Verdict | **${VERDICT}** |" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Bundle root | \`${BUNDLE_ROOT}\` |" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Merkle root | \`${MERKLE_ROOT}\` |" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Conformance | ${{ inputs.level }} |" >> "$GITHUB_STEP_SUMMARY"
+
+        if [ "$VERDICT" = "FAIL" ]; then
+          exit 1
+        elif [ "$VERDICT" = "ERROR" ]; then
+          exit 2
+        fi
+
+    - name: Upload report
+      if: inputs.report != ''
+      uses: actions/upload-artifact@v4
+      with:
+        name: helm-verification-report
+        path: ${{ inputs.report }}

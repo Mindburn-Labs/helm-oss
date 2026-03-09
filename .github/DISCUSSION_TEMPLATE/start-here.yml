@@ -1,0 +1,49 @@
+title: "Start here: 5-minute quickstart + UC-012 + Conformance L1/L2"
+labels: [quickstart, pinned]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Welcome to HELM
+
+        **Goal**: Go from zero to verified in under 5 minutes.
+
+        ## 1. Run HELM (30 seconds)
+
+        ```bash
+        git clone https://github.com/Mindburn-Labs/helm-oss.git && cd helm-oss
+        docker compose up -d
+        curl -s http://localhost:8080/healthz   # → OK
+        ```
+
+        ## 2. See It Work — OpenAI Proxy Wedge
+
+        ```python
+        import openai
+        client = openai.OpenAI(base_url="http://localhost:8080/v1")
+        # Every tool call now gets a cryptographic receipt
+        ```
+
+        ## 3. Run Conformance (UC-012)
+
+        ```bash
+        make build && make crucible
+        # → 12/12 use cases pass, conformance L1+L2 verified
+        ```
+
+        ## 4. Proof Loop
+
+        ```bash
+        ./bin/helm export --evidence ./data/evidence --out pack.tar.gz
+        ./bin/helm verify --bundle pack.tar.gz
+        ```
+
+        ## What Just Happened
+        - Tool calls intercepted, validated (JCS + SHA-256), receipted ✅
+        - Conformance L1 (structural) + L2 (temporal) verified ✅
+        - EvidencePack exported as deterministic tar.gz ✅
+        - Offline verify proved validity with zero network ✅
+
+        ---
+
+        📖 **Full docs**: [README](https://github.com/Mindburn-Labs/helm-oss#readme) · [Security](docs/SECURITY_MODEL.md) · [Deploy](deploy/README.md)

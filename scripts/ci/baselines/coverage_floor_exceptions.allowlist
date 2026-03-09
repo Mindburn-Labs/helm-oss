@@ -1,0 +1,9 @@
+# Packages currently below 30% coverage floor.
+# New packages below floor should fail the audit.
+github.com/Mindburn-Labs/helm-oss/core/pkg/agent
+github.com/Mindburn-Labs/helm-oss/core/pkg/api
+github.com/Mindburn-Labs/helm-oss/core/pkg/conform/gates
+github.com/Mindburn-Labs/helm-oss/core/pkg/metering
+github.com/Mindburn-Labs/helm-oss/core/pkg/prg
+github.com/Mindburn-Labs/helm-oss/core/pkg/store
+github.com/Mindburn-Labs/helm-oss/core/pkg/store/ledger

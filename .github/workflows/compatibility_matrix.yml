@@ -1,0 +1,90 @@
+name: Compatibility Matrix
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Weekly: Monday 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        provider: [mock, opensandbox, e2b, daytona]
+        tier: [compatible, verified]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Build HELM
+        run: make build
+
+      - name: Run conformance
+        run: |
+          ./bin/helm conform --level L2 --json > conformance-${{ matrix.provider }}-L2.json || true
+        continue-on-error: true
+
+      - name: Run sandbox conformance
+        run: |
+          ./bin/helm sandbox conform --provider ${{ matrix.provider }} --tier ${{ matrix.tier }} --json > sandbox-${{ matrix.provider }}-${{ matrix.tier }}.json || true
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: conformance-${{ matrix.provider }}-${{ matrix.tier }}
+          path: |
+            conformance-*.json
+            sandbox-*.json
+
+  matrix:
+    needs: conformance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: results/
+
+      - name: Build matrix (JSON + Markdown)
+        run: |
+          # Build JSON matrix
+          echo '{"generated_at":"'$(date -Is)'","providers":[]}' > matrix-base.json
+          JSON_ENTRIES=""
+          for f in results/*/sandbox-*.json; do
+            provider=$(echo "$f" | grep -oP '(?<=sandbox-)\w+')
+            tier=$(echo "$f" | grep -oP '(?<=-)[\w]+(?=\.json)' | tail -1)
+            pass=$(jq -r '.pass // false' "$f" 2>/dev/null || echo "false")
+            receipt_sample=$(jq -r '.receipt_id // "none"' "$f" 2>/dev/null || echo "none")
+            reason=$(jq -r '.reason_code // "N/A"' "$f" 2>/dev/null || echo "N/A")
+            version=$(jq -r '.provider_version // "unknown"' "$f" 2>/dev/null || echo "unknown")
+            JSON_ENTRIES="$JSON_ENTRIES{\"provider\":\"$provider\",\"tier\":\"$tier\",\"pass\":$pass,\"provider_version\":\"$version\",\"receipt_sample\":\"$receipt_sample\",\"reason_code\":\"$reason\"},"
+          done
+          echo "{\"generated_at\":\"$(date -Is)\",\"entries\":[${JSON_ENTRIES%,}]}" | jq '.' > compatibility-matrix.json
+
+          # Build Markdown matrix
+          echo "# Compatibility Matrix — $(date -I)" > compatibility-matrix.md
+          echo "" >> compatibility-matrix.md
+          echo "| Provider | Version | Tier | Pass | Receipt Sample | Reason Code |" >> compatibility-matrix.md
+          echo "|----------|---------|------|------|----------------|-------------|" >> compatibility-matrix.md
+          for f in results/*/sandbox-*.json; do
+            provider=$(echo "$f" | grep -oP '(?<=sandbox-)\w+')
+            tier=$(echo "$f" | grep -oP '(?<=-)[\w]+(?=\.json)' | tail -1)
+            pass=$(jq -r '.pass // false' "$f" 2>/dev/null || echo "false")
+            receipt=$(jq -r '.receipt_id // "—"' "$f" 2>/dev/null || echo "—")
+            reason=$(jq -r '.reason_code // "—"' "$f" 2>/dev/null || echo "—")
+            version=$(jq -r '.provider_version // "?"' "$f" 2>/dev/null || echo "?")
+            icon="❌"
+            [ "$pass" = "true" ] && icon="✅"
+            echo "| $provider | $version | $tier | $icon | \`$receipt\` | $reason |" >> compatibility-matrix.md
+          done
+          cat compatibility-matrix.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: compatibility-matrix
+          path: |
+            compatibility-matrix.md
+            compatibility-matrix.json

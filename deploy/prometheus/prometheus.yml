@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "helm_alerts.yml"
+
+scrape_configs:
+  - job_name: "helm-core"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["localhost:8080"]
+        labels:
+          service: helm-core
+
+  - job_name: "helm-console"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["localhost:9090"]
+        labels:
+          service: helm-console

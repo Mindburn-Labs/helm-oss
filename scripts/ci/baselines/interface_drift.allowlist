@@ -1,0 +1,27 @@
+# Heuristic interface drift baseline (Name|File).
+# New entries indicate potential design drift and should fail the audit.
+BundleSigner|core/pkg/evidence/exporter.go
+CompilerPolicy|core/pkg/executor/executor.go
+DataObject|core/pkg/governance/data_classification.go
+FactOracle|core/pkg/governance/pdp.go
+IOCaptureStore|core/pkg/kernel/io_capture.go
+IdempotencyStorer|core/pkg/api/idempotency.go
+IntentSigner|core/pkg/kernel/sovereignty/guard.go
+KMSProvider|core/pkg/governance/kms.go
+KeyStatusStore|core/pkg/trust/pack_loader.go
+LedgerClient|core/pkg/governance/corroborator.go
+MemoryAdapter|core/pkg/kernel/memory/adapter.go
+ModuleRegistry|core/pkg/capabilities/organs.go
+ObligationStore|core/pkg/runtime/obligation/engine.go
+OutputSchemaRegistry|core/pkg/executor/executor.go
+PackExporter|core/pkg/executor/pack_exporter.go
+PackSignatureVerifier|core/pkg/registry/pack_registry.go
+PrivacyManager|core/pkg/privacy/privacy.go
+ReceiptSink|core/pkg/contracts/resource.go
+ReplayEngine|core/pkg/replay/harness.go
+SSOProvider|core/pkg/identity/sso.go
+StructuredSourceAdapter|core/pkg/compliance/regwatch/swarm.go
+TotalOrderLog|core/pkg/kernel/total_order_log.go
+TrustStore|core/pkg/trust/tuf_client.go
+VersionStore|core/pkg/trust/pack_loader.go
+WhyStore|core/pkg/console/why_inspector.go

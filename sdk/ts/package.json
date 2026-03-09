@@ -1,0 +1,40 @@
+{
+  "name": "@mindburn/helm-sdk",
+  "version": "0.9.0",
+  "description": "TypeScript SDK for HELM — fail-closed tool calling for AI agents",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "vitest",
+    "lint": "biome lint .",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.1",
+    "typescript": "^5.4.0",
+    "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "rollup": "^4.59.0"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mindburn-Labs/helm-oss",
+    "directory": "sdk/ts"
+  },
+  "keywords": [
+    "helm",
+    "ai",
+    "governance",
+    "openai",
+    "proxy",
+    "receipts"
+  ]
+}
