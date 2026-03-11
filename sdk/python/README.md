@@ -5,7 +5,7 @@ Typed Python client for the HELM kernel API. One dependency: `httpx`.
 ## Install
 
 ```bash
-pip install helm-sdk
+pip install helm
 ```
 
 ## Quick Example

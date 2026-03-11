@@ -1,4 +1,4 @@
-# helm-autogen
+# @mindburn/helm-autogen
 
 HELM governance adapter for [AutoGen](https://microsoft.github.io/autogen).
 

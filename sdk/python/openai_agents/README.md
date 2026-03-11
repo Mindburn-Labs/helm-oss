@@ -5,7 +5,7 @@ Route tool execution through HELM governance in under 5 minutes.
 ## Install
 
 ```bash
-pip install helm-sdk  # or: pip install -e sdk/python/
+pip install helm  # or: pip install -e sdk/python/
 ```
 
 ## Quick Integration

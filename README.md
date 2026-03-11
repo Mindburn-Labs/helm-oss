@@ -1,7 +1,7 @@
 # HELM — Fail-Closed Execution Authority for AI Agents
 
 [![CI](https://github.com/Mindburn-Labs/helm-oss/actions/workflows/ci.yml/badge.svg)](https://github.com/Mindburn-Labs/helm-oss/actions/workflows/ci.yml)
-[![Conformance](https://img.shields.io/badge/conformance-L1%20%2B%20L2-brightgreen)](docs/CONFORMANCE.md)
+[![Conformance](https://img.shields.io/badge/conformance-L1%20%2B%20L2%20%2B%20L3-brightgreen)](docs/CONFORMANCE.md)
 [![Provenance](https://img.shields.io/badge/provenance-SLSA-blue)](https://github.com/Mindburn-Labs/helm-oss/releases)
 
 **Models propose. The kernel disposes.**
@@ -71,7 +71,7 @@ cd sdk/python && pip install -e .
 go get github.com/Mindburn-Labs/helm-oss/sdk/go
 ```
 
-Public registry packages (npm, PyPI, crates.io, Maven Central) are not yet published.
+npm packages are live: `npm install @mindburn/helm` (SDK), `npx @mindburn/helm-cli` (verifier).
 
 ---
 
@@ -109,14 +109,14 @@ helm pack list && helm incident list && helm brief daily
 ## 🔍 Verify Any Release
 
 ```bash
-npx @mindburn/helm
+npx @mindburn/helm-cli
 ```
 
 One command, progressive disclosure, cryptographic proof. Supports interactive and CI modes:
 
 ```bash
 # CI mode — JSON on stdout, exit code 0/1
-npx @mindburn/helm --ci --bundle ./evidence 2>/dev/null | jq .verdict
+npx @mindburn/helm-cli --ci --bundle ./evidence 2>/dev/null | jq .verdict
 ```
 
 → Full guide: [docs/verify.md](docs/verify.md)
@@ -311,7 +311,7 @@ Your App (OpenAI SDK)
 | ✅ CPI (Canonical Policy Index)               |
 | ✅ HSM signing (Ed25519)                      |
 | ✅ Policy Bundles (load, verify, compose)     |
-| ✅ Conformance L1 + L2 (L3 specified)         |
+| ✅ Conformance L1 + L2 + L3                   |
 | ✅ 11 CLI commands                            |
 
 Full scope details in [docs/OSS_SCOPE.md](docs/OSS_SCOPE.md)
@@ -350,7 +350,7 @@ helm/
 ├── core/               # Go kernel (8-package TCB + executor + ProofGraph)
 │   └── cmd/helm/       # CLI: proxy, export, verify, replay, conform, ...
 ├── packages/
-│   └── mindburn-helm-cli/  # @mindburn/helm v3 (npm CLI)
+│   └── mindburn-helm-cli/  # @mindburn/helm-cli (npm CLI verifier)
 ├── sdk/                # Multi-language SDKs (TS, Python, Go, Rust, Java)
 ├── examples/           # Runnable examples per language + MCP
 ├── scripts/            # Release, CI, SDK generation
@@ -363,7 +363,7 @@ helm/
 
 ## Scope and Guarantees
 
-OSS ships L1 + L2 conformance. L3 gates (HSM, bundle integrity, proof condensation) are specified but not yet adversarially tested. See [docs/OSS_SCOPE.md](docs/OSS_SCOPE.md) for the shipped-vs-spec boundary.
+OSS ships L1 + L2 + L3 conformance. See [docs/OSS_SCOPE.md](docs/OSS_SCOPE.md) for the shipped-vs-spec boundary.
 
 ---
 

@@ -9,7 +9,7 @@
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | **L1** | Core kernel correctness: JCS canonicalization, PEP boundary, Ed25519 signatures, Lamport clock ordering, ProofGraph DAG integrity                             | 6         |
 | **L2** | Full operational correctness: L1 + WASI sandbox bounds, approval ceremonies, EvidencePack determinism, offline replay, output drift detection, trust rotation | 12        |
-| **L3** | Enterprise correctness: L2 + HSM key management (G13), policy bundle integrity (G14), proof condensation (G15)                                                | Specified |
+| **L3** | Enterprise correctness: L2 + HSM key management (G13), policy bundle integrity (G14), proof condensation (G15)                                                | Shipped |
 
 ## Running Conformance
 
@@ -64,7 +64,7 @@ make build
 11. **Island Mode** — Build and verify without network
 12. **Conformance Gates** — Self-test harness
 
-## L3 Gates (Specified — Not Yet Shipped)
+## L3 Gates (Shipped)
 
 L3 conformance gates extend L2 with enterprise requirements.
 These gates are structurally implemented but not yet adversarially tested.

@@ -15,7 +15,7 @@ User → OpenAI Agent → HELM Proxy → OpenAI API
 ## Setup
 
 ```bash
-pip install openai helm-sdk
+pip install openai helm
 ```
 
 ## Usage

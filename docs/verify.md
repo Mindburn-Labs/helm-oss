@@ -5,7 +5,7 @@ Verify any HELM release in one command. No configuration needed.
 ## Quick Start
 
 ```bash
-npx @mindburn/helm
+npx @mindburn/helm-cli
 ```
 
 This launches the **interactive flow**:
@@ -18,13 +18,13 @@ This launches the **interactive flow**:
 
 ```bash
 # Verify local bundle — JSON on stdout, human summary on stderr
-npx @mindburn/helm --ci --bundle ./evidence 2>/dev/null
+npx @mindburn/helm-cli --ci --bundle ./evidence 2>/dev/null
 
 # Exit code: 0 = pass, 1 = fail, 2 = error, 3 = no bundle
 echo $?
 
 # Pipe to jq for specific fields
-npx @mindburn/helm --ci --bundle ./evidence 2>/dev/null | jq .verdict
+npx @mindburn/helm-cli --ci --bundle ./evidence 2>/dev/null | jq .verdict
 # "PASS"
 ```
 
@@ -64,13 +64,13 @@ npx @mindburn/helm --ci --bundle ./evidence 2>/dev/null | jq .verdict
 
 ```bash
 # Verify a specific bundle with detailed gate output
-npx @mindburn/helm --bundle ./artifacts/conformance --level L2 --depth 2
+npx @mindburn/helm-cli --bundle ./artifacts/conformance --level L2 --depth 2
 
 # Generate an HTML evidence report
-npx @mindburn/helm --bundle ./evidence --report ./report.html
+npx @mindburn/helm-cli --bundle ./evidence --report ./report.html
 
 # Verify at minimal level
-npx @mindburn/helm --bundle ./evidence --level L1 --depth 0
+npx @mindburn/helm-cli --bundle ./evidence --level L1 --depth 0
 ```
 
 ## HTML Report
@@ -78,7 +78,7 @@ npx @mindburn/helm --bundle ./evidence --level L1 --depth 0
 The `--report` flag generates a single-file HTML evidence report suitable for embedding in audit documentation:
 
 ```bash
-npx @mindburn/helm --bundle ./evidence --report ./helm-report.html
+npx @mindburn/helm-cli --bundle ./evidence --report ./helm-report.html
 open ./helm-report.html
 ```
 

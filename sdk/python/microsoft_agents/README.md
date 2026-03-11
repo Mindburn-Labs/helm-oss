@@ -5,7 +5,7 @@ Route tool execution through HELM governance in the MS Agent Framework RC.
 ## Install
 
 ```bash
-pip install helm-sdk
+pip install helm
 ```
 
 ## Quick Integration

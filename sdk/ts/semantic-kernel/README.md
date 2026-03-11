@@ -1,4 +1,4 @@
-# helm-semantic-kernel
+# @mindburn/helm-semantic-kernel
 
 HELM governance adapter for [Microsoft Semantic Kernel](https://github.com/microsoft/semantic-kernel).
 

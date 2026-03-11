@@ -9,7 +9,7 @@ Route tool execution through HELM governance in your orchestrator framework.
 ### Python
 
 ```bash
-pip install helm-sdk
+pip install helm
 ```
 
 ```python
@@ -34,7 +34,7 @@ python your_app.py
 ### TypeScript / JavaScript
 
 ```bash
-npm install @mindburn/helm-sdk
+npm install @mindburn/helm
 ```
 
 ```typescript
@@ -54,7 +54,7 @@ See [sdk/ts/openai-agents/](../../sdk/ts/openai-agents/) for full docs.
 ## Microsoft Agent Framework (Python)
 
 ```bash
-pip install helm-sdk
+pip install helm
 ```
 
 ```python

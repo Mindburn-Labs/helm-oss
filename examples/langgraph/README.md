@@ -15,7 +15,7 @@ User Request → LangGraph Agent → HELM Proxy → LLM Provider
 ## Setup
 
 ```bash
-pip install langgraph langchain-openai helm-sdk
+pip install langgraph langchain-openai helm
 ```
 
 ## Usage
