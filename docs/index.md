@@ -192,11 +192,11 @@ Typed clients for 5 languages. All generated from [api/openapi/helm.openapi.yaml
 
 | Language | Install | Docs |
 |----------|---------|------|
-| TypeScript | `npm install @mindburn/helm-sdk` | [sdk/ts/README.md](sdk/ts/README.md) |
-| Python | `pip install helm-sdk` | [sdk/python/README.md](sdk/python/README.md) |
+| TypeScript | `npm install @mindburn/helm` | [sdk/ts/README.md](sdk/ts/README.md) |
+| Python | `pip install helm` | [sdk/python/README.md](sdk/python/README.md) |
 | Go | `go get github.com/Mindburn-Labs/helm-oss/sdk/go` | [sdk/go/README.md](sdk/go/README.md) |
-| Rust | `cargo add helm-sdk` | [sdk/rust/README.md](sdk/rust/README.md) |
-| Java | Maven `ai.mindburn.helm:helm-sdk:0.1.0` | [sdk/java/README.md](sdk/java/README.md) |
+| Rust | `cargo add helm` | [sdk/rust/README.md](sdk/rust/README.md) |
+| Java | Maven `ai.mindburn.helm:helm:1.0.0` | [sdk/java/README.md](sdk/java/README.md) |
 
 Every SDK exposes the same primitives: `chatCompletions`, `approveIntent`, `listSessions`, `getReceipts`, `exportEvidence`, `verifyEvidence`, `conformanceRun`.
 
@@ -327,11 +327,11 @@ helm/
 │   ├── cmd/helm/       # CLI: proxy, export, verify, replay, conform, ...
 │   └── cmd/helm-node/  # Kernel API server
 ├── sdk/                # Multi-language SDKs (TS, Python, Go, Rust, Java)
-│   ├── ts/             #   npm @mindburn/helm-sdk
-│   ├── python/         #   pip helm-sdk
+│   ├── ts/             #   npm @mindburn/helm
+│   ├── python/         #   pip helm
 │   ├── go/             #   go get .../sdk/go
-│   ├── rust/           #   cargo add helm-sdk
-│   └── java/           #   mvn ai.mindburn.helm:helm-sdk
+│   ├── rust/           #   cargo add helm
+│   └── java/           #   mvn ai.mindburn.helm:helm
 ├── examples/           # Runnable examples per language + MCP
 ├── scripts/sdk/        # Type generator (gen.sh)
 ├── scripts/ci/         # SDK drift + build gates

@@ -25,10 +25,10 @@ That's it. The `release.yml` workflow runs on tag push and:
 8. **Signs** Docker images with Cosign
 9. **Creates** GitHub Release with all artifacts attached
 10. **Attests** build provenance (SLSA)
-11. **Publishes** npm packages (@mindburn/helm-sdk, @mindburn/helm-openai-agents, @mindburn/helm-mastra, @mindburn/helm CLI)
-12. **Publishes** PyPI packages (helm-sdk)
-13. **Publishes** crate (helm-sdk)
-14. **Publishes** Maven artifact (ai.mindburn.helm:helm-sdk)
+11. **Publishes** npm packages (@mindburn/helm, @mindburn/helm-openai-agents, @mindburn/helm-mastra, @mindburn/helm CLI)
+12. **Publishes** PyPI packages (helm)
+13. **Publishes** crate (helm)
+14. **Publishes** Maven artifact (ai.mindburn.helm:helm)
 15. **Publishes** NuGet package (if sdk/dotnet exists)
 16. **Generates** compatibility matrix snapshot
 

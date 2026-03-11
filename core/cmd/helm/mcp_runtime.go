@@ -324,23 +324,14 @@ func handleMCPRPCRequest(req *mcpRPCRequest, catalog *mcppkg.ToolCatalog, execut
 			return response, nil
 		}
 
-		// Extract delegation context from headers for scope enforcement.
 		execReq := mcppkg.ToolExecutionRequest{
 			ToolName:  params.Name,
 			Arguments: params.Arguments,
 			SessionID: "mcp-stdio",
 		}
-		if delegationID := r.Header.Get("X-HELM-Delegation-Session-ID"); delegationID != "" {
-			execReq.DelegationSessionID = delegationID
-			execReq.DelegationVerifier = r.Header.Get("X-HELM-Delegation-Verifier")
-			if allowedCSV := r.Header.Get("X-HELM-Delegation-Allowed-Tools"); allowedCSV != "" {
-				for _, t := range strings.Split(allowedCSV, ",") {
-					if trimmed := strings.TrimSpace(t); trimmed != "" {
-						execReq.DelegationAllowedTools = append(execReq.DelegationAllowedTools, trimmed)
-					}
-				}
-			}
-		}
+		// NOTE: Delegation context (X-HELM-Delegation-*) is only available via
+		// HTTP transport headers and is handled by the Gateway's HTTP server.
+		// The stdio transport does not support delegation headers.
 
 		execResp, err := executor(context.Background(), execReq)
 		if err != nil {

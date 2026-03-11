@@ -40,7 +40,7 @@ if result.verdict == "ALLOW":
 ### TypeScript
 
 ```typescript
-import { HelmClient } from "@mindburn/helm-sdk";
+import { HelmClient } from "@mindburn/helm";
 
 const helm = new HelmClient("http://localhost:4001");
 const result = await helm.submitEffect("api_call", {

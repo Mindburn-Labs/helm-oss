@@ -46,7 +46,7 @@ All notable changes to HELM Core OSS are documented here.
 
 ### Added
 
-- **`@mindburn/helm` CLI v3** — `npx @mindburn/helm` for one-command verification with progressive disclosure, cryptographic proof (Ed25519 + real Merkle tree), and HTML evidence reports.
+- **`@mindburn/helm-cli` CLI v3** — `npx @mindburn/helm-cli` for one-command verification with progressive disclosure, cryptographic proof (Ed25519 + real Merkle tree), and HTML evidence reports.
 - **v3 bundle format spec** (`docs/cli_v3/FORMAT.md`) — canonicalization rules, Merkle tree construction, attestation schema.
 - **Key rotation policy** (`docs/cli_v3/KEYS.md`).
 - **Release pipeline** — evidence bundle build job with Ed25519 attestation signing in `release.yml`.

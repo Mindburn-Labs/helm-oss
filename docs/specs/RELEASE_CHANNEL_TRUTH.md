@@ -16,13 +16,15 @@ This document defines which channels are currently real, which are intentionally
 | --- | --- | --- | --- | --- |
 | GitHub Releases | Core binaries + release assets | `ACTIVE` | Yes | Governed by `.github/workflows/release.yml` |
 | GHCR | `ghcr.io/<repo>` images | `ACTIVE` | Yes | Images are built and signed in release workflow |
-| npm | `@mindburn/helm-sdk` | `ACTIVE` | Yes | Core TS SDK only |
-| npm | `mindburn-helm-cli` | `ACTIVE` | Yes | CLI package only |
-| npm | `@mindburn/helm-openai-agents` | `WITHHELD` | No | In repo, but not a clean standalone publish target yet |
-| npm | `@mindburn/helm-mastra` | `WITHHELD` | No | In repo, but not a clean standalone publish target yet |
-| PyPI | `helm-sdk` | `ACTIVE` | Yes | Published through release workflow |
-| crates.io | `helm-sdk` | `ACTIVE` | Yes | Rust SDK publish path exists |
-| Maven Central | Java SDK | `ACTIVE` | Yes | Release workflow contains publish job |
+| npm | `@mindburn/helm` | `ACTIVE` | Yes | Core TS SDK (v1.0.1) |
+| npm | `@mindburn/helm-cli` | `ACTIVE` | Yes | CLI verifier package (v1.0.1) |
+| npm | `@mindburn/helm-openai-agents` | `ACTIVE` | Yes | OpenAI Agents adapter (v1.0.2) |
+| npm | `@mindburn/helm-mastra` | `ACTIVE` | Yes | Mastra adapter (v1.0.2) |
+| npm | `@mindburn/helm-autogen` | `ACTIVE` | Yes | AutoGen adapter (v1.0.2) |
+| npm | `@mindburn/helm-semantic-kernel` | `ACTIVE` | Yes | Semantic Kernel adapter (v1.0.2) |
+| PyPI | `helm` | `WITHHELD` | No | SDK exists in repo but not yet published to PyPI |
+| crates.io | `helm` | `WITHHELD` | No | SDK exists in repo but not yet published to crates.io |
+| Maven Central | Java SDK | `WITHHELD` | No | SDK exists in repo but not yet published |
 | Go module proxy | `core` and `sdk/go` tags | `ACTIVE` | Yes | Tag-driven; no registry upload job |
 | NuGet | `.NET SDK package` | `BLOCKED` | No | No `sdk/dotnet` package exists yet |
 
@@ -30,17 +32,16 @@ This document defines which channels are currently real, which are intentionally
 
 Allowed language:
 
-- “GitHub release artifacts are available”
-- “GHCR images are available”
-- “Core SDKs for TypeScript, Python, Rust, Java, and Go are in scope”
-- “Adapter packages may exist in-repo but are not yet all published as standalone channels”
+- "GitHub release artifacts are available"
+- "GHCR images are available"
+- "npm packages are published for TypeScript SDK, CLI, and all four adapters"
+- "Go module is available via git tags"
 
 Forbidden language while this table remains unchanged:
 
-- “All adapters are published”
-- “.NET/NuGet distribution is available”
-- “Every package in the repo is publicly distributed”
-- “Broad package/channel distribution is complete”
+- "PyPI / crates.io / Maven packages are published"
+- ".NET/NuGet distribution is available"
+- "Every channel in the repo is publicly distributed"
 
 ## Required update rule
 

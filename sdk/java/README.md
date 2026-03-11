@@ -7,7 +7,7 @@ Typed Java client for the HELM kernel API. Uses `java.net.http` (JDK 17+) and Gs
 ```xml
 <dependency>
     <groupId>ai.mindburn.helm</groupId>
-    <artifactId>helm-sdk</artifactId>
+    <artifactId>helm</artifactId>
     <version>0.1.0</version>
 </dependency>
 ```

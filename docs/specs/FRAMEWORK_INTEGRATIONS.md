@@ -52,7 +52,7 @@ result = agent.run("Deploy the new version")
 
 ```typescript
 import { Agent } from 'openai/agents';
-import { HelmGovernance } from '@mindburn/helm-sdk';
+import { HelmGovernance } from '@mindburn/helm';
 
 const governance = new HelmGovernance({
   endpoint: 'http://localhost:4001',
@@ -113,7 +113,7 @@ graph.add_node("tools", governed_tool_node)
 
 ```typescript
 import { Agent } from "mastra";
-import { HelmGovernance } from "@mindburn/helm-sdk";
+import { HelmGovernance } from "@mindburn/helm";
 
 const governance = new HelmGovernance({
   endpoint: "http://localhost:4001",
@@ -146,7 +146,7 @@ agent = Agent(
 
 ```typescript
 import { generateText } from "ai";
-import { HelmGovernance } from "@mindburn/helm-sdk";
+import { HelmGovernance } from "@mindburn/helm";
 
 const governance = new HelmGovernance({ endpoint: "http://localhost:4001" });
 

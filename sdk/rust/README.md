@@ -6,12 +6,12 @@ Typed Rust client for the HELM kernel API. Deps: `reqwest` + `serde`.
 
 ```toml
 [dependencies]
-helm-sdk = { git = "https://github.com/Mindburn-Labs/helm-oss", path = "sdk/rust" }
+helm = { git = "https://github.com/Mindburn-Labs/helm-oss", path = "sdk/rust" }
 ```
 
 Or when published:
 ```bash
-cargo add helm-sdk
+cargo add helm
 ```
 
 ## Quick Example
