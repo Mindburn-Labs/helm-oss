@@ -1,6 +1,6 @@
 {
   "name": "@mindburn/helm-openai-agents",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "HELM governance adapter for OpenAI Agents SDK — one-line drop-in",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
