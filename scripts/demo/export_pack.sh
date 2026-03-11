@@ -5,7 +5,7 @@
 # Usage: bash scripts/demo/export_pack.sh [output_dir]
 #
 # Output: a directory containing 00_INDEX.json, 01_SCORE.json, and
-#         supporting evidence — verifiable via `npx @mindburn/helm --bundle <dir>`
+#         supporting evidence — verifiable via `npx @mindburn/helm-cli --bundle <dir>`
 
 set -euo pipefail
 
@@ -33,7 +33,7 @@ echo ""
 echo "Step 2: Verifying Evidence Pack ..."
 echo ""
 
-VERIFY_RESULT=$(npx @mindburn/helm --ci --bundle "$OUTPUT_DIR" 2>/dev/null || true)
+VERIFY_RESULT=$(npx @mindburn/helm-cli --ci --bundle "$OUTPUT_DIR" 2>/dev/null || true)
 VERDICT=$(echo "$VERIFY_RESULT" | jq -r '.verdict // "ERROR"')
 BUNDLE_ROOT=$(echo "$VERIFY_RESULT" | jq -r '.roots.manifest_root_hash // ""')
 MERKLE_ROOT=$(echo "$VERIFY_RESULT" | jq -r '.roots.merkle_root // ""')
@@ -52,4 +52,4 @@ fi
 
 echo ""
 echo "To verify independently:"
-echo "  npx @mindburn/helm --bundle $OUTPUT_DIR"
+echo "  npx @mindburn/helm-cli --bundle $OUTPUT_DIR"

@@ -52,7 +52,7 @@ runs:
           ARGS="$ARGS --report ${{ inputs.report }}"
         fi
 
-        JSON=$(npx @mindburn/helm $ARGS 2>/dev/null || true)
+        JSON=$(npx @mindburn/helm-cli $ARGS 2>/dev/null || true)
         VERDICT=$(echo "$JSON" | jq -r '.verdict // "ERROR"')
         BUNDLE_ROOT=$(echo "$JSON" | jq -r '.roots.manifest_root_hash // ""')
         MERKLE_ROOT=$(echo "$JSON" | jq -r '.roots.merkle_root // ""')
