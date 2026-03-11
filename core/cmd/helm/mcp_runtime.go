@@ -257,10 +257,11 @@ func writeMCPResponse(stdout io.Writer, resp *mcpRPCResponse) error {
 		return fmt.Errorf("encode MCP response: %w", err)
 	}
 
-	if _, err := fmt.Fprintf(stdout, "Content-Length: %d\r\n\r\n", len(data)); err != nil {
+	// MCP stdio transport: newline-delimited JSON (one JSON object per line).
+	if _, err := stdout.Write(data); err != nil {
 		return err
 	}
-	_, err = stdout.Write(data)
+	_, err = fmt.Fprint(stdout, "\n")
 	return err
 }
 
