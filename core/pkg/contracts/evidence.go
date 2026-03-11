@@ -45,10 +45,11 @@ type EvidencePack struct {
 
 // EvidencePackIdentity tracks the actor submitting the effect.
 type EvidencePackIdentity struct {
-	ActorID         string   `json:"actor_id"`
-	ActorType       string   `json:"actor_type"` // human, module, control_loop, external_system
-	SessionID       string   `json:"session_id,omitempty"`
-	DelegationChain []string `json:"delegation_chain,omitempty"`
+	ActorID            string   `json:"actor_id"`
+	ActorType          string   `json:"actor_type"` // human, module, control_loop, external_system
+	SessionID          string   `json:"session_id,omitempty"`
+	DelegationChain    []string `json:"delegation_chain,omitempty"`
+	DelegationSessionRef string `json:"delegation_session_ref,omitempty"` // binds to active DelegationSession.SessionID
 }
 
 // EvidencePackPolicy captures the policy decision.

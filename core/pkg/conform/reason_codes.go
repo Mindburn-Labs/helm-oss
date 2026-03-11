@@ -68,6 +68,10 @@ const (
 	ReasonApprovalRequired = "APPROVAL_REQUIRED" // effect requires human approval
 	ReasonApprovalTimeout  = "APPROVAL_TIMEOUT"  // approval not received in time
 
+	// --- Delegation (v1.3.0) ---
+	ReasonDelegationInvalid        = "DELEGATION_INVALID"         // invalid/expired delegation session
+	ReasonDelegationScopeViolation = "DELEGATION_SCOPE_VIOLATION" // delegate exceeded session scope
+
 	// --- Threat Signal (v1.2.0) ---
 	ReasonTaintedInputDeny           = "TAINTED_INPUT_HIGH_RISK_DENY"   // high-risk effect from tainted source
 	ReasonPromptInjectionDetected    = "PROMPT_INJECTION_DETECTED"      // prompt injection pattern found
@@ -113,6 +117,8 @@ func AllReasonCodes() []string {
 		ReasonIdentityIsolationViolation,
 		ReasonApprovalRequired,
 		ReasonApprovalTimeout,
+		ReasonDelegationInvalid,
+		ReasonDelegationScopeViolation,
 		ReasonTaintedInputDeny,
 		ReasonPromptInjectionDetected,
 		ReasonUnicodeObfuscationDetected,
