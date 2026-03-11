@@ -55,6 +55,56 @@ See [TCB_POLICY.md](TCB_POLICY.md) for the full package inventory.
 
 ---
 
+### 2.1 Delegation Model
+
+> *Added v1.3 — normative*
+
+When a remote agent or bot acts on behalf of a human principal, a
+**delegation session** mediates the authority transfer. HELM delegation
+is designed to prevent the [confused deputy problem](https://en.wikipedia.org/wiki/Confused_deputy_problem):
+the delegate can never exceed the delegator's own authority.
+
+**Invariants:**
+
+| Invariant | Mechanism |
+| :-------- | :-------- |
+| **Deny-all start** | New sessions have zero capabilities; each must be explicitly granted |
+| **Subset-of-delegator** | Session capabilities ⊆ delegator's resolved policy stack |
+| **Time-bounded** | Mandatory TTL; expired sessions produce `DELEGATION_INVALID` |
+| **Anti-replay** | Session nonce tracked; replayed nonces produce `DELEGATION_INVALID` |
+| **Verifier-bound** | Optional PKCE-style hash binding; verifier required at use time |
+| **MFA-consent** | Sessions may require MFA at creation for high-risk delegation |
+
+**Policy integration:**
+
+Delegation sessions compile into **P2-equivalent narrowing overlays**.
+They can only narrow P1 policy bundles — they can never expand authority
+beyond what the delegator holds. The effective permission set is:
+
+    Effective = P0 ∩ P1 ∩ DelegationSession.Capabilities
+
+**ProofGraph representation:**
+
+| Event | Node Kind | Payload |
+| :---- | :-------- | :------ |
+| Session creation | `ATTESTATION` | Signed `DelegationSession` |
+| Identity binding (agent → delegator) | `TRUST_EVENT` | `{event: "DELEGATION_BIND", session_id, delegate, delegator}` |
+| Session revocation / expiry | `TRUST_EVENT` | `{event: "DELEGATION_REVOKE", session_id, reason}` |
+
+**Guardian enforcement:**
+
+Delegation validation executes as **Gate 5** in the Guardian pre-PDP
+gate chain (after threat scan, before effect construction). Invalid or
+out-of-scope sessions produce canonical `DENY` verdicts with
+`DELEGATION_INVALID` or `DELEGATION_SCOPE_VIOLATION` reason codes.
+
+> **TCB impact**: delegation-aware principal evaluation touches
+> truth-plane logic. This does _not_ weaken or fork TCB semantics —
+> it extends the principal authorization path within the existing TCB
+> boundary. See [TCB_POLICY.md](TCB_POLICY.md).
+
+---
+
 ## 4. Verified Planning Loop (VPL)
 
 The canonical execution protocol: propose → validate → verdict → execute → receipt → checkpoint.

@@ -35,6 +35,7 @@ func DefaultEngine() *conform.Engine {
 	e.RegisterGate(&GXEnvelopeBound{})
 	e.RegisterGate(&GXSDKDrift{})
 	e.RegisterGate(&GXThreatScan{})
+	e.RegisterGate(&GXDelegation{})
 
 	return e
 }

@@ -14,6 +14,13 @@ type ToolExecutionRequest struct {
 	ToolName  string                 `json:"tool_name"`
 	Arguments map[string]interface{} `json:"arguments"`
 	SessionID string                 `json:"session_id"`
+
+	// Delegation-aware fields (defense-in-depth, complements Guardian Gate 5).
+	// When DelegationSessionID is set, the firewall enforces tool scope
+	// before the request reaches the Guardian policy evaluation.
+	DelegationSessionID string   `json:"delegation_session_id,omitempty"`
+	DelegationVerifier  string   `json:"delegation_verifier,omitempty"`
+	DelegationAllowedTools []string `json:"delegation_allowed_tools,omitempty"`
 }
 
 // ToolExecutionResponse represents the result of a tool execution.
@@ -44,12 +51,41 @@ func NewGovernanceFirewall(evaluator PolicyEvaluator, catalog *ToolCatalog) *Gov
 
 // InterceptToolExecution checks if a tool execution is allowed by the Guardian.
 // If allowed, it returns nil. If blocked, it returns an error.
+//
+// When DelegationAllowedTools is set, tool scope is checked BEFORE the
+// Guardian evaluation (defense-in-depth — see ARCHITECTURE.md §2.1).
 func (f *GovernanceFirewall) InterceptToolExecution(ctx context.Context, req ToolExecutionRequest) error {
+	// Pre-Guardian delegation scope check.
+	// This runs before the full policy evaluation so that a delegated agent
+	// cannot even attempt to call tools outside its session scope.
+	if len(req.DelegationAllowedTools) > 0 {
+		allowed := false
+		for _, t := range req.DelegationAllowedTools {
+			if t == req.ToolName {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			return fmt.Errorf("delegation scope violation: tool %q not in session scope", req.ToolName)
+		}
+	}
+
+	// Build Guardian decision context, forwarding delegation metadata.
+	decisionCtx := make(map[string]interface{})
+	for k, v := range req.Arguments {
+		decisionCtx[k] = v
+	}
+	if req.DelegationSessionID != "" {
+		decisionCtx["delegation_session_id"] = req.DelegationSessionID
+		decisionCtx["delegation_verifier"] = req.DelegationVerifier
+	}
+
 	decision, err := f.evaluator.EvaluateDecision(ctx, guardian.DecisionRequest{
 		Principal: req.SessionID,
 		Action:    "EXECUTE_TOOL",
 		Resource:  req.ToolName,
-		Context:   req.Arguments,
+		Context:   decisionCtx,
 	})
 	if err != nil {
 		return fmt.Errorf("governance check failed: %w", err)

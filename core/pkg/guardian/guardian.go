@@ -68,6 +68,7 @@ type Guardian struct {
 	isolationChecker  *identity.IsolationChecker // Agent credential reuse detection (§Phase 4)
 	egressChecker     *firewall.EgressChecker    // Network egress enforcement (§Phase 5)
 	threatScanner     *threatscan.Scanner        // Canonical threat signal scanner (§Phase 6)
+	delegationStore   identity.DelegationStore   // Delegation session store (§Gate 5)
 }
 
 // NewGuardian creates a new Guardian instance.
@@ -153,6 +154,13 @@ func (g *Guardian) SetEgressChecker(ec *firewall.EgressChecker) {
 // Findings are attached to the DecisionRecord InputContext.
 func (g *Guardian) SetThreatScanner(ts *threatscan.Scanner) {
 	g.threatScanner = ts
+}
+
+// SetDelegationStore injects the delegation session store.
+// When set, Guardian Gate 5 validates delegation sessions and
+// intersects capabilities with the policy stack before PRG evaluation.
+func (g *Guardian) SetDelegationStore(ds identity.DelegationStore) {
+	g.delegationStore = ds
 }
 
 // SignDecision checks requirements and signs only if met
@@ -526,6 +534,109 @@ func (g *Guardian) EvaluateDecision(ctx context.Context, req DecisionRequest) (*
 				}
 				return decision, nil
 			}
+		}
+	}
+
+	// Gate 5: Delegation session validation — if principal is a delegate,
+	// validate session and intersect capabilities with policy stack.
+	// Expired/invalid/scope-violated → DENY with canonical reason code.
+	// Per ARCHITECTURE.md §2.1: sessions compile into P2-equivalent narrowing.
+	if g.delegationStore != nil {
+		if sessionID, ok := req.Context["delegation_session_id"].(string); ok && sessionID != "" {
+			now := g.clock.Now()
+
+			// Load session from store
+			session, loadErr := g.delegationStore.Load(sessionID)
+			if loadErr != nil {
+				decision := &contracts.DecisionRecord{
+					ID:         fmt.Sprintf("dec-%d", now.UnixNano()),
+					Timestamp:  now,
+					Verdict:    string(contracts.VerdictDeny),
+					Reason:     fmt.Sprintf("DELEGATION_INVALID: %v", loadErr),
+					ReasonCode: string(contracts.ReasonDelegationInvalid),
+				}
+				_ = g.signer.SignDecision(decision)
+				return decision, nil
+			}
+			if session == nil {
+				decision := &contracts.DecisionRecord{
+					ID:         fmt.Sprintf("dec-%d", now.UnixNano()),
+					Timestamp:  now,
+					Verdict:    string(contracts.VerdictDeny),
+					Reason:     "DELEGATION_INVALID: session not found",
+					ReasonCode: string(contracts.ReasonDelegationInvalid),
+				}
+				_ = g.signer.SignDecision(decision)
+				return decision, nil
+			}
+
+			// Validate session (expiry, nonce, verifier, policy hash)
+			verifier, _ := req.Context["delegation_verifier"].(string)
+			nonceChecker := g.delegationStore.IsNonceUsed
+			if validErr := identity.ValidateSession(session, verifier, now, nonceChecker); validErr != nil {
+				decision := &contracts.DecisionRecord{
+					ID:         fmt.Sprintf("dec-%d", now.UnixNano()),
+					Timestamp:  now,
+					Verdict:    string(contracts.VerdictDeny),
+					Reason:     fmt.Sprintf("DELEGATION_INVALID: %v", validErr),
+					ReasonCode: string(contracts.ReasonDelegationInvalid),
+				}
+				_ = g.signer.SignDecision(decision)
+				return decision, nil
+			}
+
+			// Mark nonce as used (anti-replay)
+			g.delegationStore.MarkNonceUsed(session.SessionNonce)
+
+			// Scope check: is the requested tool/resource within session scope?
+			if req.Resource != "" && !session.IsToolAllowed(req.Resource) {
+				decision := &contracts.DecisionRecord{
+					ID:         fmt.Sprintf("dec-%d", now.UnixNano()),
+					Timestamp:  now,
+					Verdict:    string(contracts.VerdictDeny),
+					Reason:     fmt.Sprintf("DELEGATION_SCOPE_VIOLATION: tool %q not in session scope", req.Resource),
+					ReasonCode: string(contracts.ReasonDelegationScopeViolation),
+				}
+				_ = g.signer.SignDecision(decision)
+				if g.auditLog != nil {
+					decisionBytes, _ := canonicalize.JCS(decision)
+					_, _ = g.auditLog.Append("guardian", "DELEGATION_SCOPE_DENY", decision.ID, string(decisionBytes))
+				}
+				return decision, nil
+			}
+
+			// Action scope check
+			if req.Resource != "" && req.Action != "" && len(session.Capabilities) > 0 {
+				if !session.IsActionAllowed(req.Resource, req.Action) {
+					decision := &contracts.DecisionRecord{
+						ID:         fmt.Sprintf("dec-%d", now.UnixNano()),
+						Timestamp:  now,
+						Verdict:    string(contracts.VerdictDeny),
+						Reason:     fmt.Sprintf("DELEGATION_SCOPE_VIOLATION: action %q on %q not granted", req.Action, req.Resource),
+						ReasonCode: string(contracts.ReasonDelegationScopeViolation),
+					}
+					_ = g.signer.SignDecision(decision)
+					if g.auditLog != nil {
+						decisionBytes, _ := canonicalize.JCS(decision)
+						_, _ = g.auditLog.Append("guardian", "DELEGATION_SCOPE_DENY", decision.ID, string(decisionBytes))
+					}
+					return decision, nil
+				}
+			}
+
+			// Delegation validated — annotate context for downstream
+			if req.Context == nil {
+				req.Context = make(map[string]interface{})
+			}
+			req.Context["delegation_validated"] = true
+			req.Context["delegation_delegator"] = session.DelegatorPrincipal
+			req.Context["delegation_delegate"] = session.DelegatePrincipal
+
+			span.SetAttributes(
+				attribute.String("delegation.session_id", sessionID),
+				attribute.String("delegation.delegator", session.DelegatorPrincipal),
+				attribute.String("delegation.delegate", session.DelegatePrincipal),
+			)
 		}
 	}
 

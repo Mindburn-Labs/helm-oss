@@ -72,6 +72,10 @@ const (
 	ReasonApprovalRequired           ReasonCode = "APPROVAL_REQUIRED"
 	ReasonApprovalTimeout            ReasonCode = "APPROVAL_TIMEOUT"
 
+	// ── Delegation Reasons (v1.3) ───────────────────────────
+	ReasonDelegationInvalid        ReasonCode = "DELEGATION_INVALID"
+	ReasonDelegationScopeViolation ReasonCode = "DELEGATION_SCOPE_VIOLATION"
+
 	// ── Threat Signal Reasons (v1.2) ───────────────────────
 	ReasonTaintedInputDeny           ReasonCode = "TAINTED_INPUT_HIGH_RISK_DENY"
 	ReasonPromptInjectionDetected    ReasonCode = "PROMPT_INJECTION_DETECTED"
@@ -118,6 +122,8 @@ func CoreReasonCodes() []ReasonCode {
 		ReasonIdentityIsolationViolation,
 		ReasonApprovalRequired,
 		ReasonApprovalTimeout,
+		ReasonDelegationInvalid,
+		ReasonDelegationScopeViolation,
 		ReasonTaintedInputDeny,
 		ReasonPromptInjectionDetected,
 		ReasonUnicodeObfuscationDetected,

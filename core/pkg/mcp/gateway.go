@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/Mindburn-Labs/helm-oss/core/pkg/bridge"
 	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
@@ -109,6 +110,25 @@ func (g *Gateway) handleCapabilities(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Delegation-aware tool filtering: if a delegation session specifies
+	// allowed tools, only expose those tools in the capabilities response.
+	// This prevents delegated agents from even discovering out-of-scope tools.
+	if allowedCSV := r.Header.Get("X-HELM-Delegation-Allowed-Tools"); allowedCSV != "" {
+		allowedSet := make(map[string]bool)
+		for _, t := range strings.Split(allowedCSV, ",") {
+			if trimmed := strings.TrimSpace(t); trimmed != "" {
+				allowedSet[trimmed] = true
+			}
+		}
+		var filtered []ToolRef
+		for _, tool := range tools {
+			if allowedSet[tool.Name] {
+				filtered = append(filtered, tool)
+			}
+		}
+		tools = filtered
+	}
+
 	m := MCPCapabilityManifest{
 		ServerName:   "helm-mcp-gateway",
 		Version:      "1.0.0",
@@ -165,11 +185,24 @@ func (g *Gateway) handleExecute(w http.ResponseWriter, r *http.Request) {
 	resp := MCPToolCallResponse{ArgsHash: argsHash}
 
 	if g.exec != nil {
-		execResp, execErr := g.exec(r.Context(), ToolExecutionRequest{
+		// Build execution request with delegation context from headers.
+		execReq := ToolExecutionRequest{
 			ToolName:  req.Method,
 			Arguments: req.Params,
 			SessionID: "mcp-http",
-		})
+		}
+		if delegationID := r.Header.Get("X-HELM-Delegation-Session-ID"); delegationID != "" {
+			execReq.DelegationSessionID = delegationID
+			execReq.DelegationVerifier = r.Header.Get("X-HELM-Delegation-Verifier")
+			if allowedCSV := r.Header.Get("X-HELM-Delegation-Allowed-Tools"); allowedCSV != "" {
+				for _, t := range strings.Split(allowedCSV, ",") {
+					if trimmed := strings.TrimSpace(t); trimmed != "" {
+						execReq.DelegationAllowedTools = append(execReq.DelegationAllowedTools, trimmed)
+					}
+				}
+			}
+		}
+		execResp, execErr := g.exec(r.Context(), execReq)
 		if execErr != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)

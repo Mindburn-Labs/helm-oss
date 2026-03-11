@@ -87,6 +87,45 @@ which binds cryptographic hashes — see
 
 The ceremony supports timelock, quorum, rate limits, and emergency override.
 
+## Delegation Sessions
+
+> *Added v1.3 — normative*
+
+When an agent acts on behalf of a human (the confused deputy scenario),
+HELM requires a **delegation session** that cryptographically binds the
+delegate's authority to a subset of the delegator's own privileges.
+
+**Key distinction**: identity (who is this agent?) vs. authority (what
+can this agent do, under which exact constraints?). Upstream identity
+providers (Teleport, SPIFFE, OIDC) answer the first question. HELM's
+delegation session answers the second — and enforces it at the PEP.
+
+**Threat mitigation:**
+
+| Threat | Mitigation |
+| :----- | :--------- |
+| **Confused deputy** (Hardy 1988) | Deny-all start; explicit capability grants only |
+| **Privilege escalation** | Session capabilities ⊆ delegator's policy stack |
+| **Session hijack** | PKCE verifier binding + short TTL |
+| **Replay** | One-time nonce per session, tracked by DelegationStore |
+| **Unauthorized creation** | Optional MFA gate at session creation |
+
+**PEP integration:**
+
+Delegation validation runs as Guardian Gate 5 — inside the existing
+gate chain, not parallel to it. This means:
+
+1. Frozen system (Gate 0) still overrides delegation
+2. Context mismatch (Gate 1) still overrides delegation
+3. Identity isolation (Gate 2) still checked before delegation
+4. Egress control (Gate 3) still enforced independently
+5. Threat scan (Gate 4) still blocks tainted input
+6. **Delegation (Gate 5)** — validate session, intersect scope
+7. Effect construction + PRG/PDP evaluation proceed as normal
+
+This ordering ensures delegation never bypasses any existing security
+gate. See [ARCHITECTURE.md §2.1](ARCHITECTURE.md#21-delegation-model).
+
 ## EvidencePack
 
 Every session can be exported as a deterministic `.tar` containing:
