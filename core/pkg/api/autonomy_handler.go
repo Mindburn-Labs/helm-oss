@@ -147,8 +147,8 @@ func (h *AutonomyHandler) HandleGetState(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// TODO(peycheff): Extract orgID from authenticated session.
-	// For now, use query param or default.
+	// NOTE: orgID is extracted from query param; production deployments
+	// should inject from authenticated session via middleware.
 	orgID := r.URL.Query().Get("org_id")
 	if orgID == "" {
 		orgID = "default"
