@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://helm.peycheff.com/schemas/access/PrivilegedAccessReceipt.v1.json",
+  "$id": "https://helm.mindburn.run/schemas/access/PrivilegedAccessReceipt.v1.json",
   "title": "PrivilegedAccessReceipt",
   "description": "Immutable receipt for privileged access grant with audit trail",
   "type": "object",

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://helm.peycheff.com/schemas/access/PrivilegedAccessRequest.v1.json",
+  "$id": "https://helm.mindburn.run/schemas/access/PrivilegedAccessRequest.v1.json",
   "title": "PrivilegedAccessRequest",
   "description": "Request for elevated privileges with justification and audit trail",
   "type": "object",

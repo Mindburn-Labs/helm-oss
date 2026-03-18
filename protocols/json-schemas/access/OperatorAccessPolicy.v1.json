@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://helm.peycheff.com/schemas/access/OperatorAccessPolicy.v1.json",
+  "$id": "https://helm.mindburn.run/schemas/access/OperatorAccessPolicy.v1.json",
   "title": "OperatorAccessPolicy",
   "description": "Zero-trust operator access policy with break-glass protocol support",
   "type": "object",

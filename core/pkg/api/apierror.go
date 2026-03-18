@@ -33,7 +33,7 @@ func (p *ProblemDetail) Error() string {
 // WriteError writes an RFC 7807 Problem Detail JSON response.
 func WriteError(w http.ResponseWriter, status int, title, detail string) {
 	problem := &ProblemDetail{
-		Type:   fmt.Sprintf("https://helm.peycheff.com/errors/%d", status),
+		Type:   fmt.Sprintf("https://helm.mindburn.run/errors/%d", status),
 		Title:  title,
 		Status: status,
 		Detail: detail,
@@ -48,7 +48,7 @@ func WriteError(w http.ResponseWriter, status int, title, detail string) {
 // (trace_id from X-Request-ID, instance from request URI).
 func WriteErrorR(w http.ResponseWriter, r *http.Request, status int, title, detail string) {
 	problem := &ProblemDetail{
-		Type:     fmt.Sprintf("https://helm.peycheff.com/errors/%d", status),
+		Type:     fmt.Sprintf("https://helm.mindburn.run/errors/%d", status),
 		Title:    title,
 		Status:   status,
 		Detail:   detail,

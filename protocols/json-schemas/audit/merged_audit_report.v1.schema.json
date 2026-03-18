@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://helm.peycheff.com/schemas/audit/merged_audit_report.v1.schema.json",
+    "$id": "https://helm.mindburn.run/schemas/audit/merged_audit_report.v1.schema.json",
     "title": "HELM Merged Audit Report v1",
     "description": "Unified final report combining mechanical (25 sections) + AI (7 missions) audit layers with completeness verification.",
     "type": "object",

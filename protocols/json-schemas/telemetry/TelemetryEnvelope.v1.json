@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://helm.peycheff.com/schemas/telemetry/TelemetryEnvelope.v1.json",
+  "$id": "https://helm.mindburn.run/schemas/telemetry/TelemetryEnvelope.v1.json",
   "title": "TelemetryEnvelope",
   "description": "Canonical wire format for pipeline telemetry events. Streamed over WebSocket and stored in per-run ring buffers for replay.",
   "type": "object",
