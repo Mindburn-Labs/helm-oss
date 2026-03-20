@@ -1,0 +1,63 @@
+# HELM Free Tier Policy — try.mindburn.run
+#
+# Enforced by HELM kernel. Every DENY is a signed receipt.
+# This is governance, not middleware.
+
+apiVersion: helm.mindburn.run/v1
+kind: PolicyBundle
+metadata:
+  name: free-tier
+  version: "1.0.0"
+  description: "Free tier policy for try.mindburn.run — rate-limited, free models only"
+
+rules:
+  # Allow standard chat completions
+  - effect: EXECUTE_TOOL
+    action: ALLOW
+    proposers: ["*"]
+    targetConstraint: "chat.*"
+    maxAuthority: L1
+
+  # Allow read-only tool calls
+  - effect: READ
+    action: ALLOW
+    proposers: ["*"]
+    targetConstraint: "*"
+    maxAuthority: L1
+
+  # Deny destructive operations
+  - effect: WRITE
+    action: DENY
+    proposers: ["*"]
+    targetConstraint: "*"
+    maxAuthority: L3
+
+  # Deny file system access
+  - effect: EXECUTE_TOOL
+    action: DENY
+    proposers: ["*"]
+    targetConstraint: "file_*"
+    maxAuthority: L3
+
+  # Deny network access
+  - effect: EXECUTE_TOOL
+    action: DENY
+    proposers: ["*"]
+    targetConstraint: "http_*"
+    maxAuthority: L3
+
+constraints:
+  # 50 requests per day per session
+  - type: rateLimit
+    max: 50
+    window: 86400
+    current: 0
+
+  # 10,000 tokens per request
+  - type: budget
+    limit: 10000
+    used: 0
+
+  # Free models only — block paid model IDs
+  - type: proof
+    required: "free-tier-model-attestation"

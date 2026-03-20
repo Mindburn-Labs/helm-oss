@@ -1,0 +1,43 @@
+# OpenClaw + HELM Hardening Quickstart
+#
+# Usage:
+#   docker compose up -d
+#
+# This spins up HELM as a governed proxy in front of OpenClaw's LLM calls.
+# Every action gets a cryptographic receipt. No OpenClaw code changes needed.
+
+services:
+  # ── HELM Kernel (governed proxy) ─────────────────
+  helm:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      HELM_DEMO_MODE: "1"
+      HELM_ENABLE_OPENAI_PROXY: "1"
+      EVIDENCE_SIGNING_KEY: "demo-ephemeral-key"
+      LLM_API_KEY: "${LLM_API_KEY}"
+      LLM_PROVIDER_URL: "${LLM_PROVIDER_URL:-https://api.openai.com/v1}"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/helm", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── OpenClaw Agent ───────────────────────────────
+  openclaw:
+    image: ghcr.io/openclaw/openclaw:latest
+    restart: unless-stopped
+    depends_on:
+      helm:
+        condition: service_healthy
+    environment:
+      # Route all LLM calls through HELM proxy
+      OPENAI_BASE_URL: "http://helm:8080/v1"
+      OPENAI_API_KEY: "${LLM_API_KEY}"
+    ports:
+      - "3000:3000"

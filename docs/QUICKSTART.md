@@ -37,12 +37,12 @@ HELM is running with Postgres-backed ProofGraph, policy enforcement, and the Ope
 Send a malformed tool call. HELM should fail-closed:
 
 ```bash
-curl -s http://localhost:8080/v1/tools/execute \
+curl -s -X POST http://localhost:8080/mcp/v1/execute \
   -H 'Content-Type: application/json' \
-  -d '{"tool":"unknown_tool","args":{"bad_field":true}}' | jq .reason_code
+  -d '{"method":"unknown_tool","params":{"bad_field":true}}' | jq '.error.reason_code'
 ```
 
-**Expected:** `"ERR_TOOL_NOT_FOUND"` — denied with a deterministic reason code.
+**Expected:** `"DENY_TOOL_NOT_FOUND"` — denied with a deterministic reason code.
 
 This is the PEP boundary in action. Unknown tool URNs, schema mismatches, and missing fields all produce `DENY` with a reason code. No fallthrough, no partial execution.
 
@@ -61,11 +61,11 @@ This produces `bin/helm` and `bin/helm-node`.
 ## Step 4 — View a Receipt
 
 ```bash
-curl -s http://localhost:8080/api/v1/receipts?limit=1 | jq '.[0]'
+curl -s 'http://localhost:8080/api/v1/oss-local/decision-timeline?limit=1' | jq '.decisions[0]'
 ```
 
 Each receipt contains:
-- `receipt_hash` — SHA-256 of the canonical receipt
+- `id` / `hash` — stable receipt identifiers and content hash
 - `lamport_clock` — causal ordering
 - `principal` — who initiated
 - `reason_code` — why it was allowed or denied

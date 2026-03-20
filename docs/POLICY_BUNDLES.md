@@ -10,7 +10,7 @@ runtime.
 
 ```yaml
 # policy-bundle.yaml
-apiVersion: helm.mindburn.com/v1
+apiVersion: helm.mindburn.run/v1
 kind: PolicyBundle
 metadata:
   name: production-policy

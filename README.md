@@ -1,12 +1,13 @@
-# HELM — Fail-Closed Execution Authority for AI Agents
+# HELM OSS — The Agent Hardening Kit
 
 [![CI](https://github.com/Mindburn-Labs/helm-oss/actions/workflows/ci.yml/badge.svg)](https://github.com/Mindburn-Labs/helm-oss/actions/workflows/ci.yml)
 [![Conformance](https://img.shields.io/badge/conformance-L1%20%2B%20L2%20%2B%20L3-brightgreen)](docs/CONFORMANCE.md)
 [![Provenance](https://img.shields.io/badge/provenance-SLSA-blue)](https://github.com/Mindburn-Labs/helm-oss/releases)
+[![Hardened](https://img.shields.io/badge/HELM-hardened-blueviolet)](https://mindburn.org/lab/status)
 
-**Models propose. The kernel disposes.**
+**Bring your agent runtime, get fail-closed execution and receipts.**
 
-HELM is a kernel-grade execution authority for AI agents. Every tool call, sandbox execution, and self-extension goes through fail-closed governance — producing tamper-proof receipts and deterministic **EvidencePacks** you can hand to auditors, regulators, or your board.
+HELM OSS is the open Agent Hardening Kit for governed AI execution. Drop it in front of **DeerFlow**, **OpenClaw**, or any OpenAI-compatible agent runtime — every tool call gets fail-closed policy enforcement, cryptographic receipts (Ed25519), and deterministic **EvidencePacks** you can verify offline.
 
 **What you get in 10 minutes:**
 
@@ -19,11 +20,34 @@ HELM is a kernel-grade execution authority for AI agents. Every tool call, sandb
 <details>
 <summary>📊 <strong>What the Proof Report looks like</strong></summary>
 
-> The `helm demo company` command generates an interactive HTML proof report with causal chain visualization, receipt details, verification status, and one-click sharing. Open `data/evidence/run-report.html` after running the demo.
+> The canonical `helm demo organization` command generates an interactive HTML proof report with causal chain visualization, receipt details, authority-scope metadata, verification status, and one-click sharing. The legacy `helm demo company` alias remains supported for compatibility.
 >
 > <!-- TODO: Replace with actual screenshot: ![HELM Proof Report](docs/assets/proof-report-screenshot.png) -->
 
 </details>
+
+---
+
+## 🚀 Agent Hardening Quickstarts
+
+| Your Runtime | Hardening Quickstart | Time |
+|-------------|---------------------|------|
+| **DeerFlow** | [`examples/deerflow/`](examples/deerflow/) — governed research pipeline | 5 min |
+| **OpenClaw** | [`examples/openclaw/`](examples/openclaw/) — hardened agent actions | 5 min |
+| **Any OpenAI-compatible** | Just change `base_url` → [see below](#integrations) | 2 min |
+
+> **See it live:** [Lab Status](https://mindburn.org/lab/status) · [Compatibility Matrix](https://mindburn.org/lab/compatibility) · [Proof Demos](https://mindburn.org/demos)
+
+### Add HELM Checks to Your CI
+
+```yaml
+# .github/workflows/ci.yml — add this job
+jobs:
+  helm-check:
+    uses: Mindburn-Labs/helm-oss/.github/workflows/boundary-checks.yml@main
+    with:
+      level: L2
+```
 
 ---
 
@@ -39,8 +63,8 @@ go install github.com/Mindburn-Labs/helm-oss/core/cmd/helm@latest
 # Docker
 docker run --rm ghcr.io/mindburn-labs/helm-oss:latest --help
 
-# Homebrew (coming soon)
-# brew install mindburn-labs/tap/helm
+# Homebrew formula is not published yet
+# Use the install script, Go install, or Docker for now
 ```
 
 ## MCP One-Click Install
@@ -91,8 +115,11 @@ HELM is built for high-stakes, low-latency environments. To measure the overhead
 # 1. Setup (SQLite + Ed25519 + config — instant)
 helm onboard --yes
 
-# 2. Run governed company demo (15 receipts, 7 phases: approval → sandbox → deny → skill gap → incident)
-helm demo company --template starter --provider mock
+# 2. Run the canonical organization demo (legacy alias: `helm demo company`)
+helm demo organization --template starter --provider mock
+
+# 2b. Run the research-lab reference scenario in policy simulation mode
+helm demo research-lab --template starter --provider mock --dry-run
 
 # 3. Export deterministic EvidencePack + verify offline (air-gapped safe)
 helm export --evidence ./data/evidence --out evidence.tar
@@ -102,7 +129,7 @@ helm verify --bundle evidence.tar
 helm pack list && helm incident list && helm brief daily
 ```
 
-→ Full commands: [docs/VERIFICATION.md](docs/VERIFICATION.md) · [docs/QUICKSTART.md](docs/QUICKSTART.md)
+→ Full commands: [docs/VERIFICATION.md](docs/VERIFICATION.md) · [docs/QUICKSTART.md](docs/QUICKSTART.md) · [docs/POLICY_SIMULATION.md](docs/POLICY_SIMULATION.md)
 
 ---
 
@@ -133,6 +160,29 @@ npx @mindburn/helm-cli --ci --bundle ./evidence 2>/dev/null | jq .verdict
 | "Who approved that?" disputes       | Timelock + challenge/response ceremony, Ed25519 signed              | `DENY_APPROVAL_REQUIRED` | [UC-003](docs/use-cases/UC-003_approval_ceremony.sh)                                                   |
 | No audit trail for regulators       | Deterministic EvidencePack, offline verifiable, replay from genesis | —                        | [UC-008](docs/use-cases/UC-008_replay_verify.sh)                                                       |
 | Can't prove compliance to auditors  | Conformance L1 + L2 gates, 12 runnable use cases                    | —                        | [UC-012](docs/use-cases/UC-012_openai_proxy.sh)                                                        |
+
+---
+
+## OSS Boundary
+
+HELM OSS includes the full execution boundary:
+
+- fail-closed policy enforcement
+- ProofGraph and EvidencePacks
+- replay and verification
+- MCP, framework, and proxy integrations
+
+HELM OSS does **not** include the full commercial control plane:
+
+- managed federation
+- pack distribution and entitlement management
+- compliance intelligence workflows
+- Mission Control / Studio operations surfaces
+- full OrgDNA deployment lifecycle
+
+That boundary exists to keep the kernel trustworthy, not to cripple OSS.
+
+→ Details: [docs/OSS_SCOPE.md](docs/OSS_SCOPE.md)
 
 ---
 
@@ -207,6 +257,20 @@ curl -s -X POST http://localhost:8080/mcp/v1/execute \
   -d '{"method":"file_read","params":{"path":"/tmp/test.txt"}}' | jq .
 # → { "result": ..., "receipt_id": "rec_...", "reason_code": "ALLOW" }
 → Full example: [examples/mcp_client/main.sh](examples/mcp_client/main.sh)
+
+### Organization-scoped metadata
+
+When you need organizational context, thread it through receipt metadata:
+
+```json
+{
+  "organization_id": "northstar-research",
+  "scope_id": "lab.benchmarks.pipeline",
+  "principal_id": "ml_engineer"
+}
+```
+
+The kernel already supports metadata on intents and receipts. HELM OSS keeps this optional and backward-compatible so you can grow from local agent governance into organizational execution without changing the boundary contract.
 
 ---
 
@@ -388,6 +452,27 @@ See the [GitHub Issues](https://github.com/Mindburn-Labs/helm-oss/issues) for pl
 ## License
 
 [Apache License 2.0](LICENSE)
+
+---
+
+## Live Proof Surface
+
+See HELM in action — no install required:
+
+- 📊 **[Lab Status](https://mindburn.org/lab/status)** — live governed runs and receipts
+- ✅ **[Compatibility Matrix](https://mindburn.org/lab/compatibility)** — weekly provider conformance results
+- 🔬 **[Proof Demos](https://mindburn.org/demos)** — interactive gate, verify, policy, and conformance demos
+- 🌐 **[Ecosystem Intel](https://mindburn.org/ecosystem)** — weekly briefs on DeerFlow, OpenClaw, Crucix, MiroFish
+
+---
+
+## 🎯 Try It — No Install
+
+Use a HELM-governed AI assistant right now — free, no signup:
+
+**→ [try.mindburn.run](https://try.mindburn.run)** — OpenClaw + HELM + free models. Every action gets a receipt.
+
+See the full product ladder: [PRODUCT_LADDER.md](PRODUCT_LADDER.md)
 
 ---
 

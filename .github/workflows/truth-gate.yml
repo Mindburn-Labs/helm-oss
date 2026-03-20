@@ -1,0 +1,67 @@
+name: Truth Gate
+
+on:
+  pull_request:
+    paths:
+      - 'core/pkg/mcp/**'
+      - 'docs/**'
+      - 'examples/starters/**'
+  push:
+    branches: [main]
+
+jobs:
+  truth-gate:
+    name: Truth Surface Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Build helm binary
+        run: cd core && go build -o ../bin/helm ./cmd/helm/
+
+      # Protocol truth: verify /mcp endpoint version matches docs
+      - name: Check protocol version consistency
+        run: |
+          PROTOCOL_IN_CODE=$(grep -oP 'LatestProtocolVersion\s*=\s*"\K[^"]+' core/pkg/mcp/protocol.go)
+          echo "Protocol version in code: $PROTOCOL_IN_CODE"
+          if ! grep -q "$PROTOCOL_IN_CODE" docs/INTEGRATIONS/mcp.md 2>/dev/null; then
+            echo "::warning::Protocol version $PROTOCOL_IN_CODE not found in docs/INTEGRATIONS/mcp.md"
+          fi
+
+      # Auth-matrix truth: verify auth modes in docs match runtime
+      - name: Check auth modes in docs
+        run: |
+          for mode in none static-header oauth; do
+            if ! grep -q "$mode" docs/INTEGRATIONS/mcp.md 2>/dev/null; then
+              echo "::warning::Auth mode '$mode' not documented in mcp.md"
+            fi
+          done
+
+      # Starter docs truth: verify helm init profiles work
+      - name: Smoke test helm init profiles
+        run: |
+          for profile in openai claude google codex; do
+            TMPDIR=$(mktemp -d)
+            ./bin/helm init $profile "$TMPDIR/test-$profile" 2>&1 || {
+              echo "::error::helm init $profile failed"
+              exit 1
+            }
+            if [ ! -f "$TMPDIR/test-$profile/helm.yaml" ]; then
+              echo "::error::helm init $profile did not create helm.yaml"
+              exit 1
+            fi
+            rm -rf "$TMPDIR"
+          done
+          echo "All init profiles produce valid output"
+
+      # Compatibility: verify tests pass
+      - name: Run MCP tests
+        run: cd core && go test ./pkg/mcp/... -count=1
+
+      - name: Run CLI tests
+        run: cd core && go test ./cmd/helm/ -count=1

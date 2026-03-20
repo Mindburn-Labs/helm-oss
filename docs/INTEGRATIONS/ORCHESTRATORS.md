@@ -1,6 +1,7 @@
 # HELM Orchestrator Integrations
 
-Route tool execution through HELM governance in your orchestrator framework.
+Route tool execution through the HELM execution kernel in your orchestrator framework.
+Orchestrators decide sequence. HELM decides whether a proposed side effect is authorized under policy, scope, and proof requirements.
 
 ---
 
@@ -19,6 +20,17 @@ executor = HelmToolExecutor(helm_url="http://localhost:8080")
 result = executor.execute("search_web", {"query": "HELM"})
 print(result.receipt.verdict)  # ALLOW or DENY
 
+# Optional organization-scoped metadata
+result = executor.execute(
+    "search_web",
+    {"query": "HELM"},
+    metadata={
+        "organization_id": "northstar-research",
+        "scope_id": "lab.discovery.search",
+        "principal_id": "research_lead",
+    },
+)
+
 # Export evidence
 executor.export_evidence_pack("evidence.tar")
 ```
@@ -34,15 +46,14 @@ python your_app.py
 ### TypeScript / JavaScript
 
 ```bash
-npm install @mindburn/helm
+npm install @mindburn/helm-openai-agents
 ```
 
 ```typescript
-// The OpenAI Agents adapter currently ships from source in sdk/ts/openai-agents/.
-import { HelmGovernanceAdapter } from "../../sdk/ts/openai-agents/src";
+import { HelmToolProxy } from "@mindburn/helm-openai-agents";
 
-const adapter = new HelmGovernanceAdapter({ helmUrl: "http://localhost:8080" });
-const result = await adapter.execute("search_web", { query: "HELM" });
+const proxy = new HelmToolProxy({ baseUrl: "http://localhost:8080" });
+const governedTools = proxy.wrapTools(myTools);
 ```
 
 Responses WebSocket mode is not shipped in the OSS proxy runtime yet. Use the HTTP proxy surface for current OSS deployments.
@@ -102,8 +113,9 @@ See [sdk/python/langchain/](../../sdk/python/langchain/) for full docs.
 ## Mastra
 
 ```typescript
-// The Mastra adapter currently ships from source in sdk/ts/mastra/.
-import { HelmMastraAdapter } from "../../sdk/ts/mastra/src";
+// Install from npm for the published OSS adapter.
+// npm install @mindburn/helm-mastra
+import { HelmMastraAdapter } from "@mindburn/helm-mastra";
 
 const adapter = new HelmMastraAdapter({
   helmUrl: "http://localhost:8080",
@@ -112,3 +124,5 @@ const adapter = new HelmMastraAdapter({
 ```
 
 See [sdk/ts/mastra/](../../sdk/ts/mastra/) for full docs.
+
+For a dry-run policy simulation flow, see [../POLICY_SIMULATION.md](../POLICY_SIMULATION.md).

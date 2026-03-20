@@ -16,8 +16,8 @@ go install github.com/Mindburn-Labs/helm-oss/core/cmd/helm@latest
 # Docker
 docker run --rm ghcr.io/mindburn-labs/helm-oss:latest --help
 
-# Homebrew (coming soon)
-# brew install mindburn-labs/tap/helm
+# Homebrew formula is not published yet
+# Use the install script, Go install, or Docker for now
 ```
 
 ---
@@ -28,8 +28,11 @@ docker run --rm ghcr.io/mindburn-labs/helm-oss:latest --help
 # 1. One-command setup (SQLite + Ed25519 + config)
 helm onboard --yes
 
-# 2. Run starter company demo (12 receipts, 7 phases)
-helm demo company --template starter --provider mock
+# 2. Run starter organization demo (legacy alias: `helm demo company`)
+helm demo organization --template starter --provider mock
+
+# 2b. Optional: run the research-lab scenario in dry-run mode
+helm demo research-lab --template starter --provider mock --dry-run
 
 # 3. Export deterministic EvidencePack
 helm export --evidence ./data/evidence --out evidence.tar

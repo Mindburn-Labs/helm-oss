@@ -1,0 +1,45 @@
+# Caddy reverse proxy for try.mindburn.run
+#
+# TLS auto-provisioned via Let's Encrypt.
+# Rate limiting at edge: 20 req/min per IP.
+
+try.mindburn.run {
+	# Rate limit: 20 requests/minute per client IP
+	rate_limit {
+		zone try_zone {
+			key    {remote_host}
+			events 20
+			window 1m
+		}
+	}
+
+	# Proxy to OpenClaw agent
+	handle /api/* {
+		reverse_proxy openclaw:3000
+	}
+
+	# Health endpoint (HELM)
+	handle /health {
+		reverse_proxy helm:8080
+	}
+
+	# Receipts endpoint (HELM)
+	handle /v1/receipts* {
+		reverse_proxy helm:8080
+	}
+
+	# Evidence export (HELM)
+	handle /v1/evidence* {
+		reverse_proxy helm:8080
+	}
+
+	# CORS headers
+	header {
+		Access-Control-Allow-Origin "https://mindburn.org"
+		Access-Control-Allow-Methods "GET, POST, OPTIONS"
+		Access-Control-Allow-Headers "Content-Type, Authorization"
+	}
+
+	# Default: block
+	respond "Not found" 404
+}

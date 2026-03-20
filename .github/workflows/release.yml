@@ -385,10 +385,38 @@ jobs:
           npm ci --ignore-scripts
           npm run build
           npm publish --provenance --access public
-
-  # npm adapter publish intentionally omitted.
-  # The adapters currently ship in-repo but are not yet clean standalone
-  # publish targets against the public @mindburn/helm release line.
+      - name: Build and publish OpenAI Agents adapter
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd sdk/ts/openai-agents
+          npm ci --ignore-scripts
+          npm run build
+          npm publish --provenance --access public
+      - name: Build and publish Mastra adapter
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd sdk/ts/mastra
+          npm ci --ignore-scripts
+          npm run build
+          npm publish --provenance --access public
+      - name: Build and publish AutoGen adapter
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd sdk/ts/autogen
+          npm ci --ignore-scripts
+          npm run build
+          npm publish --provenance --access public
+      - name: Build and publish Semantic Kernel adapter
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd sdk/ts/semantic-kernel
+          npm ci --ignore-scripts
+          npm run build
+          npm publish --provenance --access public
 
   # ── crates.io Publish (OIDC) ───────────────────────
   publish-crates:

@@ -18,17 +18,19 @@ type ToolExecutionRequest struct {
 	// Delegation-aware fields (defense-in-depth, complements Guardian Gate 5).
 	// When DelegationSessionID is set, the firewall enforces tool scope
 	// before the request reaches the Guardian policy evaluation.
-	DelegationSessionID string   `json:"delegation_session_id,omitempty"`
-	DelegationVerifier  string   `json:"delegation_verifier,omitempty"`
+	DelegationSessionID    string   `json:"delegation_session_id,omitempty"`
+	DelegationVerifier     string   `json:"delegation_verifier,omitempty"`
 	DelegationAllowedTools []string `json:"delegation_allowed_tools,omitempty"`
 }
 
 // ToolExecutionResponse represents the result of a tool execution.
 type ToolExecutionResponse struct {
-	Content   string `json:"content"`
-	IsError   bool   `json:"is_error"`
-	Evaluated bool   `json:"evaluated"` // Whether policy was evaluated
-	ReceiptID string `json:"receipt_id,omitempty"`
+	Content           string            `json:"content"`
+	ContentItems      []ToolContentItem `json:"content_items,omitempty"`
+	StructuredContent map[string]any    `json:"structured_content,omitempty"`
+	IsError           bool              `json:"is_error"`
+	Evaluated         bool              `json:"evaluated"` // Whether policy was evaluated
+	ReceiptID         string            `json:"receipt_id,omitempty"`
 }
 
 // PolicyEvaluator abstracts the governance decision evaluation.

@@ -1,5 +1,5 @@
 {
-  "$id": "https://helm.mindburn.ai/schemas/core/genesis_approval.v1.schema.json",
+  "$id": "https://helm.mindburn.run/schemas/core/genesis_approval.v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "HELM Genesis Approval Request v1",
   "description": "ORG_GENESIS_APPROVAL ceremony request with four-hash binding. Per ARCHITECTURE.md §3.",

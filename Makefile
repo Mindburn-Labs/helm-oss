@@ -1,10 +1,8 @@
 .PHONY: build test test-race test-sdk-ts test-sdk-py test-all crucible lint proxy clean docker demo demo-down release-binaries verify-boundary onboard demo-cli mcp-pack mcp-install release-all
 
-# ── Build ──────────────────────────────────────────────
 build:
 	cd core && go build -o ../bin/helm ./cmd/helm/
-	go build -C tools/helm-node -o ../../bin/helm-node .
-	@echo "✅ bin/helm + bin/helm-node"
+	@echo "✅ bin/helm"
 
 # ── Test ───────────────────────────────────────────────
 test:
@@ -99,7 +97,7 @@ onboard: build
 	./bin/helm onboard --yes
 
 demo-cli: build
-	./bin/helm demo company --template starter
+	./bin/helm demo organization --template starter
 
 # ── MCP ────────────────────────────────────────────────
 mcp-pack: build

@@ -1,6 +1,7 @@
 # HELM MCP Clients — Integration Guide
 
 Install the HELM MCP server in your AI coding tool for governed tool execution.
+MCP remains a transport and capability layer; HELM adds authority, scope, and proof at execution time.
 
 ---
 
@@ -14,7 +15,7 @@ helm mcp install --client claude-code
 claude plugin install ./helm-mcp-plugin
 ```
 
-The plugin bundles a `.mcp.json` that auto-starts the HELM MCP server when enabled. Tool calls are intercepted by the GovernanceFirewall and receipted.
+The plugin bundles a `.mcp.json` that auto-starts the HELM MCP server when enabled. Tool calls are intercepted by the execution kernel, receipted, and can carry organizational scope metadata such as `organization_id`, `scope_id`, and `principal_id`.
 
 ---
 
@@ -62,6 +63,13 @@ helm mcp serve --transport http --port 9100
 # URL: http://localhost:9100/mcp
 ```
 
+For bearer-gated remote HTTP:
+
+```bash
+HELM_OAUTH_BEARER_TOKEN=testtoken helm mcp serve --transport http --port 9100 --auth oauth
+# Discovery: http://localhost:9100/.well-known/oauth-protected-resource/mcp
+```
+
 ---
 
 ## Codex
@@ -73,6 +81,8 @@ helm mcp print-config --client codex
 ```bash
 codex mcp add helm-governance -- helm mcp serve --transport stdio
 ```
+
+Remote HTTP is available at `http://localhost:9100/mcp` when you run `helm mcp serve --transport http --port 9100`.
 
 ---
 
@@ -125,5 +135,9 @@ Add to `.cursor/mcp.json`:
 The HELM MCP server supports:
 
 - **None** (default) — local stdio, no auth needed
-- **Static headers** — `HELM_API_KEY` env var
-- **OAuth** — not implemented in the OSS runtime
+- **Static headers** — `HELM_API_KEY` env var, `Authorization: Bearer ...` or `X-HELM-API-Key`
+- **OAuth bearer discovery** — `HELM_OAUTH_BEARER_TOKEN` for OSS remote HTTP plus `/.well-known/oauth-protected-resource/mcp`
+
+Supported MCP protocol versions are negotiated on `initialize`: `2025-11-25`, `2025-06-18`, `2025-03-26`.
+
+For identity and delegation patterns above raw auth, see [IDENTITY_INTEROP.md](IDENTITY_INTEROP.md).

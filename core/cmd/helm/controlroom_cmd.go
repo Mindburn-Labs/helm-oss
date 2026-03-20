@@ -44,6 +44,9 @@ func runControlRoom(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 
+	_, _ = fmt.Fprintln(stderr, "Warning: `helm control-room` is deprecated and remains only as a local debug surface.")
+	_, _ = fmt.Fprintln(stderr, "Use the existing HELM Studio OSS Local mode in the `helm` repository for the primary browser UI.")
+
 	mux := http.NewServeMux()
 
 	// Serve embedded SPA assets
@@ -87,5 +90,5 @@ func runControlRoom(args []string, stdout, stderr io.Writer) int {
 }
 
 func init() {
-	Register(Subcommand{Name: "control-room", Aliases: []string{}, Usage: "Launch the Control Room UI", RunFn: runControlRoom})
+	Register(Subcommand{Name: "control-room", Aliases: []string{}, Usage: "Launch the deprecated local debug Control Room UI", RunFn: runControlRoom})
 }

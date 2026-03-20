@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"runtime"
 	"time"
 
@@ -218,6 +219,15 @@ func RegisterSubsystemRoutes(mux *http.ServeMux, svc *Services) {
 	trustKeys := &api.TrustKeyHandler{Registry: trustregistry.NewTrustRegistry()}
 	mux.HandleFunc("/api/v1/trust/keys/add", trustKeys.HandleAddKey)
 	mux.HandleFunc("/api/v1/trust/keys/revoke", trustKeys.HandleRevokeKey)
+
+	// --- OSS Local Read Surface ---
+	ossLocal := api.NewOSSLocalHandler(api.OSSLocalConfig{
+		EvidenceDir: os.Getenv("HELM_OSS_EVIDENCE_DIR"),
+		ReceiptsDir: os.Getenv("HELM_OSS_RECEIPTS_DIR"),
+		Version:     displayVersion(),
+		BuildTime:   displayBuildTime(),
+	})
+	ossLocal.Register(mux)
 
 	// --- MCP Gateway ---
 	mcpGateway, err := newLocalMCPGateway()

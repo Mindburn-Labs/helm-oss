@@ -10,6 +10,7 @@
 | Google OAuth         | Gemini CLI / ADK demos  | `HELM_GOOGLE_OAUTH`     | Planned     |
 | Client-local session | Desktop/CLI passthrough | `HELM_SESSION_TOKEN`    | ✅ Shipping |
 | MCP header auth      | MCP protocol auth       | `Authorization` header  | ✅ Shipping |
+| MCP OAuth bearer     | Remote HTTP MCP         | `HELM_OAUTH_BEARER_TOKEN` | ⚠️ Preview |
 | Enterprise token     | SSO/IdP integration     | `HELM_ENTERPRISE_TOKEN` | Planned     |
 | mTLS                 | Service-to-service      | TLS config block        | Planned     |
 
@@ -42,6 +43,15 @@ auth:
   token_env: HELM_MCP_TOKEN
 ```
 
+### MCP OAuth Bearer (OSS remote HTTP)
+
+```yaml
+auth:
+  mode: mcp_oauth
+  resource_metadata: http://localhost:9100/.well-known/oauth-protected-resource/mcp
+  token_env: HELM_OAUTH_BEARER_TOKEN
+```
+
 ### Enterprise Token
 
 ```yaml
@@ -59,8 +69,8 @@ auth:
 | Claude Code    | MCP header   | API key          |
 | Claude Desktop | MCP header   | API key          |
 | Gemini CLI     | Google OAuth | API key          |
-| Cursor         | MCP header   | API key          |
-| VS Code        | MCP header   | API key          |
+| Cursor         | MCP header / OAuth bearer | API key |
+| VS Code        | MCP header / OAuth bearer | API key |
 | Direct SDK     | API key      | Enterprise token |
 
 ## Security Requirements

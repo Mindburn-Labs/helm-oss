@@ -11,7 +11,9 @@ All SDKs are generated from this spec. Manual drift is caught by CI.
 |-------|-----------|-----|
 | OpenAI Proxy | `POST /v1/chat/completions` | `proxy` |
 | Approval | `POST /api/v1/kernel/approve` | `approval` |
+| MCP Remote | `GET /mcp`, `POST /mcp`, `GET /.well-known/oauth-protected-resource/mcp` | `mcp` |
 | ProofGraph | `GET /api/v1/proofgraph/sessions`, `GET .../receipts` | `proofgraph` |
+| OSS Local | `GET /api/v1/oss-local/summary`, `GET .../decision-timeline`, `GET .../replay-report` | `oss-local` |
 | Evidence | `POST /api/v1/evidence/export`, `POST .../verify`, `POST /api/v1/replay/verify` | `evidence` |
 | Conformance | `POST /api/v1/conformance/run`, `GET .../reports/{id}` | `conformance` |
 | System | `GET /healthz`, `GET /version` | `system` |

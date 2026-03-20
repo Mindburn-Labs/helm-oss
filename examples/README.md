@@ -1,19 +1,46 @@
 # Examples
 
-This directory contains runnable integration examples for SDK and OpenAI-compatible flows:
+This directory contains runnable integration examples for SDK, agent frameworks, and OpenAI-compatible flows.
 
-- `go_client`
-- `java_client`
-- `js_openai_baseurl`
-- `langgraph`
-- `mcp_client`
-- `openai_agents`
-- `orchestration`
-- `orgdna`
-- `python_openai_baseurl`
-- `receipt_verification`
-- `rust_client`
-- `ts_vercel_baseurl`
+## 🚀 Agent Hardening Quickstarts
+
+| Framework | What you get | Start here |
+|-----------|-------------|------------|
+| **DeerFlow** | Governed research pipeline with receipts | [`deerflow/`](deerflow/) |
+| **OpenClaw** | Hardened agent actions with proof | [`openclaw/`](openclaw/) |
+
+## SDK Examples
+
+| Example | Language | Description |
+|---------|----------|-------------|
+| [`go_client`](go_client/) | Go | HELM Go SDK integration |
+| [`java_client`](java_client/) | Java | HELM Java SDK integration |
+| [`rust_client`](rust_client/) | Rust | HELM Rust SDK integration |
+
+## Framework Integrations
+
+| Example | Framework | Description |
+|---------|-----------|-------------|
+| [`langgraph`](langgraph/) | LangGraph | Governed LangGraph pipeline |
+| [`mcp_client`](mcp_client/) | MCP | Governed MCP tool calls |
+| [`openai_agents`](openai_agents/) | OpenAI Agents SDK | Governed OpenAI agents |
+| [`ms_agent_framework`](ms_agent_framework/) | Microsoft Agent Framework | Governed MS agents |
+| [`orchestration`](orchestration/) | Multi-agent | Orchestrated governed agents |
+
+## Proxy Integrations (base_url rewrite)
+
+| Example | Language | Description |
+|---------|----------|-------------|
+| [`js_openai_baseurl`](js_openai_baseurl/) | JavaScript | OpenAI SDK with HELM proxy |
+| [`python_openai_baseurl`](python_openai_baseurl/) | Python | OpenAI SDK with HELM proxy |
+| [`ts_vercel_baseurl`](ts_vercel_baseurl/) | TypeScript | Vercel AI SDK with HELM proxy |
+
+## Verification
+
+| Example | Description |
+|---------|-------------|
+| [`receipt_verification`](receipt_verification/) | Verify receipts offline (Python + TS) |
+| [`golden`](golden/) | Golden artifact reference |
+| [`substrate`](substrate/) | Substrate integration |
 
 Each example folder includes its own `README.md` and entrypoint.
-

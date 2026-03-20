@@ -75,7 +75,7 @@ Create `scripts/ci/smoke_test.sh`:
 
 1. Create temp dirs
 2. `helm onboard --yes --data-dir $TMP`
-3. `helm demo company --template starter --provider mock --out $TMP`
+3. `helm demo organization --template starter --provider mock --out $TMP`
 4. Assert `evidence.tar` + `run-report.html` + receipts exist
 5. `helm verify evidence.tar`
 6. Validate HTML report markers

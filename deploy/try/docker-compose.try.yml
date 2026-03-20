@@ -1,0 +1,72 @@
+# Free Tier — Hosted Governed Agent
+#
+# Deploys OpenClaw + HELM proxy at try.mindburn.run
+# Free OpenRouter models, rate-limited by HELM budget enforcement.
+#
+# Usage:
+#   docker compose -f docker-compose.try.yml up -d
+#
+# Requires:
+#   OPENROUTER_API_KEY — free tier key from openrouter.ai
+
+services:
+  # ── Caddy (TLS + reverse proxy) ─────────────────
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      helm:
+        condition: service_healthy
+
+  # ── HELM Kernel (governed proxy) ─────────────────
+  helm:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      HELM_DEMO_MODE: "1"
+      HELM_ENABLE_OPENAI_PROXY: "1"
+      EVIDENCE_SIGNING_KEY: "try-mindburn-run-ephemeral"
+      LLM_API_KEY: "${OPENROUTER_API_KEY}"
+      LLM_PROVIDER_URL: "https://openrouter.ai/api/v1"
+      # Free tier policy
+      HELM_POLICY_FILE: "/etc/helm/policy-free-tier.yml"
+      # Budget enforcement — 50 req/day, 10K tokens/req
+      HELM_BUDGET_MAX_REQUESTS_PER_DAY: "50"
+      HELM_BUDGET_MAX_TOKENS_PER_REQUEST: "10000"
+    volumes:
+      - ./policy-free-tier.yml:/etc/helm/policy-free-tier.yml:ro
+      - helm_evidence:/data/evidence
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/helm", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── OpenClaw Agent ───────────────────────────────
+  openclaw:
+    image: ghcr.io/openclaw/openclaw:latest
+    restart: unless-stopped
+    depends_on:
+      helm:
+        condition: service_healthy
+    environment:
+      # Route all LLM calls through HELM proxy
+      OPENAI_BASE_URL: "http://helm:8080/v1"
+      OPENAI_API_KEY: "${OPENROUTER_API_KEY}"
+      # Use free-tier models via OpenRouter
+      OPENAI_MODEL: "meta-llama/llama-3.1-8b-instruct:free"
+
+volumes:
+  caddy_data:
+  caddy_config:
+  helm_evidence:

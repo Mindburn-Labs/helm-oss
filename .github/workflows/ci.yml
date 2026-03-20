@@ -9,6 +9,14 @@ permissions:
   contents: read
 
 jobs:
+  release-truth:
+    name: Release Truth
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate release truth surface
+        run: bash scripts/ci/release_truth_check.sh
+
   lint:
     name: Lint & Vet
     runs-on: ubuntu-latest
@@ -166,4 +174,3 @@ jobs:
           test -f /tmp/helm.mcpb || (echo 'FAIL: mcpb generation failed' && exit 1)
 
           echo '✅ All artifact contract checks passed'
-

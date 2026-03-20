@@ -41,7 +41,7 @@ shasum -a 256 -c SHA256SUMS.txt
 # 3. Verify signature (keyless GitHub Actions identity)
 cosign verify-blob \
   --signature SHA256SUMS.txt.sig \
-  --certificate-identity-regexp ".*@mindburn.io" \
+  --certificate-identity-regexp ".*@mindburn.org" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
   SHA256SUMS.txt
 ```

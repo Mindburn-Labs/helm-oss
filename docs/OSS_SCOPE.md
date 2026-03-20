@@ -4,6 +4,10 @@
 > normative trust boundary model and TCB definition. For the canonical
 > 8-package TCB inventory, see [TCB_POLICY.md](TCB_POLICY.md).
 
+HELM OSS is the **open execution kernel** of the HELM stack.
+
+It exists to keep the deterministic boundary small, portable, and independently trustworthy. The commercial HELM Platform layers must extend this kernel, not replace it.
+
 ## Kernel TCB (Trusted Computing Base)
 
 The canonical TCB is bounded to **8 packages** — the minimal trusted core.
@@ -57,3 +61,23 @@ The following packages were removed to minimize the attack surface:
 | `hierarchy/`               | Enterprise hierarchy          |
 | `heuristic/`               | Heuristic analysis            |
 | `perimeter/`               | Network perimeter             |
+
+## Boundary truth
+
+OSS includes:
+
+- fail-closed enforcement
+- policy evaluation
+- receipts and ProofGraph
+- replay and verification
+- adapters and integration surfaces
+
+OSS does not include:
+
+- managed federation
+- pack distribution and entitlements
+- compliance intelligence workflows
+- Mission Control / Studio operations surfaces
+- full OrgDNA deployment lifecycle
+
+The invariant is simple: OSS must stay fully useful on its own. The paid layer monetizes shared organizational control around the kernel, not artificial runtime crippleware.

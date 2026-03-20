@@ -1,5 +1,5 @@
 {
-  "$id": "https://helm.mindburn.ai/schemas/core/condensation_checkpoint.v1.schema.json",
+  "$id": "https://helm.mindburn.run/schemas/core/condensation_checkpoint.v1.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "HELM Condensation Checkpoint v1",
   "description": "Periodic Merkle checkpoint for proof condensation. Per ARCHITECTURE.md §5.2.",

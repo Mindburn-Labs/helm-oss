@@ -22,9 +22,9 @@ This document defines which channels are currently real, which are intentionally
 | npm | `@mindburn/helm-mastra` | `ACTIVE` | Yes | Mastra adapter (v1.0.2) |
 | npm | `@mindburn/helm-autogen` | `ACTIVE` | Yes | AutoGen adapter (v1.0.2) |
 | npm | `@mindburn/helm-semantic-kernel` | `ACTIVE` | Yes | Semantic Kernel adapter (v1.0.2) |
-| PyPI | `helm` | `WITHHELD` | No | SDK exists in repo but not yet published to PyPI |
-| crates.io | `helm` | `WITHHELD` | No | SDK exists in repo but not yet published to crates.io |
-| Maven Central | Java SDK | `WITHHELD` | No | SDK exists in repo but not yet published |
+| PyPI | `helm` | `ACTIVE` | Yes | Published by `publish-pypi` in release workflow |
+| crates.io | `helm` | `ACTIVE` | Yes | Published by `publish-crates` in release workflow |
+| Maven Central | `ai.mindburn.helm:helm` | `ACTIVE` | Yes | Published by `publish-maven` in release workflow |
 | Go module proxy | `core` and `sdk/go` tags | `ACTIVE` | Yes | Tag-driven; no registry upload job |
 | NuGet | `.NET SDK package` | `BLOCKED` | No | No `sdk/dotnet` package exists yet |
 
@@ -34,12 +34,12 @@ Allowed language:
 
 - "GitHub release artifacts are available"
 - "GHCR images are available"
-- "npm packages are published for TypeScript SDK, CLI, and all four adapters"
+- "npm packages are published for the TypeScript SDK, CLI, and all four adapters"
+- "PyPI, crates.io, and Maven Central packages are published"
 - "Go module is available via git tags"
 
 Forbidden language while this table remains unchanged:
 
-- "PyPI / crates.io / Maven packages are published"
 - ".NET/NuGet distribution is available"
 - "Every channel in the repo is publicly distributed"
 
@@ -50,4 +50,4 @@ Any PR that changes public release channels must update:
 1. this file
 2. `docs/PUBLISHING.md`
 3. `.github/workflows/release.yml`
-4. `docs/master_scope/final_standard_implementation_report.md`
+4. `scripts/ci/release_truth_check.sh`

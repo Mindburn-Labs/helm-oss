@@ -48,6 +48,16 @@ docker compose up -d
 curl -s http://localhost:8080/healthz   # → OK
 ```
 
+### Bootstrap a local project
+
+```bash
+make build
+./bin/helm init openai
+./bin/helm doctor --fix
+```
+
+This creates `helm.yaml`, a provider-specific `.env.helm.example`, and the local artifact directories Studio OSS Local expects.
+
 ### Run the proof loop
 
 ```bash
@@ -75,14 +85,14 @@ That's it. Your app doesn't change. Every tool call now produces a signed receip
 # 1. Start
 docker compose up -d
 
-# 2. Trigger a deny (schema mismatch → fail-closed)
-curl -s http://localhost:8080/v1/tools/execute \
+# 2. Trigger a deny (unknown tool → fail-closed)
+curl -s -X POST http://localhost:8080/mcp/v1/execute \
   -H 'Content-Type: application/json' \
-  -d '{"tool":"unknown_tool","args":{"bad_field":true}}' | jq .reason_code
-# → "ERR_TOOL_NOT_FOUND"
+  -d '{"method":"unknown_tool","params":{"bad_field":true}}' | jq '.error.reason_code'
+# → "DENY_TOOL_NOT_FOUND"
 
-# 3. View receipt
-curl -s http://localhost:8080/api/v1/receipts?limit=1 | jq '.[0].receipt_hash'
+# 3. View the local attach surface used by HELM Studio OSS Local
+curl -s 'http://localhost:8080/api/v1/oss-local/decision-timeline?limit=1' | jq '.decisions[0].id'
 
 # 4. Export EvidencePack
 ./bin/helm export --evidence ./data/evidence --out pack.tar.gz
@@ -196,7 +206,7 @@ Typed clients for 5 languages. All generated from [api/openapi/helm.openapi.yaml
 | Python | `pip install helm` | [sdk/python/README.md](sdk/python/README.md) |
 | Go | `go get github.com/Mindburn-Labs/helm-oss/sdk/go` | [sdk/go/README.md](sdk/go/README.md) |
 | Rust | `cargo add helm` | [sdk/rust/README.md](sdk/rust/README.md) |
-| Java | Maven `ai.mindburn.helm:helm:1.0.0` | [sdk/java/README.md](sdk/java/README.md) |
+| Java | Maven `ai.mindburn.helm:helm:0.9.0` | [sdk/java/README.md](sdk/java/README.md) |
 
 Every SDK exposes the same primitives: `chatCompletions`, `approveIntent`, `listSessions`, `getReceipts`, `exportEvidence`, `verifyEvidence`, `conformanceRun`.
 

@@ -5,12 +5,6 @@ Typed Rust client for the HELM kernel API. Deps: `reqwest` + `serde`.
 ## Install
 
 ```toml
-[dependencies]
-helm = { git = "https://github.com/Mindburn-Labs/helm-oss", path = "sdk/rust" }
-```
-
-Or when published:
-```bash
 cargo add helm
 ```
 

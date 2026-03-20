@@ -8,7 +8,7 @@ import (
 
 func TestLoadFromBytes(t *testing.T) {
 	yaml := `
-apiVersion: helm.mindburn.com/v1
+apiVersion: helm.mindburn.run/v1
 kind: PolicyBundle
 metadata:
   name: test-bundle
@@ -42,7 +42,7 @@ rules:
 
 func TestLoadFromFile(t *testing.T) {
 	yaml := `
-apiVersion: helm.mindburn.com/v1
+apiVersion: helm.mindburn.run/v1
 kind: PolicyBundle
 metadata:
   name: file-bundle
@@ -76,7 +76,7 @@ func TestLoadInvalidYAML(t *testing.T) {
 
 func TestLoadMissingName(t *testing.T) {
 	yaml := `
-apiVersion: helm.mindburn.com/v1
+apiVersion: helm.mindburn.run/v1
 kind: PolicyBundle
 metadata:
   version: "1.0.0"
@@ -93,7 +93,7 @@ rules:
 
 func TestLoadInvalidVerdict(t *testing.T) {
 	yaml := `
-apiVersion: helm.mindburn.com/v1
+apiVersion: helm.mindburn.run/v1
 metadata:
   name: bad
 rules:
@@ -109,7 +109,7 @@ rules:
 
 func TestVerify(t *testing.T) {
 	yaml := `
-apiVersion: helm.mindburn.com/v1
+apiVersion: helm.mindburn.run/v1
 metadata:
   name: verified
   version: "1.0.0"

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/Mindburn-Labs/helm-oss/core/pkg/artifacts"
+	helmauth "github.com/Mindburn-Labs/helm-oss/core/pkg/auth"
 	"github.com/Mindburn-Labs/helm-oss/core/pkg/crypto"
 	"github.com/Mindburn-Labs/helm-oss/core/pkg/guardian"
 	"github.com/Mindburn-Labs/helm-oss/core/pkg/prg"
@@ -215,7 +216,7 @@ func runServer() {
 	}
 	server := &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
-		Handler:           mux,
+		Handler:           helmauth.CORSMiddleware(nil)(mux),
 		ReadHeaderTimeout: 15 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

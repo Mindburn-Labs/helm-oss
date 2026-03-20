@@ -46,7 +46,7 @@ fi
 ```bash
 cosign verify-blob \
   --signature "https://github.com/Mindburn-Labs/helm-oss/releases/download/${VERSION}/SHA256SUMS.txt.sig" \
-  --certificate-identity-regexp ".*@mindburn.io" \
+  --certificate-identity-regexp ".*@mindburn.org" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
   /tmp/SHA256SUMS.txt
 ```
@@ -67,7 +67,7 @@ syft parse /tmp/sbom.json
 ```bash
 # Verify GHCR container image
 cosign verify ghcr.io/mindburn-labs/helm:latest \
-  --certificate-identity-regexp ".*@mindburn.io" \
+  --certificate-identity-regexp ".*@mindburn.org" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 ```
 

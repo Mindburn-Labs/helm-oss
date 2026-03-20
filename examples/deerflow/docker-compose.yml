@@ -1,0 +1,45 @@
+# DeerFlow + HELM Hardening Quickstart
+#
+# Usage:
+#   docker compose up -d
+#
+# This spins up HELM as a governed proxy in front of DeerFlow's LLM calls.
+# Every tool call gets a cryptographic receipt. No DeerFlow code changes needed.
+
+services:
+  # ── HELM Kernel (governed proxy) ─────────────────
+  helm:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      HELM_DEMO_MODE: "1"
+      HELM_ENABLE_OPENAI_PROXY: "1"
+      EVIDENCE_SIGNING_KEY: "demo-ephemeral-key"
+      LLM_API_KEY: "${LLM_API_KEY}"
+      LLM_PROVIDER_URL: "${LLM_PROVIDER_URL:-https://api.openai.com/v1}"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/helm", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── DeerFlow Research Agent ──────────────────────
+  deerflow:
+    image: ghcr.io/bytedance/deer-flow:latest
+    restart: unless-stopped
+    depends_on:
+      helm:
+        condition: service_healthy
+    environment:
+      # Route all LLM calls through HELM proxy
+      LLM_BASE_URL: "http://helm:8080/v1"
+      LLM_API_KEY: "${LLM_API_KEY}"
+    volumes:
+      - ./deerflow-config.yml:/app/config.yml:ro
+    ports:
+      - "3000:3000"

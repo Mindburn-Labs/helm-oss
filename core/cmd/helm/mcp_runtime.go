@@ -65,12 +65,16 @@ func newLocalMCPRuntime() (*mcppkg.ToolCatalog, mcppkg.ToolExecutor, error) {
 }
 
 func newLocalMCPGateway() (*mcppkg.Gateway, error) {
+	return newConfiguredLocalMCPGateway(mcppkg.GatewayConfig{})
+}
+
+func newConfiguredLocalMCPGateway(cfg mcppkg.GatewayConfig) (*mcppkg.Gateway, error) {
 	catalog, executor, err := newLocalMCPRuntime()
 	if err != nil {
 		return nil, err
 	}
 
-	return mcppkg.NewGateway(catalog, mcppkg.GatewayConfig{}, mcppkg.WithExecutor(executor)), nil
+	return mcppkg.NewGateway(catalog, cfg, mcppkg.WithExecutor(executor)), nil
 }
 
 func runLocalMCPTool(ctx context.Context, req mcppkg.ToolExecutionRequest) (mcppkg.ToolExecutionResponse, error) {
@@ -109,6 +113,16 @@ func runLocalMCPTool(ctx context.Context, req mcppkg.ToolExecutionRequest) (mcpp
 
 		return mcppkg.ToolExecutionResponse{
 			Content: string(data),
+			ContentItems: mcppkg.StructuredTextContent(map[string]any{
+				"path":       resolvedPath,
+				"text":       string(data),
+				"size_bytes": len(data),
+			}, string(data)),
+			StructuredContent: map[string]any{
+				"path":       resolvedPath,
+				"text":       string(data),
+				"size_bytes": len(data),
+			},
 		}, nil
 
 	case "file_write":
@@ -138,6 +152,16 @@ func runLocalMCPTool(ctx context.Context, req mcppkg.ToolExecutionRequest) (mcpp
 
 		return mcppkg.ToolExecutionResponse{
 			Content: fmt.Sprintf("wrote %d bytes to %s", len(content), resolvedPath),
+			ContentItems: mcppkg.StructuredTextContent(map[string]any{
+				"path":          resolvedPath,
+				"bytes_written": len(content),
+				"status":        "written",
+			}, fmt.Sprintf("wrote %d bytes to %s", len(content), resolvedPath)),
+			StructuredContent: map[string]any{
+				"path":          resolvedPath,
+				"bytes_written": len(content),
+				"status":        "written",
+			},
 		}, nil
 	default:
 		return mcppkg.ToolExecutionResponse{
@@ -213,10 +237,8 @@ func readMCPRequest(reader *bufio.Reader) (*mcpRPCRequest, error) {
 		}
 
 		headers := map[string]string{}
-		for {
-			if trimmed == "" {
-				break
-			}
+		for trimmed != "" {
+
 			parts := strings.SplitN(trimmed, ":", 2)
 			if len(parts) != 2 {
 				return nil, fmt.Errorf("invalid MCP header %q", trimmed)
@@ -273,15 +295,30 @@ func handleMCPRPCRequest(req *mcpRPCRequest, catalog *mcppkg.ToolCatalog, execut
 
 	switch req.Method {
 	case "initialize":
+		var params struct {
+			ProtocolVersion string `json:"protocolVersion"`
+		}
+		_ = json.Unmarshal(req.Params, &params)
+
+		protocolVersion, ok := mcppkg.NegotiateProtocolVersion(params.ProtocolVersion)
+		if !ok {
+			response.Error = &mcpRPCError{Code: -32602, Message: fmt.Sprintf("unsupported protocol version %q", params.ProtocolVersion)}
+			return response, nil
+		}
+
 		response.Result = map[string]any{
-			"protocolVersion": "2025-03-26",
+			"protocolVersion": protocolVersion,
 			"serverInfo": map[string]any{
 				"name":    "helm-governance",
+				"title":   "HELM Governance",
 				"version": displayVersion(),
 			},
 			"capabilities": map[string]any{
-				"tools": map[string]any{},
+				"tools": map[string]any{
+					"listChanged": false,
+				},
 			},
+			"instructions": "HELM governs tool execution, emits receipts, and exposes a deterministic proof surface.",
 		}
 		return response, nil
 
@@ -301,11 +338,7 @@ func handleMCPRPCRequest(req *mcpRPCRequest, catalog *mcppkg.ToolCatalog, execut
 
 		payload := make([]map[string]any, 0, len(tools))
 		for _, tool := range tools {
-			payload = append(payload, map[string]any{
-				"name":        tool.Name,
-				"description": tool.Description,
-				"inputSchema": tool.Schema,
-			})
+			payload = append(payload, mcppkg.ToolDescriptorPayload(tool))
 		}
 		response.Result = map[string]any{"tools": payload}
 		return response, nil
@@ -340,20 +373,7 @@ func handleMCPRPCRequest(req *mcpRPCRequest, catalog *mcppkg.ToolCatalog, execut
 			return response, nil
 		}
 
-		result := map[string]any{
-			"content": []map[string]string{
-				{
-					"type": "text",
-					"text": execResp.Content,
-				},
-			},
-			"isError": execResp.IsError,
-		}
-		if execResp.ReceiptID != "" {
-			result["receipt_id"] = execResp.ReceiptID
-		}
-
-		response.Result = result
+		response.Result = mcppkg.ToolResultPayload(execResp)
 		return response, nil
 
 	default:
@@ -366,7 +386,11 @@ func handleMCPRPCRequest(req *mcpRPCRequest, catalog *mcppkg.ToolCatalog, execut
 }
 
 func newLocalMCPHTTPServer(port int, authMode string) (*http.Server, error) {
-	gateway, err := newLocalMCPGateway()
+	baseURL := fmt.Sprintf("http://localhost:%d", port)
+	gateway, err := newConfiguredLocalMCPGateway(mcppkg.GatewayConfig{
+		BaseURL:  baseURL,
+		AuthMode: authMode,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +409,7 @@ func newLocalMCPHTTPServer(port int, authMode string) (*http.Server, error) {
 
 	handler, err := wrapMCPAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mux.ServeHTTP(w, r)
-	}), authMode)
+	}), authMode, baseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +424,7 @@ func newLocalMCPHTTPServer(port int, authMode string) (*http.Server, error) {
 	}, nil
 }
 
-func wrapMCPAuth(next http.Handler, authMode string) (http.Handler, error) {
+func wrapMCPAuth(next http.Handler, authMode, baseURL string) (http.Handler, error) {
 	switch authMode {
 	case "none":
 		return next, nil
@@ -421,7 +445,78 @@ func wrapMCPAuth(next http.Handler, authMode string) (http.Handler, error) {
 			next.ServeHTTP(w, r)
 		}), nil
 	case "oauth":
-		return nil, fmt.Errorf("oauth auth mode is not implemented in the OSS runtime")
+		jwksURL := os.Getenv("HELM_OAUTH_JWKS_URL")
+		metadataURL := strings.TrimRight(baseURL, "/") + "/.well-known/oauth-protected-resource/mcp"
+
+		if jwksURL != "" {
+			// Production JWKS/OIDC validation.
+			issuer := os.Getenv("HELM_OAUTH_ISSUER")
+			audience := os.Getenv("HELM_OAUTH_AUDIENCE")
+			if issuer == "" || audience == "" {
+				return nil, fmt.Errorf("HELM_OAUTH_ISSUER and HELM_OAUTH_AUDIENCE must be set when HELM_OAUTH_JWKS_URL is configured")
+			}
+			var scopes []string
+			if configured := strings.TrimSpace(os.Getenv("HELM_OAUTH_SCOPES")); configured != "" {
+				for _, s := range strings.FieldsFunc(configured, func(r rune) bool { return r == ',' || r == ' ' }) {
+					if trimmed := strings.TrimSpace(s); trimmed != "" {
+						scopes = append(scopes, trimmed)
+					}
+				}
+			}
+
+			validator := mcppkg.NewJWKSValidator(mcppkg.JWKSConfig{
+				JWKSURL:  jwksURL,
+				Issuer:   issuer,
+				Audience: audience,
+				Scopes:   scopes,
+			})
+
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if strings.HasPrefix(r.URL.Path, "/.well-known/oauth-protected-resource") {
+					next.ServeHTTP(w, r)
+					return
+				}
+				authz := r.Header.Get("Authorization")
+				if !strings.HasPrefix(authz, "Bearer ") {
+					w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Bearer realm="helm-mcp", resource_metadata="%s"`, metadataURL))
+					http.Error(w, "missing bearer token", http.StatusUnauthorized)
+					return
+				}
+				tokenStr := strings.TrimSpace(strings.TrimPrefix(authz, "Bearer "))
+				_, err := validator.Validate(tokenStr)
+				if err != nil {
+					challenge := fmt.Sprintf(`Bearer realm="helm-mcp", resource_metadata="%s"`, metadataURL)
+					if validErr, ok := err.(*mcppkg.JWKSValidationError); ok && validErr.Kind == mcppkg.JWKSErrMissingScope {
+						challenge += fmt.Sprintf(`, error="insufficient_scope", error_description="%s"`, validErr.Message)
+					}
+					w.Header().Set("WWW-Authenticate", challenge)
+					http.Error(w, err.Error(), http.StatusUnauthorized)
+					return
+				}
+				next.ServeHTTP(w, r)
+			}), nil
+		}
+
+		// Dev-only fallback: simple bearer token comparison.
+		// Retained for one release train — will be removed in the next major version.
+		expectedToken := os.Getenv("HELM_OAUTH_BEARER_TOKEN")
+		if expectedToken == "" {
+			return nil, fmt.Errorf("either HELM_OAUTH_JWKS_URL (production) or HELM_OAUTH_BEARER_TOKEN (dev fallback) must be set when --auth oauth is used")
+		}
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, "/.well-known/oauth-protected-resource") {
+				next.ServeHTTP(w, r)
+				return
+			}
+			authz := r.Header.Get("Authorization")
+			provided := strings.TrimSpace(strings.TrimPrefix(authz, "Bearer "))
+			if !strings.HasPrefix(authz, "Bearer ") || provided != expectedToken {
+				w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Bearer realm="helm-mcp", resource_metadata="%s"`, metadataURL))
+				http.Error(w, "missing or invalid OAuth bearer token", http.StatusUnauthorized)
+				return
+			}
+			next.ServeHTTP(w, r)
+		}), nil
 	default:
 		return nil, fmt.Errorf("unknown auth mode %q", authMode)
 	}

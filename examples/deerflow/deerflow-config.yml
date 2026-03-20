@@ -1,0 +1,24 @@
+# DeerFlow Configuration — HELM Hardened
+#
+# This config routes all LLM calls through the HELM governed proxy.
+# No DeerFlow code changes required — just a base_url override.
+
+llm:
+  # Point at HELM proxy instead of direct LLM provider
+  base_url: "http://helm:8080/v1"
+  api_key: "${LLM_API_KEY}"
+  model: "gpt-4"
+
+# DeerFlow research pipeline settings
+research:
+  max_iterations: 10
+  tools:
+    - web_search
+    - arxiv_search
+    - code_interpreter
+
+# HELM will enforce these boundaries automatically:
+# - Budget ceiling per session
+# - Tool allowlist validation
+# - Schema conformance on inputs and outputs
+# - Cryptographic receipt for every decision

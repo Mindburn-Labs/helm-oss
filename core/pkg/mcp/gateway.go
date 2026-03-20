@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/Mindburn-Labs/helm-oss/core/pkg/bridge"
 	"github.com/Mindburn-Labs/helm-oss/core/pkg/contracts"
@@ -15,14 +18,18 @@ import (
 // GatewayConfig configures the MCP gateway server.
 type GatewayConfig struct {
 	ListenAddr string `json:"listen_addr"`
+	BaseURL    string `json:"base_url,omitempty"`
+	AuthMode   string `json:"auth_mode,omitempty"`
+	SessionTTL time.Duration `json:"session_ttl,omitempty"`
 }
 
 // Gateway is an MCP server that exposes tool execution with governance.
 type Gateway struct {
-	catalog Catalog
-	config  GatewayConfig
-	bridge  *bridge.KernelBridge // governance bridge (optional)
-	exec    ToolExecutor
+	catalog  Catalog
+	config   GatewayConfig
+	bridge   *bridge.KernelBridge // governance bridge (optional)
+	exec     ToolExecutor
+	sessions *SessionStore // HTTP session store for /mcp transport
 }
 
 // GatewayOption configures optional Gateway settings.
@@ -47,9 +54,14 @@ func WithExecutor(exec ToolExecutor) GatewayOption {
 
 // NewGateway creates a new MCP gateway.
 func NewGateway(catalog Catalog, config GatewayConfig, opts ...GatewayOption) *Gateway {
+	ttl := config.SessionTTL
+	if ttl <= 0 {
+		ttl = DefaultSessionTTL
+	}
 	gw := &Gateway{
-		catalog: catalog,
-		config:  config,
+		catalog:  catalog,
+		config:   config,
+		sessions: NewSessionStore(ttl),
 	}
 	for _, opt := range opts {
 		opt(gw)
@@ -65,40 +77,162 @@ type MCPToolCallRequest struct {
 
 // MCPToolCallResponse is the wire format for an MCP tool result.
 type MCPToolCallResponse struct {
-	Result     any    `json:"result,omitempty"`
-	Error      string `json:"error,omitempty"`
-	Decision   string `json:"decision,omitempty"`
-	ReasonCode string `json:"reason_code,omitempty"`
-	ArgsHash   string `json:"args_hash,omitempty"`
-	PGNode     string `json:"proofgraph_node,omitempty"`
-	ReceiptID  string `json:"receipt_id,omitempty"`
+	Result            any               `json:"result,omitempty"`
+	Content           []ToolContentItem `json:"content,omitempty"`
+	StructuredContent map[string]any    `json:"structured_content,omitempty"`
+	Error             string            `json:"error,omitempty"`
+	Decision          string            `json:"decision,omitempty"`
+	ReasonCode        string            `json:"reason_code,omitempty"`
+	ArgsHash          string            `json:"args_hash,omitempty"`
+	PGNode            string            `json:"proofgraph_node,omitempty"`
+	ReceiptID         string            `json:"receipt_id,omitempty"`
+	ProtocolVersion   string            `json:"protocol_version,omitempty"`
 }
 
 // MCPCapabilityManifest describes the capabilities this server exposes.
 type MCPCapabilityManifest struct {
-	ServerName   string    `json:"server_name"`
-	Version      string    `json:"version"`
-	Tools        []ToolRef `json:"tools"`
-	Capabilities []ToolRef `json:"capabilities,omitempty"`
-	Governance   string    `json:"governance"` // "helm:pep:v1"
+	ServerName       string    `json:"server_name"`
+	Version          string    `json:"version"`
+	Tools            []ToolRef `json:"tools"`
+	Capabilities     []ToolRef `json:"capabilities,omitempty"`
+	Governance       string    `json:"governance"` // "helm:pep:v1"
+	ProtocolVersions []string  `json:"protocol_versions,omitempty"`
+	AuthMode         string    `json:"auth_mode,omitempty"`
 }
 
 // RegisterRoutes registers MCP gateway HTTP routes.
 func (g *Gateway) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/mcp", g.handleIndex)
+	mux.HandleFunc("/mcp", g.handleTransport)
 	mux.HandleFunc("/mcp/v1/capabilities", g.handleCapabilities)
 	mux.HandleFunc("/mcp/v1/execute", g.handleExecute)
+	mux.HandleFunc("/.well-known/oauth-protected-resource", g.handleProtectedResourceMetadata)
+	mux.HandleFunc("/.well-known/oauth-protected-resource/mcp", g.handleProtectedResourceMetadata)
 }
 
-func (g *Gateway) handleIndex(w http.ResponseWriter, r *http.Request) {
+func (g *Gateway) handleTransport(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		g.handleTransportGET(w, r)
+	case http.MethodPost:
+		g.handleTransportPOST(w, r)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (g *Gateway) handleIndex(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"server_name":      "helm-mcp-gateway",
-		"version":          "1.0.0",
-		"capabilities_url": "/mcp/v1/capabilities",
-		"execute_url":      "/mcp/v1/execute",
-		"governance":       "helm:pep:v1",
+		"server_name":                 "helm-mcp-gateway",
+		"version":                     "1.0.0",
+		"capabilities_url":            "/mcp/v1/capabilities",
+		"execute_url":                 "/mcp/v1/execute",
+		"mcp_endpoint":                "/mcp",
+		"supported_protocol_versions": SupportedProtocolVersions,
+		"auth_mode":                   g.authMode(),
+		"governance":                  "helm:pep:v1",
 	})
+}
+
+func (g *Gateway) handleTransportGET(w http.ResponseWriter, r *http.Request) {
+	if !strings.Contains(r.Header.Get("Accept"), "text/event-stream") {
+		g.handleIndex(w, r)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	if flusher, ok := w.(http.Flusher); ok {
+		_, _ = io.WriteString(w, "id: 0\ndata:\n\n")
+		flusher.Flush()
+		return
+	}
+	http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+}
+
+func (g *Gateway) handleTransportPOST(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		JSONRPC string          `json:"jsonrpc"`
+		ID      any             `json:"id,omitempty"`
+		Method  string          `json:"method"`
+		Params  json.RawMessage `json:"params,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid JSON-RPC request body", http.StatusBadRequest)
+		return
+	}
+
+	protocolVersion := r.Header.Get("MCP-Protocol-Version")
+	if req.Method == "initialize" {
+		var params struct {
+			ProtocolVersion string `json:"protocolVersion"`
+			ClientInfo      struct {
+				Name string `json:"name"`
+			} `json:"clientInfo"`
+		}
+		_ = json.Unmarshal(req.Params, &params)
+		negotiated, ok := NegotiateProtocolVersion(params.ProtocolVersion)
+		if !ok {
+			http.Error(w, fmt.Sprintf("unsupported MCP protocol version %q", params.ProtocolVersion), http.StatusBadRequest)
+			return
+		}
+		protocolVersion = negotiated
+
+		// Issue a new HTTP session.
+		sessionID, err := g.sessions.Create(protocolVersion, params.ClientInfo.Name)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("session creation failed: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		resp, respond, status := g.handleJSONRPCRequest(r.Context(), req.ID, req.Method, req.Params, protocolVersion)
+		if !respond {
+			w.WriteHeader(status)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("MCP-Protocol-Version", protocolVersion)
+		w.Header().Set("MCP-Session-Id", sessionID)
+		w.WriteHeader(status)
+		_ = json.NewEncoder(w).Encode(resp)
+		return
+	}
+
+	// For non-initialize requests, validate the session.
+	if protocolVersion != "" {
+		if _, ok := NegotiateProtocolVersion(protocolVersion); !ok {
+			http.Error(w, fmt.Sprintf("unsupported MCP protocol version %q", protocolVersion), http.StatusBadRequest)
+			return
+		}
+	} else {
+		protocolVersion = LegacyProtocolVersion
+	}
+
+	// Require valid MCP-Session-Id for non-notification methods.
+	sessionID := r.Header.Get("MCP-Session-Id")
+	isNotification := strings.HasPrefix(req.Method, "notifications/")
+	if sessionID != "" {
+		if session := g.sessions.Get(sessionID); session == nil {
+			http.Error(w, "invalid or expired MCP session", http.StatusUnauthorized)
+			return
+		}
+	} else if !isNotification {
+		// Session ID is recommended for non-notification requests after initialize.
+		// For backward compatibility, we allow requests without session ID but log a warning.
+	}
+
+	resp, respond, status := g.handleJSONRPCRequest(r.Context(), req.ID, req.Method, req.Params, protocolVersion)
+	if !respond {
+		w.WriteHeader(status)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("MCP-Protocol-Version", protocolVersion)
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 func (g *Gateway) handleCapabilities(w http.ResponseWriter, r *http.Request) {
@@ -130,11 +264,13 @@ func (g *Gateway) handleCapabilities(w http.ResponseWriter, r *http.Request) {
 	}
 
 	m := MCPCapabilityManifest{
-		ServerName:   "helm-mcp-gateway",
-		Version:      "1.0.0",
-		Tools:        tools,
-		Capabilities: tools,
-		Governance:   "helm:pep:v1",
+		ServerName:       "helm-mcp-gateway",
+		Version:          "1.0.0",
+		Tools:            tools,
+		Capabilities:     tools,
+		Governance:       "helm:pep:v1",
+		ProtocolVersions: SupportedProtocolVersions,
+		AuthMode:         g.authMode(),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -218,6 +354,8 @@ func (g *Gateway) handleExecute(w http.ResponseWriter, r *http.Request) {
 		if execResp.IsError {
 			resp.Error = execResp.Content
 			resp.ReasonCode = string(contracts.ReasonPolicyViolation)
+			resp.Content = execResp.ContentItems
+			resp.StructuredContent = execResp.StructuredContent
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
 			_ = json.NewEncoder(w).Encode(resp)
@@ -225,6 +363,8 @@ func (g *Gateway) handleExecute(w http.ResponseWriter, r *http.Request) {
 		}
 
 		resp.Result = execResp.Content
+		resp.Content = execResp.ContentItems
+		resp.StructuredContent = execResp.StructuredContent
 	} else if g.bridge != nil {
 		govResult, govErr := g.bridge.Govern(context.Background(), req.Method, argsHash)
 		if govErr != nil {
@@ -270,6 +410,124 @@ func (g *Gateway) handleExecute(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (g *Gateway) handleProtectedResourceMetadata(w http.ResponseWriter, _ *http.Request) {
+	if g.authMode() != "oauth" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	baseURL := strings.TrimRight(g.config.BaseURL, "/")
+	if baseURL == "" {
+		baseURL = "http://localhost:9100"
+	}
+	authServer := strings.TrimSpace(strings.TrimRight(baseURL, "/"))
+	if configured := strings.TrimSpace(strings.TrimRight(os.Getenv("HELM_OAUTH_AUTHORIZATION_SERVER"), "/")); configured != "" {
+		authServer = configured
+	}
+	scopes := []string{"mcp:tools"}
+	if configured := strings.TrimSpace(os.Getenv("HELM_OAUTH_SCOPES")); configured != "" {
+		scopes = nil
+		for _, scope := range strings.FieldsFunc(configured, func(r rune) bool { return r == ',' || r == ' ' }) {
+			if strings.TrimSpace(scope) != "" {
+				scopes = append(scopes, strings.TrimSpace(scope))
+			}
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"resource":                 baseURL + "/mcp",
+		"authorization_servers":    []string{authServer},
+		"scopes_supported":         scopes,
+		"bearer_methods_supported": []string{"header"},
+		"resource_documentation":   "https://github.com/Mindburn-Labs/helm-oss/tree/main/docs/INTEGRATIONS",
+	})
+}
+
+func (g *Gateway) handleJSONRPCRequest(ctx context.Context, id any, method string, params json.RawMessage, protocolVersion string) (map[string]any, bool, int) {
+	response := map[string]any{
+		"jsonrpc": "2.0",
+		"id":      id,
+	}
+
+	writeError := func(code int, message string) (map[string]any, bool, int) {
+		response["error"] = map[string]any{
+			"code":    code,
+			"message": message,
+		}
+		return response, true, http.StatusOK
+	}
+
+	switch method {
+	case "initialize":
+		response["result"] = map[string]any{
+			"protocolVersion": protocolVersion,
+			"serverInfo": map[string]any{
+				"name":    "helm-governance",
+				"title":   "HELM Governance",
+				"version": "1.0.0",
+			},
+			"capabilities": map[string]any{
+				"tools": map[string]any{
+					"listChanged": true,
+				},
+			},
+			"instructions": "HELM governs tool execution, emits receipts, and exposes a deterministic proof surface.",
+		}
+		return response, true, http.StatusOK
+	case "notifications/initialized":
+		return nil, false, http.StatusAccepted
+	case "ping":
+		response["result"] = map[string]any{}
+		return response, true, http.StatusOK
+	case "tools/list":
+		tools, err := g.catalog.Search(ctx, "")
+		if err != nil {
+			return writeError(-32603, err.Error())
+		}
+		payload := make([]map[string]any, 0, len(tools))
+		for _, tool := range tools {
+			payload = append(payload, ToolDescriptorPayload(tool))
+		}
+		response["result"] = map[string]any{"tools": payload}
+		return response, true, http.StatusOK
+	case "tools/call":
+		var req struct {
+			Name      string         `json:"name"`
+			Arguments map[string]any `json:"arguments"`
+		}
+		if err := json.Unmarshal(params, &req); err != nil {
+			return writeError(-32602, "invalid tools/call params")
+		}
+		if _, ok := findToolRef(g.catalog, req.Name); !ok {
+			return writeError(-32602, fmt.Sprintf("tool %q not found", req.Name))
+		}
+		if g.exec == nil {
+			return writeError(-32603, "tool executor is not configured")
+		}
+
+		execResp, err := g.exec(ctx, ToolExecutionRequest{
+			ToolName:  req.Name,
+			Arguments: req.Arguments,
+			SessionID: "mcp-http-jsonrpc",
+		})
+		if err != nil {
+			return writeError(-32603, err.Error())
+		}
+		response["result"] = ToolResultPayload(execResp)
+		return response, true, http.StatusOK
+	default:
+		return writeError(-32601, fmt.Sprintf("method %q not found", method))
+	}
+}
+
+func (g *Gateway) authMode() string {
+	if strings.TrimSpace(g.config.AuthMode) == "" {
+		return "none"
+	}
+	return g.config.AuthMode
 }
 
 func findToolRef(c Catalog, name string) (ToolRef, bool) {

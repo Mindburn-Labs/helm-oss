@@ -88,9 +88,9 @@ assert_file "$WORKDIR/data/helm.db" "SQLite store created"
 assert_file "$WORKDIR/helm.yaml" "Config file created" || assert_file "$WORKDIR/data/../helm.yaml" "Config file created (alt)"
 echo ""
 
-# ── Step 2: helm demo company ────────────────────────
-echo "═══ Step 2: helm demo company ═══"
-(cd "$WORKDIR" && "$OLDPWD/$HELM_BIN" demo company --template starter --provider mock) || true
+# ── Step 2: helm demo organization ───────────────────
+echo "═══ Step 2: helm demo organization ═══"
+(cd "$WORKDIR" && "$OLDPWD/$HELM_BIN" demo organization --template starter --provider mock) || true
 check_timeout
 
 assert_dir_nonempty "$WORKDIR/data/evidence" "Evidence directory populated"

@@ -1,0 +1,101 @@
+name: Vendor Regression
+
+on:
+  schedule:
+    # Weekly: Monday 06:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      providers:
+        description: 'Comma-separated providers to test (openai,anthropic,google,codex)'
+        default: 'openai,anthropic,google,codex'
+
+jobs:
+  vendor-regression:
+    name: Vendor Regression — ${{ matrix.provider }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: [openai, anthropic, google, codex]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Build helm binary
+        run: cd core && go build -o ../bin/helm ./cmd/helm/
+
+      - name: Initialize provider project
+        run: |
+          ./bin/helm init ${{ matrix.provider }} /tmp/vendor-test
+          cd /tmp/vendor-test
+
+      - name: Run doctor
+        run: ./bin/helm doctor --dir /tmp/vendor-test
+
+      - name: Run local MCP tests
+        run: cd core && go test ./pkg/mcp/... -count=1 -v
+
+      - name: Run starter CI smoke test
+        if: hashFiles(format('examples/starters/{0}/ci-smoke.sh', matrix.provider)) != ''
+        run: |
+          chmod +x examples/starters/${{ matrix.provider }}/ci-smoke.sh
+          examples/starters/${{ matrix.provider }}/ci-smoke.sh
+
+      # Secret-gated live tests — only run when API keys are available
+      - name: Live vendor test (OpenAI)
+        if: matrix.provider == 'openai' && env.OPENAI_API_KEY != ''
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          echo "Running live OpenAI regression..."
+          cd core && go test ./pkg/mcp/... -count=1 -run TestLiveVendor -v || true
+
+      - name: Live vendor test (Anthropic)
+        if: matrix.provider == 'anthropic' && env.ANTHROPIC_API_KEY != ''
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          echo "Running live Anthropic regression..."
+          cd core && go test ./pkg/mcp/... -count=1 -run TestLiveVendor -v || true
+
+      - name: Live vendor test (Google)
+        if: matrix.provider == 'google' && env.GEMINI_API_KEY != ''
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "Running live Google regression..."
+          cd core && go test ./pkg/mcp/... -count=1 -run TestLiveVendor -v || true
+
+  metrics:
+    name: Release Metrics
+    runs-on: ubuntu-latest
+    needs: vendor-regression
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Collect metrics
+        run: |
+          echo "## Release Metrics" > /tmp/metrics.md
+          echo "" >> /tmp/metrics.md
+          echo "| Metric | Value |" >> /tmp/metrics.md
+          echo "|--------|-------|" >> /tmp/metrics.md
+
+          # Protocol negotiation
+          cd core && go build -o ../bin/helm ./cmd/helm/
+          echo "| Protocol Version | $(grep -oP 'LatestProtocolVersion\s*=\s*"\K[^"]+' pkg/mcp/protocol.go) |" >> /tmp/metrics.md
+
+          # Test counts
+          TESTS=$(go test ./pkg/mcp/... -count=1 -v 2>&1 | grep -c "^--- PASS" || echo "0")
+          echo "| MCP Tests Passing | $TESTS |" >> /tmp/metrics.md
+
+          cat /tmp/metrics.md

@@ -17,10 +17,13 @@ type Catalog interface {
 
 // ToolRef represents a tool reference for catalog search and definition.
 type ToolRef struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	ServerID    string `json:"server_id,omitempty"`
-	Schema      any    `json:"schema,omitempty"` // JSON schema (map[string]any or string)
+	Name         string           `json:"name"`
+	Title        string           `json:"title,omitempty"`
+	Description  string           `json:"description"`
+	ServerID     string           `json:"server_id,omitempty"`
+	Schema       any              `json:"schema,omitempty"` // Legacy input schema alias for /mcp/v1/*
+	OutputSchema any              `json:"output_schema,omitempty"`
+	Annotations  *ToolAnnotations `json:"annotations,omitempty"`
 }
 
 // Validate checks that a ToolRef has a non-empty Name.
@@ -52,6 +55,7 @@ func (c *ToolCatalog) RegisterCommonTools() {
 	tools := []ToolRef{
 		{
 			Name:        "file_read",
+			Title:       "Read File",
 			Description: "Read a UTF-8 text file from disk",
 			ServerID:    "helm-governance",
 			Schema: map[string]any{
@@ -61,9 +65,23 @@ func (c *ToolCatalog) RegisterCommonTools() {
 				},
 				"required": []string{"path"},
 			},
+			OutputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"path":       map[string]any{"type": "string"},
+					"text":       map[string]any{"type": "string"},
+					"size_bytes": map[string]any{"type": "integer"},
+				},
+				"required": []string{"path", "text", "size_bytes"},
+			},
+			Annotations: &ToolAnnotations{
+				ReadOnlyHint:   true,
+				IdempotentHint: true,
+			},
 		},
 		{
 			Name:        "file_write",
+			Title:       "Write File",
 			Description: "Write UTF-8 text content to disk",
 			ServerID:    "helm-governance",
 			Schema: map[string]any{
@@ -73,6 +91,19 @@ func (c *ToolCatalog) RegisterCommonTools() {
 					"content": map[string]any{"type": "string"},
 				},
 				"required": []string{"path", "content"},
+			},
+			OutputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"path":          map[string]any{"type": "string"},
+					"bytes_written": map[string]any{"type": "integer"},
+					"status":        map[string]any{"type": "string"},
+				},
+				"required": []string{"path", "bytes_written", "status"},
+			},
+			Annotations: &ToolAnnotations{
+				DestructiveHint: true,
+				IdempotentHint:  true,
 			},
 		},
 	}

@@ -210,10 +210,11 @@ func generateProofReport(receipts []demoReceipt, outDir, template, provider stri
 	for _, r := range receipts {
 		verdictClass := "allow"
 		verdictIcon := "✓"
-		if r.Verdict == "DENY" {
+		switch r.Verdict {
+		case "DENY":
 			verdictClass = "deny"
 			verdictIcon = "✗"
-		} else if r.Verdict == "PENDING" {
+		case "PENDING":
 			verdictClass = "pending"
 			verdictIcon = "○"
 		}
@@ -226,7 +227,7 @@ func generateProofReport(receipts []demoReceipt, outDir, template, provider stri
 		if r.Tool != "" {
 			toolInfo = fmt.Sprintf(`<div class="detail-field"><span class="detail-key">Tool</span><span class="detail-val">%s</span></div>`, html.EscapeString(r.Tool))
 		}
-		receiptRows.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&receiptRows, `
               <tr id="r-%d" class="receipt-row %s"
                   data-lamport="%d" data-verdict="%s" data-principal="%s"
                   data-action="%s" data-reason="%s" data-hash="%s"
@@ -266,7 +267,7 @@ func generateProofReport(receipts []demoReceipt, outDir, template, provider stri
 			html.EscapeString(r.ReasonCode),
 			r.Hash, shortHash(r.Hash, 16),
 			modeBadge,
-			// Detail row fields
+
 			r.Lamport,
 			html.EscapeString(r.Hash),
 			html.EscapeString(r.PrevHash),
@@ -277,22 +278,21 @@ func generateProofReport(receipts []demoReceipt, outDir, template, provider stri
 			toolInfo,
 			r.Lamport,
 			html.EscapeString(r.Mode),
-			html.EscapeString(r.ReceiptID),
-		))
+			html.EscapeString(r.ReceiptID))
 	}
 
 	// Build clickable causal chain with tooltips
 	var chainDots strings.Builder
 	for i, r := range receipts {
 		color := "#10b981"
-		if r.Verdict == "DENY" {
+		switch r.Verdict {
+		case "DENY":
 			color = "#f43f5e"
-		} else if r.Verdict == "PENDING" {
+		case "PENDING":
 			color = "#f59e0b"
 		}
 		x := 32 + i*72
-		chainDots.WriteString(fmt.Sprintf(
-			`<a href="#r-%d" class="chain-link" data-lamport="%d">
+		fmt.Fprintf(&chainDots, `<a href="#r-%d" class="chain-link" data-lamport="%d">
                <g class="chain-node" style="animation-delay:%dms">
                  <title>L%d · %s · %s · %s</title>
                  <circle cx="%d" cy="24" r="10" fill="%s" opacity="0.15"/>
@@ -304,12 +304,11 @@ func generateProofReport(receipts []demoReceipt, outDir, template, provider stri
 			r.Lamport, r.Lamport,
 			i*60,
 			r.Lamport, html.EscapeString(r.Principal), html.EscapeString(r.Action), r.Verdict,
-			x, color, x, color, x, r.Lamport))
+			x, color, x, color, x, r.Lamport)
 		if i > 0 {
 			prevX := 32 + (i-1)*72
-			chainDots.WriteString(fmt.Sprintf(
-				`<line x1="%d" y1="24" x2="%d" y2="24" stroke="%s" stroke-width="1" opacity="0.3"/>`,
-				prevX+6, x-6, color))
+			fmt.Fprintf(&chainDots, `<line x1="%d" y1="24" x2="%d" y2="24" stroke="%s" stroke-width="1" opacity="0.3"/>`,
+				prevX+6, x-6, color)
 		}
 	}
 	svgWidth := 32 + len(receipts)*72
@@ -375,7 +374,7 @@ func generateProofReport(receipts []demoReceipt, outDir, template, provider stri
 			hashClass = ` class="cell-mono"`
 			copyBtn = fmt.Sprintf(` <button class="copy-btn" onclick="helmCopy('%s')" title="Copy hash">📋</button>`, finalHash)
 		}
-		checks.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&checks, `
               <div class="check-row" id="check-%s">
                 <span class="check-icon" style="background:%s;color:%s">%s</span>
                 <span class="check-label">%s</span>
@@ -383,7 +382,7 @@ func generateProofReport(receipts []demoReceipt, outDir, template, provider stri
               </div>`,
 			strings.ReplaceAll(strings.ToLower(v.label), " ", "-"),
 			iconBg, iconColor, icon,
-			v.label, hashClass, v.desc, copyBtn))
+			v.label, hashClass, v.desc, copyBtn)
 	}
 
 	// Demo banner
@@ -400,7 +399,7 @@ func generateProofReport(receipts []demoReceipt, outDir, template, provider stri
 	var principalOpts strings.Builder
 	principalOpts.WriteString(`<option value="all">All principals</option>`)
 	for p := range principalSet {
-		principalOpts.WriteString(fmt.Sprintf(`<option value="%s">%s</option>`, html.EscapeString(p), html.EscapeString(p)))
+		fmt.Fprintf(&principalOpts, `<option value="%s">%s</option>`, html.EscapeString(p), html.EscapeString(p))
 	}
 
 	// Environment info
@@ -500,7 +499,7 @@ func generateProofReport(receipts []demoReceipt, outDir, template, provider stri
 		return fmt.Errorf("marshal capsule: %w", err)
 	}
 
-	reproduceCmd := fmt.Sprintf("helm onboard --yes && helm demo company --template %s --provider %s", template, provider)
+	reproduceCmd := fmt.Sprintf("helm onboard --yes && helm demo organization --template %s --provider %s", template, provider)
 
 	// Build verification summary for copy (GitHub-ready plain text)
 	verifySummaryText := fmt.Sprintf(`HELM Proof Report\nRun ID: %s\nRoot Hash: %s\nStatus: %s\nReceipts: %d (%d allow, %d deny, %d pending)\nChain: %s\nLamport: %s\nReproduce: %s\nEvidencePack SHA256: %s\nHELM: v0.2.0 (%s)`,

@@ -122,6 +122,7 @@ docker run --rm -v "$PROJECT_ROOT:/work" -w /work "$GENERATOR_IMAGE" generate \
 
 JAVA_OUT="$PROJECT_ROOT/sdk/java/src/main/java/labs/mindburn/helm"
 if [ -d "$PROJECT_ROOT/.gen_tmp/java/src/main/java" ]; then
+    shopt -s nullglob
     mkdir -p "$JAVA_OUT"
     cat > "$JAVA_OUT/TypesGen.java" <<'HEADER'
 // AUTO-GENERATED from api/openapi/helm.openapi.yaml — DO NOT EDIT
@@ -133,9 +134,10 @@ import java.util.List;
 import java.util.Map;
 HEADER
     # Extract class bodies from generated models
-    for f in "$PROJECT_ROOT/.gen_tmp/java/src/main/java/labs/mindburn/helm/models/"*.java 2>/dev/null; do
+    for f in "$PROJECT_ROOT/.gen_tmp/java/src/main/java/labs/mindburn/helm/models/"*.java; do
         [ -f "$f" ] && sed '/^package /d;/^import/d' "$f" >> "$JAVA_OUT/TypesGen.java" 2>/dev/null || true
     done
+    shopt -u nullglob
 fi
 echo "  [java] ✅ sdk/java/src/.../TypesGen.java"
 

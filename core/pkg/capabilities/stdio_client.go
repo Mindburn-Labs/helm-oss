@@ -48,9 +48,9 @@ func (s *StdioMCPClient) Call(tool string, params map[string]any) error {
 	// stdin
 	stdin, _ := cmd.StdinPipe() //nolint:errcheck // Pipe error ignored for demo
 	go func() {
-		defer func() { _ = stdin.Close() }()                                                 //nolint:errcheck // best-effort close
-		_, _ = stdin.Write([]byte(fmt.Sprintf("Content-Length: %d\r\n\r\n", len(reqBytes)))) //nolint:errcheck // best-effort write
-		_, _ = stdin.Write(reqBytes)                                                         //nolint:errcheck // best-effort write
+		defer func() { _ = stdin.Close() }()                                   //nolint:errcheck // best-effort close
+		_, _ = fmt.Fprintf(stdin, "Content-Length: %d\r\n\r\n", len(reqBytes)) //nolint:errcheck // best-effort write
+		_, _ = stdin.Write(reqBytes)                                           //nolint:errcheck // best-effort write
 	}()
 
 	// stdout

@@ -9,7 +9,7 @@ All notable changes to HELM Core OSS are documented here.
 **CLI**
 
 - `helm onboard` — one-command local setup (SQLite + Ed25519 keys + helm.yaml)
-- `helm demo company` — starter company demo with governed agents and receipts (default: mock sandbox)
+- `helm demo organization` — starter organization demo with governed agents and receipts (legacy `company` alias preserved for compatibility)
 - `helm sandbox exec` — governed sandbox execution with strict preflight and receipt preimage binding
 - `helm sandbox conform` — sandbox conformance checker (Compatible/Verified/Sovereign tiers)
 - `helm mcp serve` — MCP server (stdio + remote HTTP + remote SSE)

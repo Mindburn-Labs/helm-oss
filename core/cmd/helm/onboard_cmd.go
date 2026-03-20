@@ -99,8 +99,8 @@ trust:
 	fmt.Fprintf(stdout, "%s✅ HELM is ready.%s\n\n", ColorBold+ColorGreen, ColorReset)
 	fmt.Fprintf(stdout, "%sNext steps:%s\n\n", ColorBold, ColorReset)
 
-	fmt.Fprintf(stdout, "  %s1.%s Run the starter company demo:\n", ColorBold+ColorCyan, ColorReset)
-	fmt.Fprintf(stdout, "     %shelm demo company --template starter%s\n\n", ColorBold, ColorReset)
+	fmt.Fprintf(stdout, "  %s1.%s Run the starter organization demo:\n", ColorBold+ColorCyan, ColorReset)
+	fmt.Fprintf(stdout, "     %shelm demo organization --template starter%s\n\n", ColorBold, ColorReset)
 
 	fmt.Fprintf(stdout, "  %s2.%s Start the governance proxy:\n", ColorBold+ColorCyan, ColorReset)
 	fmt.Fprintf(stdout, "     %shelm proxy --upstream https://api.openai.com/v1%s\n\n", ColorBold, ColorReset)

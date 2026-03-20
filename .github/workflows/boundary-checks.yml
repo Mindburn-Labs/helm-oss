@@ -1,0 +1,73 @@
+# HELM Boundary Checks — Reusable Workflow
+#
+# External repos can call this to verify HELM conformance in their CI.
+#
+# Usage in another repo's workflow:
+#   jobs:
+#     helm-check:
+#       uses: Mindburn-Labs/helm-oss/.github/workflows/boundary-checks.yml@main
+#       with:
+#         level: L2
+#         bundle-path: ./evidence
+
+name: HELM Boundary Checks
+
+on:
+  workflow_call:
+    inputs:
+      level:
+        description: 'Conformance level: L1 or L2'
+        required: false
+        default: 'L2'
+        type: string
+      bundle-path:
+        description: 'Path to evidence bundle (optional; uses latest release if omitted)'
+        required: false
+        type: string
+      report:
+        description: 'Path to write HTML report (optional)'
+        required: false
+        type: string
+      node-version:
+        description: 'Node.js version'
+        required: false
+        default: '20'
+        type: string
+    outputs:
+      verdict:
+        description: 'Verification verdict: PASS or FAIL'
+        value: ${{ jobs.verify.outputs.verdict }}
+      bundle-root:
+        description: 'Bundle root hash'
+        value: ${{ jobs.verify.outputs.bundle-root }}
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    outputs:
+      verdict: ${{ steps.helm-verify.outputs.verdict }}
+      bundle-root: ${{ steps.helm-verify.outputs.bundle_root }}
+    steps:
+      - name: Checkout consumer repo
+        uses: actions/checkout@v4
+
+      - name: Run HELM Verify
+        id: helm-verify
+        uses: Mindburn-Labs/helm-oss/.github/actions/helm-verify@main
+        with:
+          level: ${{ inputs.level }}
+          bundle: ${{ inputs.bundle-path }}
+          report: ${{ inputs.report }}
+          node-version: ${{ inputs.node-version }}
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## HELM Boundary Check Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Verdict**: ${{ steps.helm-verify.outputs.verdict }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Bundle Root**: \`${{ steps.helm-verify.outputs.bundle_root }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Level**: ${{ inputs.level }}" >> "$GITHUB_STEP_SUMMARY"
