@@ -83,6 +83,12 @@ This document tracks high-signal individuals identified through live conversatio
 | @williammartin | GitHub CLI org | Active on agent security issues |
 | @arscontexta | "determinism boundary separates guaranteed agent behavior from probabilistic compliance" | Exact HELM framing; small account but sharp |
 | @asmah2107 | "Each tool call is an unsigned contract" post | Named the root of all MCP attack classes correctly |
+| @erans | X | "Rule files are not enforcement" — exact execution-boundary framing; replied with HELM |
+| @provnai | X/GitHub | Built McpVanguard MCP proxy; semantic scoring gap identified; execution boundary reply sent |
+| @s-a-m-a-i | GitHub | Built PolicyLayer Intercept (transport proxy); commented on complementary two-layer stack |
+| @ilblackdragon | GitHub | nearai/ironclaw maintainer; persistent sandbox issue#1458; per-call policy hook comment sent |
+| @MindTheGapMTG | X | "immutable audit trail" framing on MCP runtime security; signed receipt reply sent |
+| @Mako_L | GitHub | BakeLens/crust security researcher; DLP bypass report#116; dispatch boundary comment sent |
 
 ---
 
@@ -99,6 +105,15 @@ This document tracks high-signal individuals identified through live conversatio
 | Mar 2026 | X | @asmah2107 | Reply to MCP security post | Pending |
 | Mar 2026 | X | @MarioPoneder | Reply to enforcement layer post | Pending |
 | Mar 2026 | X | @mindburnlabs | Posted 3-tweet thread: prompt-layer vs execution kernel | Live |
+| Mar 2026 | X | @mindburnlabs | Posted AISecHub category-gap post (execution firewall) | Live |
+| Mar 2026 | GitHub | ironcurtain#67 | Comment: HELM as atomic policy+receipt kernel, interop with ironcurtain | Live |
+| Mar 2026 | GitHub | agentshield-benchmark#36 | Feature request: Execution Boundary category + HELM as reference | Live |
+| Mar 2026 | GitHub | nearai/ironclaw#1458 | Comment: per-call policy hook before exec_in_container, signed receipts | Live |
+| Mar 2026 | GitHub | BakeLens/crust#116 | Comment: pattern-scanning root cause analysis, dispatch boundary alternative | Live |
+| Mar 2026 | GitHub | github-mcp-server discussion#2125 | Comment: transport proxy vs execution kernel, two-layer stack framing | Live |
+| Mar 2026 | X | @erans | Reply to "Rule files are not enforcement" post | Live |
+| Mar 2026 | X | @MindTheGapMTG | Reply to immutable audit trail / runtime security layer | Live |
+| Mar 2026 | X | @provnai | Reply to McpVanguard launch: schema-pinned dispatch gap | Live |
 
 ---
 
