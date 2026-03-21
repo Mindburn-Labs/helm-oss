@@ -9,6 +9,31 @@
 
 HELM OSS is the open Agent Hardening Kit for governed AI execution. Drop it in front of **DeerFlow**, **OpenClaw**, or any OpenAI-compatible agent runtime — every tool call gets fail-closed policy enforcement, cryptographic receipts (Ed25519), and deterministic **EvidencePacks** you can verify offline.
 
+## Why Runtime Enforcement, Not Prompt-Layer Policy
+
+Security policies inside agent prompts, `.md` files, or docstrings are **advisory to the model** — they can be overridden by prompt injection, leaked by context summarization, and do not survive adversarial inputs. Compliance becomes non-deterministic across runs.
+
+The model cannot police its own execution. The enforcement layer must sit **below** the model, not inside it.
+
+HELM is the execution kernel between the model and the tools:
+
+```
+Model (probabilistic)  →  proposes tool call
+                               ↓
+              HELM Kernel (deterministic)
+              ├── schema integrity check (is this definition pinned?)
+              ├── policy evaluation (ALLOW / DENY fail-closed)
+              ├── WASI sandbox (gas/time/memory caps)
+              └── signed receipt emission (Ed25519 + Lamport clock)
+                               ↓
+              Tool executes  (or doesn't — fail-closed)
+```
+
+**On MCP tool definition poisoning (OWASP MCP Top 10, CVE class):** A compromised MCP server can inject instructions into `description` fields that the model follows without question. HELM pins tool definitions at session initialization — any drift between the pinned schema and the schema presented at call time causes a hard fail before dispatch.
+
+> SHIELD.md, agent SOULs, and system-prompt security policies are useful early guardrails. HELM is the enforcement layer they cannot replace.
+
+
 **What you get in 10 minutes:**
 
 - 🔒 **Fail-closed governance** — every action is ALLOW/DENY with a signed receipt
