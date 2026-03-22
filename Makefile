@@ -1,4 +1,4 @@
-.PHONY: build test test-race test-sdk-ts test-sdk-py test-all test-a2a test-otel test-l3 test-owasp crucible crucible-full lint proxy clean docker demo demo-down release-binaries verify-boundary onboard demo-cli mcp-pack mcp-install release-all operator-crds
+.PHONY: build test test-race test-sdk-ts test-sdk-py test-all test-a2a test-otel test-l3 test-owasp crucible crucible-full lint proxy clean docker demo demo-down release-binaries verify-boundary onboard demo-cli mcp-pack mcp-install release-all operator-crds bench bench-report
 
 VERSION ?= $(shell cat VERSION 2>/dev/null || echo 0.3.0)
 GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
@@ -31,6 +31,15 @@ verify-fixtures:
 	@echo "Golden fixture roots verified"
 
 test-all: test test-sdk-ts test-sdk-py test-cli verify-fixtures
+
+# ── Benchmarks ─────────────────────────────────────────
+bench:
+	cd core && go test -bench=. -benchmem -count=3 ./pkg/crypto/ ./pkg/store/ ./pkg/guardian/ ./benchmarks/
+	@echo "✅ Benchmarks complete"
+
+bench-report:
+	cd core && go test -v -run TestOverheadReport -count=1 ./benchmarks/
+	@echo "✅ Overhead report: benchmarks/results/latest.json"
 
 # ── Strategic Test Targets ──────────────────────────────────
 test-a2a:

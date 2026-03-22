@@ -1,0 +1,47 @@
+{
+  "baseline_p99_us": 2,
+  "go_arch": "arm64",
+  "go_os": "darwin",
+  "go_version": "go1.24.0",
+  "helm_version": "0.3.0",
+  "hot_path_p99_us": 75,
+  "num_cpu": 16,
+  "overhead_p99_us": 73,
+  "overhead_under_5ms": true,
+  "scenarios": [
+    {
+      "name": "baseline_no_helm",
+      "iterations": 10000,
+      "p50_us": 0,
+      "p95_us": 1,
+      "p99_us": 2,
+      "mean_us": 0.1666,
+      "stddev_us": 2.3227234962431504,
+      "min_us": 0,
+      "max_us": 126
+    },
+    {
+      "name": "helm_allow",
+      "iterations": 10000,
+      "p50_us": 46,
+      "p95_us": 54,
+      "p99_us": 75,
+      "mean_us": 47.9619,
+      "stddev_us": 11.149181512111092,
+      "min_us": 40,
+      "max_us": 409
+    },
+    {
+      "name": "helm_deny",
+      "iterations": 10000,
+      "p50_us": 20,
+      "p95_us": 23,
+      "p99_us": 29,
+      "mean_us": 20.924,
+      "stddev_us": 5.887989809773787,
+      "min_us": 18,
+      "max_us": 317
+    }
+  ],
+  "timestamp": "2026-03-22T17:06:26Z"
+}
