@@ -22,11 +22,10 @@ import (
 //	2 = config error
 func runDemoCmd(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
-		fmt.Fprintln(stderr, "Usage: helm demo <organization|company|research-lab> [flags]")
+		fmt.Fprintln(stderr, "Usage: helm demo <organization|research-lab> [flags]")
 		fmt.Fprintln(stderr, "")
 		fmt.Fprintln(stderr, "Subcommands:")
 		fmt.Fprintln(stderr, "  organization  Run the canonical starter organization demo")
-		fmt.Fprintln(stderr, "  company       Legacy alias for organization")
 		fmt.Fprintln(stderr, "  research-lab  Run a research-lab reference scenario")
 		return 2
 	}
@@ -34,16 +33,13 @@ func runDemoCmd(args []string, stdout, stderr io.Writer) int {
 	switch args[0] {
 	case "organization", "org":
 		return runDemoScenario("organization", args[1:], stdout, stderr)
-	case "company":
-		return runDemoScenario("organization", args[1:], stdout, stderr)
 	case "research-lab":
 		return runDemoScenario("research-lab", args[1:], stdout, stderr)
 	case "--help", "-h":
-		fmt.Fprintln(stdout, "Usage: helm demo <organization|company|research-lab> [flags]")
+		fmt.Fprintln(stdout, "Usage: helm demo <organization|research-lab> [flags]")
 		fmt.Fprintln(stdout, "")
 		fmt.Fprintln(stdout, "Subcommands:")
 		fmt.Fprintln(stdout, "  organization  Run the canonical starter organization demo")
-		fmt.Fprintln(stdout, "  company       Legacy alias for organization")
 		fmt.Fprintln(stdout, "  research-lab  Run a research-lab reference scenario")
 		return 0
 	default:

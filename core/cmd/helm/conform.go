@@ -229,5 +229,5 @@ func (f *multiFlag) Set(value string) error {
 }
 
 func init() {
-	Register(Subcommand{Name: "conform", Aliases: []string{"conformance"}, Usage: "Run conformance gates (--profile, --json)", RunFn: runConform})
+	Register(Subcommand{Name: "conform", Aliases: []string{"conformance"}, Usage: "Run conformance gates (--level L1|L2 or --profile, --json)", RunFn: runConform})
 }

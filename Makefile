@@ -1,8 +1,13 @@
 .PHONY: build test test-race test-sdk-ts test-sdk-py test-all test-a2a test-otel test-l3 test-owasp crucible crucible-full lint proxy clean docker demo demo-down release-binaries verify-boundary onboard demo-cli mcp-pack mcp-install release-all operator-crds
 
+VERSION ?= $(shell cat VERSION 2>/dev/null || echo 0.3.0)
+GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+LDFLAGS := -X main.version=$(VERSION) -X main.commit=$(GIT_COMMIT) -X main.buildTime=$(BUILD_TIME)
+
 build:
-	cd core && go build -o ../bin/helm ./cmd/helm/
-	@echo "✅ bin/helm"
+	cd core && go build -ldflags "$(LDFLAGS)" -o ../bin/helm ./cmd/helm/
+	@echo "✅ bin/helm v$(VERSION) ($(GIT_COMMIT))"
 
 # ── Test ───────────────────────────────────────────────
 test:
@@ -100,17 +105,15 @@ provenance:
 	@echo "✅ Provenance build: bin/helm + bin/helm.sha256"
 
 # ── Release Binaries (cross-compile) ──────────────────
-VERSION ?= $(shell cat VERSION 2>/dev/null || echo 0.3.0)
-COMMIT  := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-LDFLAGS := -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.buildTime=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+RELEASE_LDFLAGS := -s -w $(LDFLAGS)
 
 release-binaries:
 	@echo "Building release binaries (v$(VERSION))..."
-	cd core && GOOS=linux   GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o ../bin/helm-linux-amd64 ./cmd/helm/
-	cd core && GOOS=linux   GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o ../bin/helm-linux-arm64 ./cmd/helm/
-	cd core && GOOS=darwin  GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o ../bin/helm-darwin-amd64 ./cmd/helm/
-	cd core && GOOS=darwin  GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o ../bin/helm-darwin-arm64 ./cmd/helm/
-	cd core && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o ../bin/helm-windows-amd64.exe ./cmd/helm/
+	cd core && GOOS=linux   GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$(RELEASE_LDFLAGS)" -o ../bin/helm-linux-amd64 ./cmd/helm/
+	cd core && GOOS=linux   GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$(RELEASE_LDFLAGS)" -o ../bin/helm-linux-arm64 ./cmd/helm/
+	cd core && GOOS=darwin  GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$(RELEASE_LDFLAGS)" -o ../bin/helm-darwin-amd64 ./cmd/helm/
+	cd core && GOOS=darwin  GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="$(RELEASE_LDFLAGS)" -o ../bin/helm-darwin-arm64 ./cmd/helm/
+	cd core && GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="$(RELEASE_LDFLAGS)" -o ../bin/helm-windows-amd64.exe ./cmd/helm/
 	cd bin && shasum -a 256 helm-* > SHA256SUMS.txt
 	@echo "✅ Release binaries + SHA256SUMS.txt (v$(VERSION))"
 

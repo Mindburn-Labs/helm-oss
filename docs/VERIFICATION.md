@@ -28,7 +28,7 @@ docker run --rm ghcr.io/mindburn-labs/helm-oss:latest --help
 # 1. One-command setup (SQLite + Ed25519 + config)
 helm onboard --yes
 
-# 2. Run starter organization demo (legacy alias: `helm demo company`)
+# 2. Run starter organization demo
 helm demo organization --template starter --provider mock
 
 # 2b. Optional: run the research-lab scenario in dry-run mode
