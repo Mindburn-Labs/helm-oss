@@ -272,17 +272,19 @@ jobs:
 
 ## SDKs
 
-Generated from [api/openapi/helm.openapi.yaml](api/openapi/helm.openapi.yaml). CI enforces spec-SDK parity.
+**HELM works with your existing SDK first.** Point any OpenAI-compatible client at the HELM proxy and you have governed tool calling with zero code changes. Native SDKs are there when you want tighter integration.
 
-| Language | Status | Path |
-|----------|--------|------|
-| TypeScript | In-repo | `sdk/ts/` |
-| Python | In-repo | `sdk/python/` |
-| Go | In-repo | `sdk/go/` |
-| Rust | Preview | `sdk/rust/` |
-| Java | Preview | `sdk/java/` |
+→ [Insertion Guide](docs/INSERTION_GUIDE.md) — three copy-paste paths to get started.
 
-All SDKs expose: `chatCompletions`, `approveIntent`, `listSessions`, `getReceipts`, `exportEvidence`, `verifyEvidence`, `conformanceRun`. Every error includes a typed `reason_code`.
+Generated from [api/openapi/helm.openapi.yaml](api/openapi/helm.openapi.yaml).
+
+| Language | Package | Version | Status | Path |
+|----------|---------|---------|--------|------|
+| TypeScript | `@mindburn/helm` | 0.3.0 | Runtime/client SDK | `sdk/ts/` |
+| TypeScript | `@mindburn/helm-cli` | 0.3.0 | Verifier CLI | `packages/mindburn-helm-cli/` |
+| Python | `helm-sdk` | 0.3.0 | In-repo | `sdk/python/` |
+| Go | `github.com/Mindburn-Labs/helm-oss/sdk/go` | 0.3.0 | In-repo | `sdk/go/` |
+| Rust | `helm-sdk` | 0.3.0 | Preview | `sdk/rust/` |
 
 ```go
 c := helm.New("http://localhost:8080")
@@ -360,7 +362,7 @@ helm-oss/
 │   └── cmd/helm/        # CLI: proxy, export, verify, replay, conform
 ├── packages/
 │   └── mindburn-helm-cli/  # @mindburn/helm-cli (npm verifier)
-├── sdk/                 # TypeScript, Python, Go, Rust, Java
+├── sdk/                 # TypeScript, Python, Go, Rust
 ├── examples/            # Runnable per-language + MCP examples
 ├── deploy/              # Caddy, compose, deploy guide
 ├── docs/                # Threat model, security model, conformance

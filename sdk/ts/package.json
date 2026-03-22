@@ -1,6 +1,6 @@
 {
   "name": "@mindburn/helm",
-  "version": "1.0.1",
+  "version": "0.3.0",
   "description": "TypeScript SDK for HELM — fail-closed tool calling for AI agents",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
