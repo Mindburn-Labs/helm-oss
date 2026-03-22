@@ -6,6 +6,14 @@ All notable changes to HELM Core OSS are documented here.
 
 ### Changed — Truth-Reset Release
 
+**Performance Evidence (Phase 2)**
+- Benchmark harness: measured hot-path p99 = 75µs (governed allow: Guardian eval + Ed25519 sign + SQLite persist)
+- Deny path: 29µs p99, mean allow overhead: 48µs
+- Public claim upgraded from generic `< 5ms` to measured `75µs p99` with full methodology
+- New `make bench` and `make bench-report` targets
+- Machine-readable results at `benchmarks/results/latest.json`
+- Full methodology: `docs/BENCHMARKS.md`
+
 **Version Unification**
 - Canonical version now lives in `VERSION` file at repo root
 - `buildinfo.go`, `Makefile`, root `package.json`, `@mindburn/helm-cli` all read from or match VERSION

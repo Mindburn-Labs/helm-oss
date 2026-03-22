@@ -62,7 +62,7 @@ Every tool call is governed, hashed, and signed:
 - **Cryptographic receipts** — Ed25519-signed, Lamport-ordered
 - **Budget enforcement** — ACID locks, fail-closed on ceiling breach
 - **Offline verifiable** — export EvidencePack, verify without network access
-- **< 5ms p99 overhead** — [measured: 75µs p99](benchmarks/README.md)
+- **Sub-0.1ms p99 overhead** — governed hot-path measured at 75µs p99 ([methodology](docs/BENCHMARKS.md))
 
 ---
 
@@ -181,7 +181,7 @@ helm conform --level L2 --json
 | **Budget enforcement** | ACID locks | — | — | — | — |
 | **Framework agnostic** | Any LLM, any SDK | NVIDIA only | Python only | Meta only | Yes |
 | **Tool calling governance** | Schema + args + output | Prompt-level | Basic validation | Content only | No AI semantics |
-| **Latency** | < 5ms p99 ([measured: 75µs](benchmarks/README.md)) | 100ms+ | 50ms+ | 200ms+ | < 5ms |
+| **Latency** | 75µs p99 ([benchmarked](docs/BENCHMARKS.md)) | 100ms+ | 50ms+ | 200ms+ | < 5ms |
 
 ---
 
