@@ -1,3 +1,7 @@
+---
+title: OSS_SCOPE
+---
+
 # HELM OSS Scope
 
 > **Canonical architecture**: see [ARCHITECTURE.md](ARCHITECTURE.md) for the

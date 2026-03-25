@@ -1,3 +1,7 @@
+---
+title: VERIFIER_TRUST_MODEL
+---
+
 # Offline Verifier Trust Model
 The HELM Offline Verifier is a standalone tool designed for high-assurance audits and air-gapped verification of EvidencePacks.
 

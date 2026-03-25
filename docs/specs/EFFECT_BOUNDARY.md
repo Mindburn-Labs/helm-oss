@@ -1,3 +1,7 @@
+---
+title: EFFECT_BOUNDARY
+---
+
 # EffectBoundary Specification
 
 > **Status**: normative v1  

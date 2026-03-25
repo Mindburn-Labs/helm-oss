@@ -1,3 +1,7 @@
+---
+title: OBSERVABILITY
+---
+
 # Observability Templates
 
 ## OBS-001: Structured Logging with Trace Correlation

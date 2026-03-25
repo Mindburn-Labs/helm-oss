@@ -1,3 +1,7 @@
+---
+title: ai_sdk
+---
+
 # Integration: AI SDK (TypeScript)
 
 Use HELM as the base URL for any OpenAI-compatible AI SDK.

@@ -1,3 +1,7 @@
+---
+title: LEXICON
+---
+
 # HELM Lexicon
 
 > Canonical terminology for the HELM open standard.

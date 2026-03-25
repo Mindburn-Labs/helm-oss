@@ -1,3 +1,7 @@
+---
+title: PROXY_SNIPPETS
+---
+
 # HELM Proxy — Copy-Paste Snippets
 
 Drop-in integration with your existing OpenAI-compatible app.

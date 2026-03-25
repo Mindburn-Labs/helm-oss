@@ -1,3 +1,7 @@
+---
+title: PDP_IDL
+---
+
 # PDP IDL Specification
 
 > **Status**: normative v1  

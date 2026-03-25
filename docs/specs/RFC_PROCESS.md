@@ -1,3 +1,7 @@
+---
+title: RFC_PROCESS
+---
+
 # HELM RFC Process
 
 > How to propose, review, and finalize changes to the HELM standard.

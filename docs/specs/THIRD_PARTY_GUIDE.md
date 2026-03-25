@@ -1,3 +1,7 @@
+---
+title: THIRD_PARTY_GUIDE
+---
+
 # HELM Third-Party Implementation Guide
 
 > How to build a HELM-conformant implementation from scratch.

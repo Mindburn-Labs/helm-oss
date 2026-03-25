@@ -1,3 +1,7 @@
+---
+title: OWASP_MCP_THREAT_MAPPING
+---
+
 # OWASP MCP Threat Mapping
 
 > **Canonical** · v1.0 · Normative Appendix

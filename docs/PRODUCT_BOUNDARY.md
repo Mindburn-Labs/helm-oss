@@ -1,3 +1,7 @@
+---
+title: PRODUCT_BOUNDARY
+---
+
 # Product Boundary — OSS vs Commercial
 
 HELM ships as two products. This document defines the boundary.

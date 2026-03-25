@@ -1,3 +1,7 @@
+---
+title: CTO_RADAR
+---
+
 # CTO / Core Contributor Radar
 
 This document tracks high-signal individuals identified through live conversations in the agent security, MCP, and execution-boundary ecosystem. Updated continuously as part of the HELM OSS operator mission.

@@ -1,3 +1,7 @@
+---
+title: CREDENTIAL_SECURITY
+---
+
 # Credential Security
 
 HELM uses layered credential protection with AES-256-GCM at-rest encryption and strict access controls.

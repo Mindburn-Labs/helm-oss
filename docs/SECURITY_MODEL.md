@@ -1,3 +1,7 @@
+---
+title: SECURITY_MODEL
+---
+
 # Security Model
 
 > **Canonical architecture**: see [ARCHITECTURE.md](ARCHITECTURE.md) for the

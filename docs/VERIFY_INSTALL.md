@@ -1,3 +1,7 @@
+---
+title: VERIFY_INSTALL
+---
+
 # HELM Verify Install Guide
 
 > How to verify the integrity of a HELM installation.

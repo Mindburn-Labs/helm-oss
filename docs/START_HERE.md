@@ -1,3 +1,7 @@
+---
+title: START_HERE
+---
+
 # Start Here
 
 Go from zero to verified HELM in 5 minutes.

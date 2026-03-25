@@ -1,3 +1,7 @@
+---
+title: REGIONAL_COMPAT
+---
+
 # HELM Regional Compatibility
 
 HELM supports regional deployment profiles that automatically configure governance

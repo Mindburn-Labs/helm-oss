@@ -1,3 +1,7 @@
+---
+title: PACK_COMPOSITION
+---
+
 # HELM Pack Composition Rules
 
 > How jurisdiction, industry, and business packs combine at runtime.

@@ -1,3 +1,7 @@
+---
+title: WALL_CLOCK_AUDIT
+---
+
 # HELM Wall-Clock Contamination Audit
 
 > Audit of `time.Now()` usage in proof-bearing paths.

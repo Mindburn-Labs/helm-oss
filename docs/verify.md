@@ -1,3 +1,7 @@
+---
+title: verify
+---
+
 # Verify HELM Conformance
 
 Verify any HELM release in one command. No configuration needed.

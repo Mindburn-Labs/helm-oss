@@ -1,3 +1,7 @@
+---
+title: BUNDLE_TRUST_MODEL
+---
+
 # HELM Policy Bundle Trust Model
 
 > How bundles establish, maintain, and revoke trust.

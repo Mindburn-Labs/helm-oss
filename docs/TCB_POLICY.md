@@ -1,3 +1,7 @@
+---
+title: TCB_POLICY
+---
+
 # HELM TCB Policy
 
 > **Canonical architecture**: see [ARCHITECTURE.md §2](ARCHITECTURE.md#2-trust-boundaries)

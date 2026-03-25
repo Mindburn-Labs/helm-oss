@@ -1,3 +1,7 @@
+---
+title: BENCHMARKS
+---
+
 # HELM Benchmark Methodology
 
 ## Claim

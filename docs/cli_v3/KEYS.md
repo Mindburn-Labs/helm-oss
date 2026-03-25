@@ -1,3 +1,7 @@
+---
+title: KEYS
+---
+
 # HELM Signing Keys — Key Rotation Policy
 
 ## Active Keys

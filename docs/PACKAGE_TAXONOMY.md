@@ -1,3 +1,7 @@
+---
+title: PACKAGE_TAXONOMY
+---
+
 # HELM Package Taxonomy
 
 Classification of all 83 directories in `core/pkg/`.

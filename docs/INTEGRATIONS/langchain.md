@@ -1,3 +1,7 @@
+---
+title: langchain
+---
+
 # Integration: LangChain
 
 Use HELM as a drop-in proxy for LangChain's OpenAI integration.

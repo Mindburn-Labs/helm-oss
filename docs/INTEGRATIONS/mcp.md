@@ -1,3 +1,7 @@
+---
+title: mcp
+---
+
 # Integration: Model Context Protocol (MCP)
 
 HELM provides an MCP gateway that governs tool execution via the MCP protocol.

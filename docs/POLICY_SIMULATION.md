@@ -1,3 +1,7 @@
+---
+title: POLICY_SIMULATION
+---
+
 # Policy Simulation
 
 HELM OSS supports dry-run oriented demos for policy simulation without changing the boundary model.

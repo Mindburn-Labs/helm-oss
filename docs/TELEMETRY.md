@@ -1,3 +1,7 @@
+---
+title: TELEMETRY
+---
+
 # HELM Governance Telemetry
 
 OpenTelemetry integration for governance observability.

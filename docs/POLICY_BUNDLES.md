@@ -1,3 +1,7 @@
+---
+title: POLICY_BUNDLES
+---
+
 # External Policy Bundle Loading (GOV-002)
 
 ## Overview

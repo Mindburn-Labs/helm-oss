@@ -1,3 +1,7 @@
+---
+title: CAPABILITY_MANIFESTS
+---
+
 # Capability Manifests
 
 > **Canonical** · v1.0 · Normative

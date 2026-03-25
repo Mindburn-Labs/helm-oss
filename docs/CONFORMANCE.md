@@ -1,3 +1,16 @@
+---
+title: "Conformance Levels"
+description: "L1, L2, and L3 conformance gates — what each level guarantees and how to test."
+category: overview
+order: 4
+status: Canonical
+audience: [Users, Developers, Auditors]
+product: [HELM]
+type: reference
+last_reviewed: "2026-03-15"
+owner: "@mindburn-labs/docs"
+---
+
 # HELM Conformance
 
 > **Canonical architecture**: see [ARCHITECTURE.md §8](ARCHITECTURE.md#8-conformance-levels)

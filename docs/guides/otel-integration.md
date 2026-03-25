@@ -1,3 +1,7 @@
+---
+title: otel-integration
+---
+
 # HELM OpenTelemetry Integration Guide
 
 ## Overview

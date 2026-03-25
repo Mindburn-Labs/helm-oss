@@ -1,3 +1,7 @@
+---
+title: SDK_CODEGEN
+---
+
 # HELM SDK Codegen Pipeline
 
 > Generate SDK types from the canonical proto IDL.

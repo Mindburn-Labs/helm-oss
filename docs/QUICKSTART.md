@@ -1,5 +1,14 @@
 ---
-title: HELM Quickstart — 5-Minute Proof Loop
+title: Quickstart
+description: "Install HELM, govern your first AI tool call, and verify the proof — in under 5 minutes."
+category: overview
+order: 1
+status: Canonical
+audience: [Users, Developers]
+product: [HELM]
+type: guide
+last_reviewed: "2026-03-15"
+owner: "@mindburn-labs/docs"
 ---
 
 # HELM Quickstart — 5-Minute Proof Loop

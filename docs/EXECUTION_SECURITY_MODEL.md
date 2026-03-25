@@ -1,3 +1,7 @@
+---
+title: EXECUTION_SECURITY_MODEL
+---
+
 # Execution Security Model
 
 > **Canonical** · v1.0 · Normative

@@ -1,3 +1,7 @@
+---
+title: RELEASE_CHANNEL_TRUTH
+---
+
 # HELM Release Channel Truth
 
 Status: `authoritative`

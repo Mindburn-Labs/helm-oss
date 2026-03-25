@@ -1,3 +1,7 @@
+---
+title: GOVERNANCE_SPEC
+---
+
 # HELM Governance Subsystem Specification
 
 > Normative reference for the governance subsystem in `core/pkg/governance/`.

@@ -1,3 +1,7 @@
+---
+title: openai_baseurl
+---
+
 # Integration: OpenAI base_url Swap
 
 The simplest way to integrate HELM. Change one line, get receipts for every tool call.

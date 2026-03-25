@@ -1,3 +1,7 @@
+---
+title: 00_INDEX
+---
+
 # HELM SDK Documentation
 
 ## Available SDKs

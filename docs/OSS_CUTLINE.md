@@ -1,3 +1,7 @@
+---
+title: OSS_CUTLINE
+---
+
 # HELM OSS Scope Cutline
 
 > This document defines the boundary between what HELM OSS ships today and what the specification describes.

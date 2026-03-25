@@ -1,3 +1,7 @@
+---
+title: INSERTION_GUIDE
+---
+
 # HELM Insertion Guide
 
 Three copy-paste paths to put HELM in front of any AI agent.

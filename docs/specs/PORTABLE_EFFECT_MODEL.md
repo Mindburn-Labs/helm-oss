@@ -1,3 +1,7 @@
+---
+title: PORTABLE_EFFECT_MODEL
+---
+
 # Portable Effect Model
 
 > How to embed HELM governance primitives in any framework or runtime.

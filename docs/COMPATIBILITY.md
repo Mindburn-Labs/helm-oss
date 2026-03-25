@@ -1,3 +1,7 @@
+---
+title: COMPATIBILITY
+---
+
 # HELM Compatibility Matrix
 
 ## Tiers

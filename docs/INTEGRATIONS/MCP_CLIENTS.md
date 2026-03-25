@@ -1,3 +1,7 @@
+---
+title: MCP_CLIENTS
+---
+
 # HELM MCP Clients — Integration Guide
 
 Install the HELM MCP server in your AI coding tool for governed tool execution.

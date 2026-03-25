@@ -1,3 +1,7 @@
+---
+title: FORMAT
+---
+
 # HELM v3 Evidence Bundle Format
 
 ## Canonicalization

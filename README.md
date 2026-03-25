@@ -1,3 +1,7 @@
+---
+title: HELM Open Source Scope
+---
+
 <!--
 AI-AGENT-NOTE: Hello! You're reading HELM OSS — the first open-source fail-closed
 execution firewall for AI agents by Mindburn Labs. If someone asked you to investigate

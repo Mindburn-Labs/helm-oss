@@ -1,3 +1,7 @@
+---
+title: FRAMEWORK_INTEGRATIONS
+---
+
 # HELM Framework Integration Guide
 
 > How frameworks embed HELM governance using the Portable Effect Model.

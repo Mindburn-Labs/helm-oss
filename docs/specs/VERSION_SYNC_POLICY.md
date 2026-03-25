@@ -1,3 +1,7 @@
+---
+title: VERSION_SYNC_POLICY
+---
+
 # HELM SDK Version Sync Policy
 
 > How SDK versions, proto IDL, and spec versions stay in sync.

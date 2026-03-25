@@ -1,3 +1,16 @@
+---
+title: "Architecture"
+description: "HELM's execution kernel, platform boundary, and organizational control model."
+category: overview
+order: 3
+status: Canonical
+audience: [Developers, Auditors]
+product: [HELM]
+type: reference
+last_reviewed: "2026-03-19"
+owner: "@mindburn-labs/docs"
+---
+
 # HELM Architecture
 
 > **Canonical** · v1.1 · Normative

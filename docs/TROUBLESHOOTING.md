@@ -1,3 +1,7 @@
+---
+title: TROUBLESHOOTING
+---
+
 # Troubleshooting
 
 Common issues and solutions for HELM.

@@ -1,3 +1,7 @@
+---
+title: titan
+---
+
 # HELM Case Study: Titan Algorithmic Trading System
 
 ## Executive Summary

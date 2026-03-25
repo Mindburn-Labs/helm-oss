@@ -1,3 +1,7 @@
+---
+title: SANDBOXES
+---
+
 # HELM Sandbox Governance — OpenSandbox / E2B / Daytona
 
 HELM enforces strict governance on sandbox execution with preflight posture checks and receipt preimage binding.

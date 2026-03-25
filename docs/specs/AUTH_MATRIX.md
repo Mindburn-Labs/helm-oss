@@ -1,3 +1,7 @@
+---
+title: AUTH_MATRIX
+---
+
 # HELM Auth Matrix
 
 > Authentication and authorization modes for HELM integrations.

@@ -1,3 +1,7 @@
+---
+title: INTEGRATE_IN_5_MIN
+---
+
 # Integrate HELM in 5 Minutes
 
 No trust required. Every step produces verifiable output.

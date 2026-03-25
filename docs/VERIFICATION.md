@@ -1,3 +1,7 @@
+---
+title: VERIFICATION
+---
+
 # How to Prove It Works
 
 Every claim is backed by a command you can run right now. Zero hidden steps.

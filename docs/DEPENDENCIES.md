@@ -1,3 +1,7 @@
+---
+title: DEPENDENCIES
+---
+
 # Dependencies
 
 HELM OSS v1.0 dependency justification. Prefer standard library. External deps are pinned.

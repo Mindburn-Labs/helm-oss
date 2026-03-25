@@ -1,3 +1,7 @@
+---
+title: PUBLISHING
+---
+
 # HELM Publishing
 
 `docs/specs/RELEASE_CHANNEL_TRUTH.md` is the authoritative shipping matrix for HELM OSS.
