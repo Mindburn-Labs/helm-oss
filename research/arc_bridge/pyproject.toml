@@ -1,0 +1,19 @@
+[project]
+name = "helm-arc-bridge"
+version = "0.1.0"
+description = "HELM ARC-AGI-3 Bridge Sidecar — thin FastAPI layer over official arc_agi toolkit"
+requires-python = ">=3.12"
+dependencies = [
+    "arc-agi>=0.1.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+]
+
+

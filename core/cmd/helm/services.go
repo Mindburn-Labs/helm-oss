@@ -30,6 +30,8 @@ import (
 	"github.com/Mindburn-Labs/helm-oss/core/pkg/runtime/obligation"
 	"github.com/Mindburn-Labs/helm-oss/core/pkg/runtime/sandbox"
 	"github.com/Mindburn-Labs/helm-oss/core/pkg/simulation"
+	"github.com/Mindburn-Labs/helm-oss/core/pkg/mama/command"
+	mamaruntime "github.com/Mindburn-Labs/helm-oss/core/pkg/mama/runtime"
 )
 
 // Services holds all initialized subsystems for the HELM runtime.
@@ -77,6 +79,10 @@ type Services struct {
 
 	// --- Compatibility Matrix ---
 	CompatMatrix *pack.CompatibilityMatrix
+
+	// --- MAMA Cognitive Runtime ---
+	MamaRegistry *command.Registry
+	MamaMission  *mamaruntime.MissionState
 }
 
 // NewServices initializes all subsystems.
@@ -216,6 +222,14 @@ func NewServices(ctx context.Context, db *sql.DB, artStore artifacts.Store, logg
 		Version:  displayVersion(),
 	}
 	logger.Info("subsystem ready", "component", " Compatibility Matrix initialized")
+
+	// --- 18. MAMA Cognitive Runtime ---
+	s.MamaRegistry = command.NewRegistry()
+	s.MamaMission = &mamaruntime.MissionState{
+		Mode:  mamaruntime.ModeState{CurrentMode: string(mamaruntime.ModeObserve)},
+		Agent: mamaruntime.AgentState{ActiveRoles: []string{"Explore", "WorldModel"}},
+	}
+	logger.Info("subsystem ready", "component", " MAMA Canonical Runtime initialized")
 
 	logger.Info("subsystem ready", "component", " All subsystems initialized successfully")
 	return s, nil

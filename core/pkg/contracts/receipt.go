@@ -28,6 +28,12 @@ type Receipt struct {
 	ReplayScript     *ReplayScriptRef   `json:"replay_script,omitempty"`     // Link to deterministic replay script
 	Provenance       *ReceiptProvenance `json:"provenance,omitempty"`        // Chain of custody
 	BundledArtifacts []ParsedArtifact   `json:"bundled_artifacts,omitempty"` // Hashable bundles of related artifacts
+
+	// V4: Inference Telemetry (Local Inference Gateway)
+	GatewayID      string `json:"gateway_id,omitempty"`      // Node identity of the serving LIG
+	RuntimeType    string `json:"runtime_type,omitempty"`    // e.g. "ollama", "vllm"
+	RuntimeVersion string `json:"runtime_version,omitempty"` // Exact semver of the inference engine
+	ModelHash      string `json:"model_hash,omitempty"`      // SHA-256 snapshot of the loaded weights
 }
 
 // ReplayScriptRef points to the script that can reproduce this receipt's effect.

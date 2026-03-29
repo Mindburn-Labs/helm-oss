@@ -1,0 +1,191 @@
+[
+  {
+    "node_hash": "4aacac9143c60bcfa9fc67b438f7fd282747b27bdc41a05f81cdbd3b9cb1353c",
+    "kind": "EFFECT",
+    "parents": [
+      "d5abf4ff5867e7a14edee760bb29256a94386250afac7356e47a31799a64ba17"
+    ],
+    "lamport": 2,
+    "principal": "arc-agi-3",
+    "principal_seq": 0,
+    "payload": {
+      "type": "arc.scorecard.open.effect",
+      "card_id": "9cd06b4a-88e0-428d-a857-da0854567ecb"
+    },
+    "sig": "",
+    "ts_unix_ms": 1774609813
+  },
+  {
+    "node_hash": "2fcd69a7a525034b88740e5d79e2864dfc3267cd24f483f7f03e3f105ff45c34",
+    "kind": "EFFECT",
+    "parents": [
+      "69bea468c95638c55d763a3d1aab8435da67790d7c922b2ab3e3de78434859fc"
+    ],
+    "lamport": 6,
+    "principal": "arc-agi-3",
+    "principal_seq": 4,
+    "payload": {
+      "type": "arc.env.effect",
+      "session_id": "78f128f2-67c2-449b-bd37-fa96c5155fad",
+      "step": 2,
+      "action_hash": "sha256:94cf725baae646ec449761f0bc399343d8371166ff48869124ab79dd4cff762a",
+      "frame_hash": "sha256:411d3082b2f4284ad45ffe470cb2dca53d3f9c27fcec218d3913efee7e54b886",
+      "done": false,
+      "reward": 0
+    },
+    "sig": "",
+    "ts_unix_ms": 1774609814
+  },
+  {
+    "node_hash": "44446a4bd33e3569adfe821f8cf8030b89e2b39ea2de8bfd0c17e6951742c936",
+    "kind": "CHECKPOINT",
+    "parents": [
+      "b2cad6e72128e473b1783a2ac1c217944caa90f5e1ff044e90612ea971172ceb"
+    ],
+    "lamport": 8,
+    "principal": "arc-agi-3",
+    "principal_seq": 5,
+    "payload": {
+      "type": "arc.episode.checkpoint",
+      "session_id": "78f128f2-67c2-449b-bd37-fa96c5155fad",
+      "game_id": "ls20",
+      "episode_hash": "sha256:b7b418820eb60bba7f0f8ce380867e8b06202c2e93f3d396f668b37519d5423f",
+      "total_steps": 2,
+      "final_reward": 0
+    },
+    "sig": "",
+    "ts_unix_ms": 1774609814
+  },
+  {
+    "node_hash": "738223692b0b1ae7cf60b608c9e2476f25f1e79f2df5beca55f224b8ded457f3",
+    "kind": "EFFECT",
+    "parents": [
+      "ac676aeb36945473c0e894b9774ac5c577632001a5ff53bfe7b9ce5e0ed23431"
+    ],
+    "lamport": 10,
+    "principal": "arc-agi-3",
+    "principal_seq": 0,
+    "payload": {
+      "type": "arc.scorecard.close.effect",
+      "card_id": "9cd06b4a-88e0-428d-a857-da0854567ecb"
+    },
+    "sig": "",
+    "ts_unix_ms": 1774609814
+  },
+  {
+    "node_hash": "d5abf4ff5867e7a14edee760bb29256a94386250afac7356e47a31799a64ba17",
+    "kind": "INTENT",
+    "parents": null,
+    "lamport": 1,
+    "principal": "arc-agi-3",
+    "principal_seq": 0,
+    "payload": {
+      "type": "arc.scorecard.open.intent",
+      "game_ids": [
+        "ls20"
+      ]
+    },
+    "sig": "",
+    "ts_unix_ms": 1774609812
+  },
+  {
+    "node_hash": "44dc6ce77e20126b232e1a017cc1b46f1838c2ae86324689fb1ee916f3633ab6",
+    "kind": "INTENT",
+    "parents": [
+      "4aacac9143c60bcfa9fc67b438f7fd282747b27bdc41a05f81cdbd3b9cb1353c"
+    ],
+    "lamport": 3,
+    "principal": "arc-agi-3",
+    "principal_seq": 1,
+    "payload": {
+      "type": "arc.env.step",
+      "session_id": "78f128f2-67c2-449b-bd37-fa96c5155fad",
+      "step": 1,
+      "action": "ACTION1",
+      "reasoning": {
+        "thought": "I believe ACTION1 is the optimal move."
+      }
+    },
+    "sig": "",
+    "ts_unix_ms": 1774609814
+  },
+  {
+    "node_hash": "66d8af214e9978ef4aae5688d62fdbea981e722719fcecf91699594c825e423e",
+    "kind": "EFFECT",
+    "parents": [
+      "44dc6ce77e20126b232e1a017cc1b46f1838c2ae86324689fb1ee916f3633ab6"
+    ],
+    "lamport": 4,
+    "principal": "arc-agi-3",
+    "principal_seq": 2,
+    "payload": {
+      "type": "arc.env.effect",
+      "session_id": "78f128f2-67c2-449b-bd37-fa96c5155fad",
+      "step": 1,
+      "action_hash": "sha256:d70cfbe534c369f5ffc75b53910b591da884ab47fa8e483a003770deca31fb82",
+      "frame_hash": "sha256:411d3082b2f4284ad45ffe470cb2dca53d3f9c27fcec218d3913efee7e54b886",
+      "done": false,
+      "reward": 0
+    },
+    "sig": "",
+    "ts_unix_ms": 1774609814
+  },
+  {
+    "node_hash": "69bea468c95638c55d763a3d1aab8435da67790d7c922b2ab3e3de78434859fc",
+    "kind": "INTENT",
+    "parents": [
+      "66d8af214e9978ef4aae5688d62fdbea981e722719fcecf91699594c825e423e"
+    ],
+    "lamport": 5,
+    "principal": "arc-agi-3",
+    "principal_seq": 3,
+    "payload": {
+      "type": "arc.env.step",
+      "session_id": "78f128f2-67c2-449b-bd37-fa96c5155fad",
+      "step": 2,
+      "action": "ACTION2",
+      "reasoning": {
+        "thought": "I believe ACTION2 is the optimal move."
+      }
+    },
+    "sig": "",
+    "ts_unix_ms": 1774609814
+  },
+  {
+    "node_hash": "b2cad6e72128e473b1783a2ac1c217944caa90f5e1ff044e90612ea971172ceb",
+    "kind": "INTENT",
+    "parents": [
+      "2fcd69a7a525034b88740e5d79e2864dfc3267cd24f483f7f03e3f105ff45c34"
+    ],
+    "lamport": 7,
+    "principal": "arc-agi-3",
+    "principal_seq": 5,
+    "payload": {
+      "type": "arc.env.step",
+      "session_id": "78f128f2-67c2-449b-bd37-fa96c5155fad",
+      "step": 3,
+      "action": "Submit",
+      "reasoning": {
+        "thought": "I believe Submit is the optimal move."
+      }
+    },
+    "sig": "",
+    "ts_unix_ms": 1774609814
+  },
+  {
+    "node_hash": "ac676aeb36945473c0e894b9774ac5c577632001a5ff53bfe7b9ce5e0ed23431",
+    "kind": "INTENT",
+    "parents": [
+      "44446a4bd33e3569adfe821f8cf8030b89e2b39ea2de8bfd0c17e6951742c936"
+    ],
+    "lamport": 9,
+    "principal": "arc-agi-3",
+    "principal_seq": 0,
+    "payload": {
+      "type": "arc.scorecard.close.intent",
+      "card_id": "9cd06b4a-88e0-428d-a857-da0854567ecb"
+    },
+    "sig": "",
+    "ts_unix_ms": 1774609814
+  }
+]

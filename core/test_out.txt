@@ -1,0 +1,168 @@
+ok  	github.com/Mindburn-Labs/helm-oss/core/benchmarks	0.979s
+?   	github.com/Mindburn-Labs/helm-oss/core/cmd/bootstrap	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/cmd/fas-score	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/cmd/fas-verify	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/cmd/helm	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/cmd/helm-loadtest	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/cmd/helm-migrate	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/a2a	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/api	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/api/trust	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/artifacts	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/artifacts/arc	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/audit	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/auth	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/authority	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/authz	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/boundary	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/bridge	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/budget	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/buildguard	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/bundles	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/canonicalize	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/capabilities	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/celcheck	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/certification	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/certification/admission	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/compiler	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/controls	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/csr	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/docs	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/dora	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/enforcement	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/evidence	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/fca	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/gdpr	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/hipaa	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/jcs	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/jkg	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/mica	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/normalize	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/obligations	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/regwatch	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/risk	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/sec	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/sox	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/compliance/templates	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/config	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/conform	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/conform/adversarial	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/conform/gates	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/conformance	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/conformance/cases	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/conformance/sandbox	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/conformance/scenarios	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/connector	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/connectors/arc	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/connectors/sandbox	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/connectors/sandbox/daytona	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/connectors/sandbox/e2b	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/connectors/sandbox/opensandbox	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/context	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/contracts	0.183s
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/contracts/actuators	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/contracts/economic	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/contracts/schemas	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/credentials	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/crypto	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/crypto/hsm	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/crypto/keystore	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/crypto/mtls	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/crypto/sdjwt	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/crypto/shredding	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/crypto/tls	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/database	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/delegation	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/disclosure	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/edgegovernance	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/effects	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/envelope	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/escalation	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/escalation/ceremony	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/evaluation	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/evidence	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/evidence/arc	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/evidencepack	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/evidencepack/retention	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/executor	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/firewall	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/forensics	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/gateway	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/governance	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/guardian	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/identity	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/integrations/capgraph	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/integrations/manifest	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/integrations/receipts	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/intent	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/interfaces	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/interfaces/agui	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/intervention	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/kernel	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/kernel/celdp	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/kernel/consistency	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/kernel/cpi	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/kernel/csnf	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/kernel/errorir	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/kernel/pdp	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/kernel/retry	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/kernel/sovereignty	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/kernel/ui	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/kernelruntime	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/kms	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/ledger	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/mama/agents	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/mama/command	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/mama/lanes	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/mama/runtime	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/manifest	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/mcp	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/memory	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/merkle	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/metrics	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/observability	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/orgdna	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/otel	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/pack	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/pdp	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/policy/wasm	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/policyloader	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/prg	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/privacy	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/proofgraph	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/proofgraph/aigp	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/proofgraph/anchor	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/proofgraph/condensation	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/proofgraph/graphql	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/provenance	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/receipts	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/receipts/policies	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/registry	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/releasegovernance	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/replay	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/rir	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/runtime	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/runtime/budget	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/runtime/obligation	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/runtime/sandbox	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/sandbox	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/sandbox/docker	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/security/suites	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/serving	0.158s
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/simulation	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/store	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/store/ledger	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/store/objstore	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/store/objstore/fs	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/surface	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/tape	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/threatscan	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/tooling	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/trust	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/trust/registry	(cached)
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/truth	[no test files]
+?   	github.com/Mindburn-Labs/helm-oss/core/pkg/util/resiliency	[no test files]
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/verifier	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/versioning	(cached)
+ok  	github.com/Mindburn-Labs/helm-oss/core/pkg/witness	(cached)

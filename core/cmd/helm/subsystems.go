@@ -18,6 +18,7 @@ import (
 	"github.com/Mindburn-Labs/helm-oss/core/pkg/memory"
 	"github.com/Mindburn-Labs/helm-oss/core/pkg/replay"
 	trustregistry "github.com/Mindburn-Labs/helm-oss/core/pkg/trust/registry"
+	mamahttp "github.com/Mindburn-Labs/helm-oss/core/pkg/mama/http"
 )
 
 // RegisterSubsystemRoutes registers all subsystem API routes on the given mux.
@@ -348,6 +349,10 @@ func RegisterSubsystemRoutes(mux *http.ServeMux, svc *Services) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{"surfaces": surfaces, "count": len(surfaces)})
 	})
+
+	// --- MAMA HTTP Engine ---
+	mamaServer := mamahttp.NewServer(svc.MamaRegistry, svc.MamaMission)
+	mamaServer.RegisterRoutes(mux)
 
 	// Suppress unused variable
 	_ = ctx
