@@ -71,6 +71,11 @@ and `ESCALATE` decision before downstream policy or dispatch.
 
 ## Relationship to existing surfaces
 
+- Organization runtimes may request missing capabilities as governed build,
+  procurement, or data-acquisition work. The output is a candidate manifest
+  and implementation; the producing task does not certify it or grant live
+  dispatch authority. Qualification, activation, revocation, and rollback
+  must retain the same effect and evidence semantics as existing capabilities.
 - `connectors/` certification (`/helm-connector-cert`) becomes the pipeline
   that produces certified manifests.
 - `effect_type_definition/v2` remains the per-effect vocabulary; the manifest
