@@ -1,7 +1,7 @@
 ---
 title: Signed Connector Effect Close
 status: internal-foundation
-last_reviewed: 2026-09-05
+last_reviewed: 2026-09-06
 ---
 
 <!-- quantum_posture: documents classical Ed25519 connector effect-close acknowledgement and receipt signing plus offline verification; no post-quantum control is added or claimed. -->
@@ -18,7 +18,7 @@ internal and pre-production. There is no deployed Data Plane close endpoint,
 connector acknowledgement publisher, deployed cross-plane disposition
 controller, or controlled-live effect proof in this slice.
 
-Version 2 currently adds contracts and reference vectors only. The authority,
+Versions 2 and 3 add contracts and reference vectors only. The authority,
 transaction, persistence, and recovery sections below describe v1; they are not
 evidence of a v2 runtime or database implementation.
 
@@ -199,10 +199,30 @@ no authority to execute compensation.
 
 `reference_packs/effect-close-v2` verifies canonical hashes, detached signatures,
 exact acknowledgement/receipt bindings, and seven negative mutations in Go and
-independent Python. `make verify-effect-close-vectors` runs both v1 and v2
+independent Python. `make verify-effect-close-vectors` runs the v1, v2, and v3
 packs. These checks do not establish v2 persistence, an authenticated close
 route, connector publication, durable signed EvidencePack lineage, or live
 provider finality. Those runtime paths remain unimplemented.
+
+## Version 3: disposition binding prerequisite
+
+V3 restores the optional `disposition_receipt_hash` in both the acknowledgement
+and receipt while retaining V2 activation, adapter capability, and finality
+semantics. When present, the hash requires a reconciliation ref and must match
+between acknowledgement and receipt. It participates in their complete artifact
+hashes and their separate V3 signature domains.
+
+The published V2 schemas reject additional fields and have no signed extension
+slot. V1/V2 schemas, canonical payloads, signature domains, and reference vectors
+remain unchanged; V3 is an explicit successor, not a reinterpretation of V2.
+
+`reference_packs/effect-close-v3` supplies canonical vectors and an independent
+Python verifier. `make verify-effect-close-vectors` checks all three versions.
+This is a contract prerequisite only. `EffectCloser` and its PostgreSQL store
+still consume V1. V3 does not establish a close route, durable lineage, source
+readback, or permission to dispatch an effect. Runtime adoption must preserve
+the current exact-reservation, current-FENCE, signed-disposition and non-`HOLD`
+checks; a valid V3 hash alone cannot satisfy those checks.
 
 ## Remaining production gates
 

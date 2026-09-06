@@ -1,0 +1,30 @@
+{
+  "$comment": "quantum_posture: classical_ed25519_only. These `*.c14n.json` files are byte-exact canonical (RFC 8785) connector effect-close acknowledgement v3 and receipt v3 signing payloads whose SHA-256 digests are hash-pinned in vectors.json and covered by a valid classical Ed25519 signature. They cannot host an inline annotation without invalidating that signature or digest, so this manifest carries the posture note. This is not a post-quantum claim and does not alter any payload bytes.",
+  "immutable_payloads": [
+    {
+      "file": "acknowledgement.c14n.json",
+      "sha256": "16fd3de98e061338bb6cb5fe65a0d51f14d567fec3310fa23d31847919b703cd"
+    },
+    {
+      "file": "acknowledgement_envelope.c14n.json",
+      "sha256": "f652d1e13f7d9153a17b49f1c6e113417d90a8bf60f728ee44cc41a865ec24a4"
+    },
+    {
+      "file": "acknowledgement_signing_payload.c14n.json",
+      "sha256": "8d39c97e7606d8badc3939ffdd92201bc24d94afba23f011d8737cccf67c2c7a"
+    },
+    {
+      "file": "receipt.c14n.json",
+      "sha256": "8727e470fca6799df9954c650db7b20078c37ce6311173718527cf4a71c28abf"
+    },
+    {
+      "file": "receipt_signing_payload.c14n.json",
+      "sha256": "73a05dfa3d7776c169ad00bda5b7aac87dfe79e73ac311daa7401bb3f833e82f"
+    }
+  ],
+  "pinning_authority": "reference_packs/effect-close-v3/vectors.json",
+  "purpose": "Local immutable-payload posture record for the effect-close v3 reference pack. vectors.json remains the verified hash-pinning authority.",
+  "source_path": "reference_packs/effect-close-v3",
+  "source_repository": "Mindburn-Labs/helm-ai-kernel",
+  "verifier": "reference_packs/effect-close-v3/verify_vectors.py"
+}

@@ -85,9 +85,10 @@ verify-connector-release-authority-vectors:
 	python3 reference_packs/connector-release-authority-v1/verify_vectors.py
 
 verify-effect-close-vectors:
-	cd core && go test ./pkg/boundary/approvalceremony -run 'TestEffectClose(V2ReferencePackMatchesGoImplementation|ReferencePackMatchesGoImplementation|Schemas)' -count=1
+	cd core && go test ./pkg/boundary/approvalceremony -run 'TestEffectClose(V[23]ReferencePackMatchesGoImplementation|ReferencePackMatchesGoImplementation|V3Schemas|Schemas)' -count=1
 	python3 reference_packs/effect-close-v1/verify_vectors.py
 	python3 reference_packs/effect-close-v2/verify_vectors.py
+	python3 reference_packs/effect-close-v3/verify_vectors.py
 
 verify-effect-disposition-vectors:
 	cd core && go test ./pkg/contracts -run '^TestEffectDisposition' -count=1
