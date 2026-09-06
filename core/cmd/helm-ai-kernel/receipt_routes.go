@@ -120,6 +120,10 @@ func registerReceiptRoutes(mux *http.ServeMux, svc *Services) {
 				api.WriteBadRequest(w, "Evaluate route "+err.Error())
 				return
 			}
+			if err := validateMemoryEvaluateArgs(req.Args); err != nil {
+				api.WriteBadRequest(w, "Evaluate route "+err.Error())
+				return
+			}
 		}
 		if err := validateEvaluateAuthorityArgs(req.Args, evaluateAuthorityBinding{
 			TenantID: tenantID, PrincipalID: principalID, WorkspaceID: workspaceID,
@@ -566,6 +570,80 @@ func writeEvaluateDecodeError(w http.ResponseWriter, err error) {
 
 func isMemoryEvaluateAction(tool string) bool {
 	return strings.HasPrefix(strings.TrimSpace(tool), "memory.")
+}
+
+var memoryEvaluateArgKeys = map[string]struct{}{
+	"schema_version":  {},
+	"operation":       {},
+	"memory_class":    {},
+	"scope":           {},
+	"target_scope":    {},
+	"data_class":      {},
+	"data_boundary":   {},
+	"purpose":         {},
+	"content_hash":    {},
+	"query_hash":      {},
+	"record_id":       {},
+	"entry_id":        {},
+	"provenance_hash": {},
+	"retention_days":  {},
+	"provider_id":     {},
+	"model_id":        {},
+	"budget":          {},
+}
+
+var memoryEvaluateBudgetKeys = map[string]struct{}{
+	"decision":     {},
+	"receipt_hash": {},
+}
+
+// validateMemoryEvaluateArgs enforces the source schema's closed object
+// boundaries at the HTTP edge. The reserved Control Plane authority envelope
+// is validated separately and is the only additive key permitted after the
+// source args cross the wire. Scalar source fields may not hide policy-bearing
+// objects or arrays; budget is the sole nested object and has its own closed
+// key set. This prevents a nested budget ALLOW or unknown sibling from
+// satisfying an unanchored policy expression.
+func validateMemoryEvaluateArgs(args map[string]any) error {
+	if args == nil {
+		return fmt.Errorf("evaluate memory args must be an object")
+	}
+	for key, value := range args {
+		if key == evaluateAuthorityArgsKey {
+			continue
+		}
+		if _, ok := memoryEvaluateArgKeys[key]; !ok {
+			return fmt.Errorf("evaluate memory args field %q is not permitted", key)
+		}
+		if key != "budget" {
+			if isCompositeEvaluateValue(value) {
+				return fmt.Errorf("evaluate memory args field %q must be a scalar", key)
+			}
+			continue
+		}
+		budget, ok := value.(map[string]any)
+		if !ok {
+			return fmt.Errorf("evaluate memory args budget must be an object")
+		}
+		for budgetKey, budgetValue := range budget {
+			if _, ok := memoryEvaluateBudgetKeys[budgetKey]; !ok {
+				return fmt.Errorf("evaluate memory args budget field %q is not permitted", budgetKey)
+			}
+			if isCompositeEvaluateValue(budgetValue) {
+				return fmt.Errorf("evaluate memory args budget field %q must be a scalar", budgetKey)
+			}
+		}
+	}
+	return nil
+}
+
+func isCompositeEvaluateValue(value any) bool {
+	switch value.(type) {
+	case map[string]any, []any:
+		return true
+	default:
+		return false
+	}
 }
 
 var evaluateAuthorityContextKeys = map[string]struct{}{
