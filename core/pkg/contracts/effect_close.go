@@ -707,6 +707,12 @@ func (r EffectCloseReceiptV2) ValidateAcknowledgement(a ConnectorEffectAcknowled
 	if err := a.ValidateIntegrity(); err != nil {
 		return err
 	}
+	return validateEffectCloseV2AcknowledgementBinding(r, a)
+}
+
+// validateEffectCloseV2AcknowledgementBinding compares the frozen v2 fields.
+// Each version must verify its complete artifact integrity before calling it.
+func validateEffectCloseV2AcknowledgementBinding(r EffectCloseReceiptV2, a ConnectorEffectAcknowledgementV2) error {
 	if r.AdmissionID != a.AdmissionID || r.AttemptID != a.AttemptID ||
 		r.TenantID != a.TenantID || r.WorkspaceID != a.WorkspaceID || r.Audience != a.Audience ||
 		r.ConnectorID != a.ConnectorID || r.ConnectorVersion != a.ConnectorVersion ||
