@@ -199,7 +199,7 @@ no authority to execute compensation.
 
 `reference_packs/effect-close-v2` verifies canonical hashes, detached signatures,
 exact acknowledgement/receipt bindings, and seven negative mutations in Go and
-independent Python. `make verify-effect-close-vectors` runs both v1 and v2
+independent Python. `make verify-effect-close-vectors` runs the v1, v2, and v3
 packs. These checks do not establish v2 persistence, an authenticated close
 route, connector publication, durable signed EvidencePack lineage, or live
 provider finality. Those runtime paths remain unimplemented.
