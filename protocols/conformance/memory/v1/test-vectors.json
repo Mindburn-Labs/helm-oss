@@ -454,6 +454,267 @@
       }
     },
     {
+      "id": "memory-write-retention-type-rejected",
+      "schema_valid": false,
+      "authenticated": true,
+      "workspace_bound": true,
+      "request": {
+        "tool": "memory.write",
+        "effect_level": "E2",
+        "session_id": "memory-write-retention-type-session",
+        "args": {
+          "schema_version": "memory-policy/v1",
+          "operation": "memory.write",
+          "memory_class": "M1_EPISODIC",
+          "scope": "PRIVATE",
+          "data_class": "INTERNAL",
+          "data_boundary": "org_boundary",
+          "purpose": "reject a non-integer retention bound",
+          "content_hash": "sha256:1222222222222222222222222222222222222222222222222222222222222222",
+          "record_id": "memory-entry-retention-type",
+          "provenance_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "retention_days": "180",
+          "budget": {
+            "decision": "ALLOW",
+            "receipt_hash": "sha256:3222222222222222222222222222222222222222222222222222222222222222"
+          }
+        }
+      },
+      "expected": {
+        "http_status": 400,
+        "verdict": "",
+        "reason_code": "",
+        "signed_receipt": false
+      }
+    },
+    {
+      "id": "memory-write-retention-range-rejected",
+      "schema_valid": false,
+      "authenticated": true,
+      "workspace_bound": true,
+      "request": {
+        "tool": "memory.write",
+        "effect_level": "E2",
+        "session_id": "memory-write-retention-range-session",
+        "args": {
+          "schema_version": "memory-policy/v1",
+          "operation": "memory.write",
+          "memory_class": "M1_EPISODIC",
+          "scope": "PRIVATE",
+          "data_class": "INTERNAL",
+          "data_boundary": "org_boundary",
+          "purpose": "reject an out-of-range retention bound",
+          "content_hash": "sha256:1222222222222222222222222222222222222222222222222222222222222222",
+          "record_id": "memory-entry-retention-range",
+          "provenance_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "retention_days": 3651,
+          "budget": {
+            "decision": "ALLOW",
+            "receipt_hash": "sha256:3222222222222222222222222222222222222222222222222222222222222222"
+          }
+        }
+      },
+      "expected": {
+        "http_status": 400,
+        "verdict": "",
+        "reason_code": "",
+        "signed_receipt": false
+      }
+    },
+    {
+      "id": "memory-write-retention-exponent-integer-accepted",
+      "schema_valid": true,
+      "authenticated": true,
+      "workspace_bound": true,
+      "request": {
+        "tool": "memory.write",
+        "effect_level": "E2",
+        "session_id": "memory-write-retention-exponent-session",
+        "args": {
+          "schema_version": "memory-policy/v1",
+          "operation": "memory.write",
+          "memory_class": "M1_EPISODIC",
+          "scope": "PRIVATE",
+          "data_class": "INTERNAL",
+          "data_boundary": "org_boundary",
+          "purpose": "accept an integer retention exponent",
+          "content_hash": "sha256:1222222222222222222222222222222222222222222222222222222222222222",
+          "record_id": "memory-entry-retention-exponent",
+          "provenance_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "retention_days": 1e2,
+          "budget": {
+            "decision": "ALLOW",
+            "receipt_hash": "sha256:3222222222222222222222222222222222222222222222222222222222222222"
+          }
+        }
+      },
+      "expected": {
+        "http_status": 200,
+        "verdict": "ALLOW",
+        "reason_code": "",
+        "signed_receipt": true
+      }
+    },
+    {
+      "id": "memory-read-content-hash-type-rejected",
+      "schema_valid": false,
+      "authenticated": true,
+      "workspace_bound": true,
+      "request": {
+        "tool": "memory.read",
+        "effect_level": "E1",
+        "session_id": "memory-read-content-hash-type-session",
+        "args": {
+          "schema_version": "memory-policy/v1",
+          "operation": "memory.read",
+          "memory_class": "M2_ENTITY",
+          "scope": "PRIVATE",
+          "data_class": "CONFIDENTIAL",
+          "data_boundary": "org_boundary",
+          "purpose": "reject a non-string content hash",
+          "content_hash": null,
+          "query_hash": "sha256:2111111111111111111111111111111111111111111111111111111111111111",
+          "budget": {
+            "decision": "ALLOW",
+            "receipt_hash": "sha256:3111111111111111111111111111111111111111111111111111111111111111"
+          }
+        }
+      },
+      "expected": {
+        "http_status": 400,
+        "verdict": "",
+        "reason_code": "",
+        "signed_receipt": false
+      }
+    },
+    {
+      "id": "memory-read-data-class-enum-rejected",
+      "schema_valid": false,
+      "authenticated": true,
+      "workspace_bound": true,
+      "request": {
+        "tool": "memory.read",
+        "effect_level": "E1",
+        "session_id": "memory-read-data-class-session",
+        "args": {
+          "schema_version": "memory-policy/v1",
+          "operation": "memory.read",
+          "memory_class": "M2_ENTITY",
+          "scope": "PRIVATE",
+          "data_class": "UNKNOWN",
+          "data_boundary": "org_boundary",
+          "purpose": "reject an unknown data class",
+          "content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "query_hash": "sha256:2111111111111111111111111111111111111111111111111111111111111111",
+          "budget": {
+            "decision": "ALLOW",
+            "receipt_hash": "sha256:3111111111111111111111111111111111111111111111111111111111111111"
+          }
+        }
+      },
+      "expected": {
+        "http_status": 400,
+        "verdict": "",
+        "reason_code": "",
+        "signed_receipt": false
+      }
+    },
+    {
+      "id": "memory-read-schema-version-rejected",
+      "schema_valid": false,
+      "authenticated": true,
+      "workspace_bound": true,
+      "request": {
+        "tool": "memory.read",
+        "effect_level": "E1",
+        "session_id": "memory-read-schema-version-session",
+        "args": {
+          "schema_version": 2,
+          "operation": "memory.read",
+          "memory_class": "M2_ENTITY",
+          "scope": "PRIVATE",
+          "data_class": "CONFIDENTIAL",
+          "data_boundary": "org_boundary",
+          "purpose": "reject an unsupported memory schema version",
+          "content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "query_hash": "sha256:2111111111111111111111111111111111111111111111111111111111111111",
+          "budget": {
+            "decision": "ALLOW",
+            "receipt_hash": "sha256:3111111111111111111111111111111111111111111111111111111111111111"
+          }
+        }
+      },
+      "expected": {
+        "http_status": 400,
+        "verdict": "",
+        "reason_code": "",
+        "signed_receipt": false
+      }
+    },
+    {
+      "id": "memory-read-query-hash-required",
+      "schema_valid": false,
+      "authenticated": true,
+      "workspace_bound": true,
+      "request": {
+        "tool": "memory.read",
+        "effect_level": "E1",
+        "session_id": "memory-read-query-hash-required-session",
+        "args": {
+          "schema_version": "memory-policy/v1",
+          "operation": "memory.read",
+          "memory_class": "M2_ENTITY",
+          "scope": "PRIVATE",
+          "data_class": "CONFIDENTIAL",
+          "data_boundary": "org_boundary",
+          "purpose": "reject a read without its query hash",
+          "content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "budget": {
+            "decision": "ALLOW",
+            "receipt_hash": "sha256:3111111111111111111111111111111111111111111111111111111111111111"
+          }
+        }
+      },
+      "expected": {
+        "http_status": 400,
+        "verdict": "",
+        "reason_code": "",
+        "signed_receipt": false
+      }
+    },
+    {
+      "id": "memory-operation-tool-mismatch-rejected",
+      "schema_valid": true,
+      "authenticated": true,
+      "workspace_bound": true,
+      "request": {
+        "tool": "memory.write",
+        "effect_level": "E2",
+        "session_id": "memory-operation-tool-mismatch-session",
+        "args": {
+          "schema_version": "memory-policy/v1",
+          "operation": "memory.read",
+          "memory_class": "M2_ENTITY",
+          "scope": "PRIVATE",
+          "data_class": "CONFIDENTIAL",
+          "data_boundary": "org_boundary",
+          "purpose": "reject a tool and operation mismatch",
+          "content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "query_hash": "sha256:2111111111111111111111111111111111111111111111111111111111111111",
+          "budget": {
+            "decision": "ALLOW",
+            "receipt_hash": "sha256:3111111111111111111111111111111111111111111111111111111111111111"
+          }
+        }
+      },
+      "expected": {
+        "http_status": 400,
+        "verdict": "",
+        "reason_code": "",
+        "signed_receipt": false
+      }
+    },
+    {
       "id": "local-only-egress-denied",
       "schema_valid": false,
       "authenticated": true,
@@ -480,10 +741,10 @@
         }
       },
       "expected": {
-        "http_status": 200,
-        "verdict": "DENY",
-        "reason_code": "PDP_DENY",
-        "signed_receipt": true
+        "http_status": 400,
+        "verdict": "",
+        "reason_code": "",
+        "signed_receipt": false
       }
     },
     {
@@ -540,10 +801,10 @@
         }
       },
       "expected": {
-        "http_status": 200,
-        "verdict": "DENY",
-        "reason_code": "PDP_DENY",
-        "signed_receipt": true
+        "http_status": 400,
+        "verdict": "",
+        "reason_code": "",
+        "signed_receipt": false
       }
     },
     {
