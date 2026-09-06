@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"go.opentelemetry.io/otel/sdk/resource"
-	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 )
 
 func TestSemconvResourceSchemaMatchesDefaultResource(t *testing.T) {
@@ -14,7 +14,7 @@ func TestSemconvResourceSchemaMatchesDefaultResource(t *testing.T) {
 		resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceName("helm-ai-kernel"),
-			semconv.DeploymentEnvironmentName("test"),
+			semconv.DeploymentEnvironmentNameKey.String("test"),
 		),
 	)
 	if err != nil {
