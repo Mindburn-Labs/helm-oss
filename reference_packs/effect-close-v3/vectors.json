@@ -1,0 +1,99 @@
+{
+  "$comment": "quantum_posture: classical Ed25519 effect acknowledgement and close receipt only; no hybrid or post-quantum claim.",
+  "schema_version": "effect-close-vectors.v3",
+  "contract_version": "2026-09-06",
+  "quantum_posture": "classical_ed25519_only",
+  "acknowledgement": {
+    "artifact": {
+      "canonical": "acknowledgement.c14n.json",
+      "sha256": "sha256:16fd3de98e061338bb6cb5fe65a0d51f14d567fec3310fa23d31847919b703cd"
+    },
+    "envelope": {
+      "canonical": "acknowledgement_envelope.c14n.json",
+      "sha256": "sha256:f652d1e13f7d9153a17b49f1c6e113417d90a8bf60f728ee44cc41a865ec24a4"
+    },
+    "signing_payload": {
+      "canonical": "acknowledgement_signing_payload.c14n.json",
+      "sha256": "sha256:8d39c97e7606d8badc3939ffdd92201bc24d94afba23f011d8737cccf67c2c7a"
+    },
+    "public_key": "ed25519:772c8a442b7db06e166cfbc1ccbcbcde6f3eba76a4e98ef3ffc519502237d6ef",
+    "signature": "ed25519:3e7ea8cf351573beee147ca9d7be4ca3a3b28dd5fb154fa58f904b3fbbd12ef49338f957a944c3fe6084eeaf094ccb85790456750136a4c63b015baf150db40d",
+    "key_not_before": "2026-09-06T11:00:00.123456Z",
+    "key_not_after": "2026-09-06T13:00:00.123456Z"
+  },
+  "receipt": {
+    "artifact": {
+      "canonical": "receipt.c14n.json",
+      "sha256": "sha256:8727e470fca6799df9954c650db7b20078c37ce6311173718527cf4a71c28abf"
+    },
+    "envelope": {
+      "canonical": "",
+      "sha256": ""
+    },
+    "signing_payload": {
+      "canonical": "receipt_signing_payload.c14n.json",
+      "sha256": "sha256:73a05dfa3d7776c169ad00bda5b7aac87dfe79e73ac311daa7401bb3f833e82f"
+    },
+    "public_key": "ed25519:353c8a7feeca38b2c4536e0bd2586fdb18d070e50e059f1d43f8bfefb97a7ce1",
+    "signature": "ed25519:dac541f0a38ba51f5f253b0fd6ae7f042592e2fd80d537fb93f3c93f718af8c382d8f3c62ffa5ba033fb79b1a31f7ef9604b0d26d98deaa7921b8a5e2d49c900",
+    "key_not_before": "2026-09-06T11:00:00.123456Z",
+    "key_not_after": "2026-09-06T13:00:00.123456Z"
+  },
+  "negative_vectors": [
+    {
+      "id": "acknowledgement_disposition_hash_tamper",
+      "mutation": "set_acknowledgement_disposition_hash_to_tampered",
+      "expected_error": "acknowledgement_hash_mismatch"
+    },
+    {
+      "id": "receipt_disposition_substitution",
+      "mutation": "set_receipt_disposition_hash_to_other_and_reseal",
+      "expected_error": "acknowledgement_binding_rejected"
+    },
+    {
+      "id": "receipt_disposition_removed",
+      "mutation": "remove_receipt_disposition_hash_and_reseal",
+      "expected_error": "acknowledgement_binding_rejected"
+    },
+    {
+      "id": "disposition_without_reconciliation",
+      "mutation": "remove_acknowledgement_reconciliation_ref_and_reseal",
+      "expected_error": "acknowledgement_contract_rejected"
+    },
+    {
+      "id": "acknowledgement_activation_hash_tamper",
+      "mutation": "set_acknowledgement_activation_record_hash_to_tampered",
+      "expected_error": "acknowledgement_hash_mismatch"
+    },
+    {
+      "id": "acknowledgement_observed_fact_unsorted",
+      "mutation": "reverse_acknowledgement_observed_external_facts_and_reseal",
+      "expected_error": "acknowledgement_contract_rejected"
+    },
+    {
+      "id": "acknowledgement_compensation_removed",
+      "mutation": "remove_acknowledgement_conditional_compensation_ref_and_reseal",
+      "expected_error": "acknowledgement_contract_rejected"
+    },
+    {
+      "id": "receipt_activation_hash_substitution",
+      "mutation": "set_receipt_activation_record_hash_to_other_and_reseal",
+      "expected_error": "acknowledgement_binding_rejected"
+    },
+    {
+      "id": "receipt_signature_tamper",
+      "mutation": "flip_receipt_signature_last_bit",
+      "expected_error": "receipt_signature_rejected"
+    },
+    {
+      "id": "receipt_deadline_removal",
+      "mutation": "remove_receipt_finality_deadline_and_reseal",
+      "expected_error": "receipt_contract_rejected"
+    },
+    {
+      "id": "receipt_resolution_failure_without_outcome_flip",
+      "mutation": "set_receipt_resolution_state_to_finalized_failure_and_reseal",
+      "expected_error": "receipt_contract_rejected"
+    }
+  ]
+}
