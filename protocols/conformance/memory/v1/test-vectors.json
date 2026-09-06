@@ -500,10 +500,10 @@
         }
       },
       "expected": {
-        "http_status": 200,
-        "verdict": "DENY",
-        "reason_code": "PDP_DENY",
-        "signed_receipt": true
+        "http_status": 403,
+        "verdict": "",
+        "reason_code": "",
+        "signed_receipt": false
       }
     },
     {

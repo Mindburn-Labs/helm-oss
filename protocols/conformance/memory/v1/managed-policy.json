@@ -69,24 +69,44 @@
         "reason": "local-only mode forbids external memory egress"
       },
       {
-        "id": "memory-p1-read-allow",
+        "id": "memory-p1-read-allow-direct",
         "layer": "P1",
         "effect_class": "E1",
         "action": "memory.read",
         "resource": "E1",
-        "pattern": "\"args\":\\{(\"__helm_evaluate_authority_v1\":\\{.*\\},)?\"budget\":\\{\"decision\":\"ALLOW\",\"receipt_hash\":\"sha256:[a-f0-9]{64}\"\\}.*\"data_boundary\":\"(local_only|org_boundary)\".*\"operation\":\"memory.read\".*\\}.*\"principal_id\":\".+\".*\"tenant_id\":\".+\".*\"workspace_id\":\".+",
+        "pattern": "\"args\":\\{\"budget\":\\{\"decision\":\"ALLOW\",\"receipt_hash\":\"sha256:[a-f0-9]{64}\"\\}.*\"data_boundary\":\"(local_only|org_boundary)\".*\"operation\":\"memory.read\".*\\}.*\"principal_id\":\"[^\"]+\".*\"tenant_id\":\"[^\"]+\".*\"workspace_id\":\"[^\"]+\"",
         "verdict": "ALLOW",
         "reason": "authenticated bounded memory read"
       },
       {
-        "id": "memory-p1-write-allow",
+        "id": "memory-p1-read-allow-cp-authority",
+        "layer": "P1",
+        "effect_class": "E1",
+        "action": "memory.read",
+        "resource": "E1",
+        "pattern": "\"args\":\\{\"__helm_evaluate_authority_v1\":\\{.*\\},\"budget\":\\{\"decision\":\"ALLOW\",\"receipt_hash\":\"sha256:[a-f0-9]{64}\"\\}.*\"data_boundary\":\"(local_only|org_boundary)\".*\"operation\":\"memory.read\".*\\}.*\"workspace_id\":\"[^\"]+\"",
+        "verdict": "ALLOW",
+        "reason": "authenticated bounded memory read with Control Plane authority"
+      },
+      {
+        "id": "memory-p1-write-allow-direct",
         "layer": "P1",
         "effect_class": "E2",
         "action": "memory.write",
         "resource": "E2",
-        "pattern": "\"args\":\\{(\"__helm_evaluate_authority_v1\":\\{.*\\},)?\"budget\":\\{\"decision\":\"ALLOW\",\"receipt_hash\":\"sha256:[a-f0-9]{64}\"\\}.*\"data_boundary\":\"(local_only|org_boundary)\".*\"operation\":\"memory.write\".*\\}.*\"principal_id\":\".+\".*\"tenant_id\":\".+\".*\"workspace_id\":\".+",
+        "pattern": "\"args\":\\{\"budget\":\\{\"decision\":\"ALLOW\",\"receipt_hash\":\"sha256:[a-f0-9]{64}\"\\}.*\"data_boundary\":\"(local_only|org_boundary)\".*\"operation\":\"memory.write\".*\\}.*\"principal_id\":\"[^\"]+\".*\"tenant_id\":\"[^\"]+\".*\"workspace_id\":\"[^\"]+\"",
         "verdict": "ALLOW",
         "reason": "authenticated bounded memory write"
+      },
+      {
+        "id": "memory-p1-write-allow-cp-authority",
+        "layer": "P1",
+        "effect_class": "E2",
+        "action": "memory.write",
+        "resource": "E2",
+        "pattern": "\"args\":\\{\"__helm_evaluate_authority_v1\":\\{.*\\},\"budget\":\\{\"decision\":\"ALLOW\",\"receipt_hash\":\"sha256:[a-f0-9]{64}\"\\}.*\"data_boundary\":\"(local_only|org_boundary)\".*\"operation\":\"memory.write\".*\\}.*\"workspace_id\":\"[^\"]+\"",
+        "verdict": "ALLOW",
+        "reason": "authenticated bounded memory write with Control Plane authority"
       },
       {
         "id": "memory-p1-approved-egress-allow",

@@ -6,7 +6,9 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -37,8 +39,14 @@ func registerReceiptRoutes(mux *http.ServeMux, svc *Services) {
 		// generated SDKs use the canonical V5 tool/effect_level/session_id
 		// fields. Authentication remains authoritative for principal and tenant.
 		var req api.EvaluateRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			api.WriteBadRequest(w, "Invalid JSON body")
+		r.Body = http.MaxBytesReader(w, r.Body, evaluateRequestMaxBodyBytes)
+		decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(&req); err != nil {
+			writeEvaluateDecodeError(w, err)
+			return
+		}
+		if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+			writeEvaluateDecodeError(w, err)
 			return
 		}
 		principal, err := helmauth.GetPrincipal(r.Context())
@@ -71,6 +79,16 @@ func registerReceiptRoutes(mux *http.ServeMux, svc *Services) {
 		if err := api.NormalizeEvaluateRequest(&req); err != nil {
 			api.WriteBadRequest(w, "Evaluate route "+err.Error())
 			return
+		}
+		if isMemoryEvaluateAction(req.Tool) {
+			if workspaceID == "" {
+				api.WriteForbidden(w, "Evaluate route memory actions require an explicit authenticated workspace binding")
+				return
+			}
+			if err := validateMemoryEvaluateContext(req.Context); err != nil {
+				api.WriteBadRequest(w, "Evaluate route "+err.Error())
+				return
+			}
 		}
 		if err := validateEvaluateAuthorityArgs(req.Args, evaluateAuthorityBinding{
 			TenantID: tenantID, PrincipalID: principalID, WorkspaceID: workspaceID,
@@ -334,7 +352,13 @@ func registerReceiptRoutes(mux *http.ServeMux, svc *Services) {
 	}))
 }
 
-const evaluateAuthorityArgsKey = "__helm_evaluate_authority_v1"
+const (
+	evaluateAuthorityArgsKey             = "__helm_evaluate_authority_v1"
+	evaluateAuthorityExecutionProfileKey = "execution_profile"
+	evaluateRequestMaxBodyBytes          = 1 << 20
+	evaluateAuthorityMaxDepth            = 64
+	evaluateAuthorityMaxNodes            = 4096
+)
 
 type evaluateAuthorityBinding struct {
 	TenantID    string
@@ -348,12 +372,52 @@ type evaluateAuthorityBinding struct {
 // validateEvaluateAuthorityArgs keeps the CP's reserved authority envelope
 // bound to the authenticated route identity. Ordinary direct-daemon requests
 // remain valid without the envelope; when present, it must be the exact
-// six-field CP binding and may not be shadowed inside source args.
+// six-field memory binding. The additive organization-runtime execution
+// profile is accepted only for non-memory bindings, and may not be shadowed
+// inside source args.
 func validateEvaluateAuthorityArgs(args map[string]any, expected evaluateAuthorityBinding) error {
-	return walkEvaluateAuthorityArgs(args, true, expected)
+	state := evaluateAuthorityWalkState{}
+	return walkEvaluateAuthorityArgs(args, true, expected, &state)
 }
 
-func walkEvaluateAuthorityArgs(value any, topLevel bool, expected evaluateAuthorityBinding) error {
+type evaluateAuthorityWalkState struct {
+	depth int
+	nodes int
+}
+
+func (s *evaluateAuthorityWalkState) enter(composite bool) error {
+	s.nodes++
+	if s.nodes > evaluateAuthorityMaxNodes {
+		return fmt.Errorf("evaluate args exceed authority validation node limit")
+	}
+	if composite {
+		if s.depth >= evaluateAuthorityMaxDepth {
+			return fmt.Errorf("evaluate args exceed authority validation depth limit")
+		}
+		s.depth++
+	}
+	return nil
+}
+
+func (s *evaluateAuthorityWalkState) leave(composite bool) {
+	if composite {
+		s.depth--
+	}
+}
+
+func walkEvaluateAuthorityArgs(value any, topLevel bool, expected evaluateAuthorityBinding, state *evaluateAuthorityWalkState) error {
+	composite := false
+	switch value.(type) {
+	case map[string]any, []any:
+		composite = true
+	}
+	if err := state.enter(composite); err != nil {
+		return err
+	}
+	if composite {
+		defer state.leave(true)
+	}
+
 	switch typed := value.(type) {
 	case map[string]any:
 		for key, nested := range typed {
@@ -370,13 +434,13 @@ func walkEvaluateAuthorityArgs(value any, topLevel bool, expected evaluateAuthor
 				}
 				continue
 			}
-			if err := walkEvaluateAuthorityArgs(nested, false, expected); err != nil {
+			if err := walkEvaluateAuthorityArgs(nested, false, expected, state); err != nil {
 				return err
 			}
 		}
 	case []any:
 		for _, nested := range typed {
-			if err := walkEvaluateAuthorityArgs(nested, false, expected); err != nil {
+			if err := walkEvaluateAuthorityArgs(nested, false, expected, state); err != nil {
 				return err
 			}
 		}
@@ -385,6 +449,9 @@ func walkEvaluateAuthorityArgs(value any, topLevel bool, expected evaluateAuthor
 }
 
 func validateEvaluateAuthorityBinding(binding map[string]any, expected evaluateAuthorityBinding) error {
+	if strings.TrimSpace(expected.WorkspaceID) == "" {
+		return fmt.Errorf("evaluate args reserved authority binding requires an authenticated workspace")
+	}
 	want := map[string]string{
 		"tenant_id":    expected.TenantID,
 		"workspace_id": expected.WorkspaceID,
@@ -393,13 +460,91 @@ func validateEvaluateAuthorityBinding(binding map[string]any, expected evaluateA
 		"tool":         expected.Tool,
 		"effect_level": expected.EffectLevel,
 	}
-	if len(binding) != len(want) {
+	if profile, present := binding[evaluateAuthorityExecutionProfileKey]; present {
+		if profile != "organization-runtime" || isMemoryEvaluateAction(expected.Tool) {
+			return fmt.Errorf("evaluate args reserved authority binding has an invalid execution profile")
+		}
+	}
+	expectedFields := len(want)
+	if _, present := binding[evaluateAuthorityExecutionProfileKey]; present {
+		expectedFields++
+	}
+	if len(binding) != expectedFields {
 		return fmt.Errorf("evaluate args reserved authority binding has unexpected fields")
 	}
 	for key, wantValue := range want {
 		got, ok := binding[key].(string)
 		if !ok || got != wantValue {
 			return fmt.Errorf("evaluate args reserved authority binding does not match authenticated request")
+		}
+	}
+	return nil
+}
+
+func writeEvaluateDecodeError(w http.ResponseWriter, err error) {
+	var maxBytesErr *http.MaxBytesError
+	if errors.As(err, &maxBytesErr) {
+		api.WriteError(w, http.StatusRequestEntityTooLarge, "Request Too Large", fmt.Sprintf("request body exceeds %d MiB", evaluateRequestMaxBodyBytes>>20))
+		return
+	}
+	api.WriteBadRequest(w, "Invalid JSON body")
+}
+
+func isMemoryEvaluateAction(tool string) bool {
+	return strings.HasPrefix(strings.TrimSpace(tool), "memory.")
+}
+
+var evaluateAuthorityContextKeys = map[string]struct{}{
+	"principal":    {},
+	"principal_id": {},
+	"agent_id":     {},
+	"tenant":       {},
+	"tenantId":     {},
+	"tenant_id":    {},
+	"workspace":    {},
+	"workspaceId":  {},
+	"workspace_id": {},
+}
+
+// validateMemoryEvaluateContext rejects nested identity aliases that could
+// satisfy a policy pattern without being the route's authenticated binding.
+// Top-level aliases retain the legacy route behavior: they are stripped and
+// replaced below with authenticated values.
+func validateMemoryEvaluateContext(context map[string]any) error {
+	state := evaluateAuthorityWalkState{}
+	return walkMemoryEvaluateContext(context, true, &state)
+}
+
+func walkMemoryEvaluateContext(value any, topLevel bool, state *evaluateAuthorityWalkState) error {
+	composite := false
+	switch value.(type) {
+	case map[string]any, []any:
+		composite = true
+	}
+	if err := state.enter(composite); err != nil {
+		return err
+	}
+	if composite {
+		defer state.leave(true)
+	}
+
+	switch typed := value.(type) {
+	case map[string]any:
+		for key, nested := range typed {
+			if !topLevel {
+				if _, authorityKey := evaluateAuthorityContextKeys[key]; authorityKey {
+					return fmt.Errorf("evaluate memory context authority keys may only appear at the top level")
+				}
+			}
+			if err := walkMemoryEvaluateContext(nested, false, state); err != nil {
+				return err
+			}
+		}
+	case []any:
+		for _, nested := range typed {
+			if err := walkMemoryEvaluateContext(nested, false, state); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
