@@ -145,7 +145,11 @@ require "SLSA_BUILD_TYPE: $build_uri" "$workflow"
 require "RELEASE_EVIDENCE_TYPE: $evidence_uri" "$workflow"
 require 'STAGING_TAG: staging-${{ inputs.source_sha }}-${{ github.run_id }}-${{ github.run_attempt }}' "$workflow"
 require 'WORKFLOW_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/release-ai-os-image.yml@refs/heads/main' "$workflow"
-require 'name: release-production' "$workflow"
+require 'name: helm-ai-os-image-release' "$workflow"
+if grep -Fq 'release-production' "$workflow"; then
+  echo 'AI OS image publication must not reuse the tag-release environment or its authority' >&2
+  exit 1
+fi
 require 'RELEASE_ACTORS_JSON: ${{ vars.HELM_AI_OS_IMAGE_RELEASE_ACTORS }}' "$workflow"
 require 'RELEASE_AUTHORITY_ARMED: ${{ vars.HELM_RELEASE_AUTHORITY_ARMED }}' "$workflow"
 require 'OWNER_READBACK_TOKEN: ${{ secrets.HELM_GITHUB_OWNER_READ_TOKEN }}' "$workflow"
@@ -189,7 +193,7 @@ require '.name == "main"' "$workflow"
 require '.type == "branch"' "$workflow"
 require '/environments/${RELEASE_ENVIRONMENT}/variables/HELM_RELEASE_AUTHORITY_ARMED' "$workflow"
 require '/actions/variables/HELM_AI_OS_IMAGE_RELEASE_ACTORS' "$workflow"
-require 'if [[ "${live_release_authority}" != "release-production" ]]; then' "$workflow"
+require 'if [[ "${live_release_authority}" != "helm-ai-os-image-release" ]]; then' "$workflow"
 require 'if [[ "${live_release_authority}" != "${RELEASE_AUTHORITY_ARMED}" ]]; then' "$workflow"
 require '. == ["mindburnlabs","peycheff-com"]' "$workflow"
 require '--argjson configured "${RELEASE_ACTORS_JSON}"' "$workflow"
@@ -366,18 +370,25 @@ fi
 authority_environment_count="$(awk '
   /^      - name: Validate publication authority$/ { in_step = 1; next }
   in_step && /^      - name:/ { in_step = 0 }
-  in_step && /^          RELEASE_ENVIRONMENT: release-production$/ { count++ }
+  in_step && /^          RELEASE_ENVIRONMENT: helm-ai-os-image-release$/ { count++ }
+  END { print count + 0 }
+' "$workflow")"
+evidence_environment_count="$(awk '
+  /^      - name: Generate verified release evidence$/ { in_step = 1; next }
+  in_step && /^      - name:/ { in_step = 0 }
+  in_step && /^          RELEASE_ENVIRONMENT: helm-ai-os-image-release$/ { count++ }
   END { print count + 0 }
 ' "$workflow")"
 promotion_environment_count="$(awk '
   /^      - name: Reauthorize and promote the verified digest$/ { in_step = 1; next }
   in_step && /^      - name:/ { in_step = 0 }
-  in_step && /^          RELEASE_ENVIRONMENT: release-production$/ { count++ }
+  in_step && /^          RELEASE_ENVIRONMENT: helm-ai-os-image-release$/ { count++ }
   END { print count + 0 }
 ' "$workflow")"
-if [ "$(grep -Fc 'if [[ "${RELEASE_AUTHORITY_ARMED:-}" != "release-production" ]]; then' "$workflow")" -ne 2 ] ||
+if [ "$(grep -Fc 'if [[ "${RELEASE_AUTHORITY_ARMED:-}" != "helm-ai-os-image-release" ]]; then' "$workflow")" -ne 2 ] ||
   [ "$authority_environment_count" -ne 1 ] ||
   [ "$promotion_environment_count" -ne 1 ] ||
+  [ "$evidence_environment_count" -ne 1 ] ||
   [ "$(grep -Fc 'for candidate in "${REQUEST_ACTOR}" "${TRIGGERING_ACTOR}"; do' "$workflow")" -ne 2 ] ||
   [ "$(grep -Fc 'jq -e --arg actor "${candidate}"' "$workflow")" -ne 2 ] ||
   [ "$(grep -Fc 'approval_history="$(GH_TOKEN="${OWNER_READBACK_TOKEN}" gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/approvals")"' "$workflow")" -ne 2 ] ||
@@ -553,7 +564,7 @@ promotion_live_authority_read_line="$(last_line 'live_release_authority="$(GH_TO
 promotion_live_actors_read_line="$(last_line 'live_release_actors="$(GH_TOKEN="${OWNER_READBACK_TOKEN}" gh api')"
 promotion_environment_validation_line="$(last_line '<<<"${live_release_environment_payload}" >/dev/null; then')"
 promotion_branch_validation_line="$(last_line '<<<"${live_deployment_branch_policies}" >/dev/null; then')"
-promotion_authority_line="$(last_line 'if [[ "${live_release_authority}" != "release-production" ]]; then')"
+promotion_authority_line="$(last_line 'if [[ "${live_release_authority}" != "helm-ai-os-image-release" ]]; then')"
 promotion_authority_binding_line="$(last_line 'if [[ "${live_release_authority}" != "${RELEASE_AUTHORITY_ARMED}" ]]; then')"
 promotion_live_actor_validation_line="$(last_line '. == ["mindburnlabs","peycheff-com"]')"
 promotion_actor_loop_line="$(last_line 'for candidate in "${REQUEST_ACTOR}" "${TRIGGERING_ACTOR}"; do')"
