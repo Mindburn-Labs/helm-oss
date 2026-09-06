@@ -39,6 +39,27 @@ HELM AI Kernel is the **open, headless execution kernel and API contract** of th
 
 It exists to keep the deterministic boundary small, portable, and independently trustworthy. Downstream HELM layers must extend this kernel through public contracts, not replace it.
 
+### Organization lifecycle integrations
+
+An organization runtime may use the same Kernel contracts while creating,
+connecting, operating, or transforming an organization. The runtime owns
+goals, obligations, planning, shared-resource allocation, outcome evaluation,
+and organization version changes. Kernel owns the authority and evidence for
+the effects that cross its boundary.
+
+Reuse existing obligation, capability, effect, permit, receipt, ProofGraph,
+and EvidencePack semantics. A newly generated adapter or tool remains a
+candidate until qualified and admitted through the owning activation path;
+generation cannot grant it authority. Resource references must resolve to
+the enforcement required by the bound effect, rather than implying that a
+reference alone reserves organization-wide capacity.
+
+Downstream product acceptance must prove durable operation, recovery, and
+verified outcomes separately. Neither a valid organization schema nor a
+Kernel conformance fixture establishes general availability of that product.
+Kernel remains reusable without a commercial runtime, a named organization,
+or a particular model provider.
+
 ## Kernel TCB (Trusted Computing Base)
 
 The canonical TCB is bounded to **8 packages** — the minimal trusted core.
