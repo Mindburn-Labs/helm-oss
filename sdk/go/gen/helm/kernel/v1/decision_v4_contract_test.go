@@ -31,7 +31,7 @@ func TestDecisionRecordV4AuthorityFieldsRoundTrip(t *testing.T) {
 		got.GetResource() != want.GetResource() ||
 		got.GetSignatureType() != want.GetSignatureType() ||
 		got.GetReasonCodeText() != want.GetReasonCodeText() {
-		t.Fatalf("generated DecisionRecord lost V4 authority fields: got=%+v", got)
+		t.Fatalf("generated DecisionRecord lost V4 authority fields: got=%+v", &got)
 	}
 
 	for _, wantField := range []struct {
