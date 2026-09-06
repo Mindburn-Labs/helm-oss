@@ -162,7 +162,7 @@ checker=./scripts/release/check_ai_os_image_contract.sh
 
 # These fixtures mirror the GitHub REST provider shape, including both
 # environment protection rules and the deployment-branch policy response.
-provider_environment='{"name":"release-production","can_admins_bypass":false,"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true},"protection_rules":[{"id":101,"node_id":"PR_required","type":"required_reviewers","prevent_self_review":true,"reviewers":[{"type":"User","reviewer":{"login":"mindburnlabs","id":123456,"node_id":"U_owner","type":"User","site_admin":false,"avatar_url":"https://avatars.githubusercontent.com/u/123456?v=4","events_url":"https://api.github.com/users/mindburnlabs/events{/privacy}","followers_url":"https://api.github.com/users/mindburnlabs/followers","following_url":"https://api.github.com/users/mindburnlabs/following{/other_user}","gists_url":"https://api.github.com/users/mindburnlabs/gists{/gist_id}","gravatar_id":"","html_url":"https://github.com/mindburnlabs","organizations_url":"https://api.github.com/users/mindburnlabs/orgs","received_events_url":"https://api.github.com/users/mindburnlabs/received_events","repos_url":"https://api.github.com/users/mindburnlabs/repos","starred_url":"https://api.github.com/users/mindburnlabs/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/mindburnlabs/subscriptions","url":"https://api.github.com/users/mindburnlabs","user_view_type":"public"}}]},{"id":102,"node_id":"PR_branch","type":"branch_policy"}]}'
+provider_environment='{"name":"helm-ai-os-image-release","can_admins_bypass":false,"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true},"protection_rules":[{"id":101,"node_id":"PR_required","type":"required_reviewers","prevent_self_review":true,"reviewers":[{"type":"User","reviewer":{"login":"mindburnlabs","id":123456,"node_id":"U_owner","type":"User","site_admin":false,"avatar_url":"https://avatars.githubusercontent.com/u/123456?v=4","events_url":"https://api.github.com/users/mindburnlabs/events{/privacy}","followers_url":"https://api.github.com/users/mindburnlabs/followers","following_url":"https://api.github.com/users/mindburnlabs/following{/other_user}","gists_url":"https://api.github.com/users/mindburnlabs/gists{/gist_id}","gravatar_id":"","html_url":"https://github.com/mindburnlabs","organizations_url":"https://api.github.com/users/mindburnlabs/orgs","received_events_url":"https://api.github.com/users/mindburnlabs/received_events","repos_url":"https://api.github.com/users/mindburnlabs/repos","starred_url":"https://api.github.com/users/mindburnlabs/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/mindburnlabs/subscriptions","url":"https://api.github.com/users/mindburnlabs","user_view_type":"public"}}]},{"id":102,"node_id":"PR_branch","type":"branch_policy"}]}'
 provider_branch_policies='{"total_count":1,"branch_policies":[{"id":201,"node_id":"BP_main","name":"main","type":"branch"}]}'
 provider_environment="$(printf '%s\n' "$provider_environment" | jq -c '
   .protection_rules[0].reviewers += [
@@ -177,12 +177,12 @@ provider_environment="$(printf '%s\n' "$provider_environment" | jq -c '
       .reviewer.node_id = "U_owner_2")
   ]
 ')"
-provider_approval='[{"environments":[{"name":"release-production","id":301,"created_at":"2026-09-01T10:00:01Z"}],"state":"approved","comment":"approved exact run","user":{"login":"peycheff-com"}}]'
+provider_approval='[{"environments":[{"name":"helm-ai-os-image-release","id":301,"created_at":"2026-09-01T10:00:01Z"}],"state":"approved","comment":"approved exact run","user":{"login":"peycheff-com"}}]'
 
 assert_provider_authority() {
   environment_json=$1
   branch_policy_json=$2
-  printf '%s\n' "$environment_json" | jq -e --arg environment release-production '
+  printf '%s\n' "$environment_json" | jq -e --arg environment helm-ai-os-image-release '
     .name == $environment and
     .can_admins_bypass == false and
     .deployment_branch_policy == {
@@ -252,7 +252,7 @@ assert_provider_approval() {
   approval_request_actor=$2
   approval_triggering_actor=$3
   printf '%s\n' "$approval_json" | jq -e \
-    --arg release_environment release-production \
+    --arg release_environment helm-ai-os-image-release \
     --arg request_actor "$approval_request_actor" \
     --arg triggering_actor "$approval_triggering_actor" '
     [
@@ -313,7 +313,7 @@ assert_release_evidence_shape() {
       .component == "helm-ai-kernel" and
       .actor == "mindburnlabs" and
       .triggering_actor == "peycheff-com" and
-      .release_environment == "release-production" and
+      .release_environment == "helm-ai-os-image-release" and
       .source_repository == "Mindburn-Labs/helm-ai-kernel" and
       .source_ref == "refs/heads/main" and
       (.source_sha | type == "string" and test("^[0-9a-f]{40}$")) and
@@ -392,7 +392,7 @@ evidence_fixture="$(jq -cn \
     component: "helm-ai-kernel",
     actor: "mindburnlabs",
     triggering_actor: "peycheff-com",
-    release_environment: "release-production",
+    release_environment: "helm-ai-os-image-release",
     source_repository: "Mindburn-Labs/helm-ai-kernel",
     source_ref: "refs/heads/main",
     source_sha: $source_sha,
@@ -459,6 +459,7 @@ if ! assert_release_evidence_shape "$final_evidence_fixture" final-tag-digest-pl
   exit 1
 fi
 if assert_release_evidence_shape "$(printf '%s\n' "$evidence_fixture" | jq -c '.actor = "other"')" staging-digest-verified '' ||
+  assert_release_evidence_shape "$(printf '%s\n' "$evidence_fixture" | jq -c '.release_environment = "release-production"')" staging-digest-verified '' ||
   assert_release_evidence_shape "$(printf '%s\n' "$evidence_fixture" | jq -c '.cve_gate.fail_on = "medium"')" staging-digest-verified '' ||
   assert_release_evidence_shape "$(printf '%s\n' "$evidence_fixture" | jq -c 'del(.cve_gate.database)')" staging-digest-verified '' ||
   assert_release_evidence_shape "$(printf '%s\n' "$evidence_fixture" | jq -c '.cve_gate.database.status_digest = "sha256:not-a-digest"')" staging-digest-verified '' ||
@@ -469,6 +470,10 @@ if assert_release_evidence_shape "$(printf '%s\n' "$evidence_fixture" | jq -c '.
 fi
 if assert_release_evidence_shape "$(printf '%s\n' "$final_evidence_fixture" | jq -c 'del(.final_tag_digest)')" final-tag-digest-platforms-signature-and-evidence-verified "$expected_digest"; then
   echo 'final release evidence without final_tag_digest was accepted' >&2
+  exit 1
+fi
+if assert_release_evidence_shape "$(printf '%s\n' "$final_evidence_fixture" | jq -c '.release_environment = "release-production"')" final-tag-digest-platforms-signature-and-evidence-verified "$expected_digest"; then
+  echo 'tag-release environment incorrectly authorized final image evidence' >&2
   exit 1
 fi
 
@@ -482,6 +487,8 @@ reject_provider_authority() {
   fi
 }
 
+reject_provider_authority 'tag-release environment' \
+  "$(printf '%s\n' "$provider_environment" | jq -c '.name = "release-production"')"
 reject_provider_authority 'missing required reviewer rule' \
   "$(printf '%s\n' "$provider_environment" | jq -c '.protection_rules = [.protection_rules[0]]')"
 reject_provider_authority 'required reviewer outer rule extra field' \
@@ -623,6 +630,7 @@ if ! assert_provider_approval "$(printf '%s\n' "$provider_approval" | jq -c '.[0
 fi
 if assert_provider_approval "$provider_approval" peycheff-com mindburnlabs ||
   assert_provider_approval "$provider_approval" mindburnlabs peycheff-com ||
+  assert_provider_approval "$(printf '%s\n' "$provider_approval" | jq -c '.[0].environments[0].name = "release-production"')" mindburnlabs mindburnlabs ||
   assert_provider_approval "$(printf '%s\n' "$provider_approval" | jq -c '.[0].environments[0].name = "other"')" mindburnlabs mindburnlabs; then
   echo 'self or wrong-environment exact-run approval fixture was accepted' >&2
   exit 1
@@ -968,7 +976,7 @@ sed 's/if \[\[ "${GITHUB_RUN_ATTEMPT}" != "1" \]\]; then/if false; then/' \
 mutate_and_reject "$test_dir/replayed-owner-approval.yml"
 
 awk '
-  /if \[\[ "\${RELEASE_AUTHORITY_ARMED:-}" != "release-production" \]\]; then/ {
+  /if \[\[ "\${RELEASE_AUTHORITY_ARMED:-}" != "helm-ai-os-image-release" \]\]; then/ {
     seen++
     if (seen == 2) {
       print "          if false; then # mutation: skip final authority recheck"
@@ -979,7 +987,7 @@ awk '
 ' "$workflow" > "$test_dir/stale-final-authority.yml"
 mutate_and_reject "$test_dir/stale-final-authority.yml"
 
-sed 's/if \[\[ "${live_release_authority}" != "release-production" \]\]; then/if false; then/' \
+sed 's/if \[\[ "${live_release_authority}" != "helm-ai-os-image-release" \]\]; then/if false; then/' \
   "$workflow" > "$test_dir/stale-live-authority-readback.yml"
 mutate_and_reject "$test_dir/stale-live-authority-readback.yml"
 
@@ -1029,7 +1037,7 @@ mutate_and_reject "$test_dir/missing-final-owner-readback.yml"
 
 awk '
   /^      - name: Reauthorize and promote the verified digest$/ { in_final = 1 }
-  in_final && /^          RELEASE_ENVIRONMENT: release-production$/ { next }
+  in_final && /^          RELEASE_ENVIRONMENT: helm-ai-os-image-release$/ { next }
   in_final && /^      - name:/ && $0 !~ /Reauthorize and promote the verified digest/ { in_final = 0 }
   { print }
 ' "$workflow" > "$test_dir/missing-final-release-environment.yml"
@@ -1053,8 +1061,35 @@ awk '
 ' "$workflow" > "$test_dir/reordered-final-authority.yml"
 mutate_and_reject "$test_dir/reordered-final-authority.yml"
 
-sed 's/name: release-production/name: unprotected-release/' "$workflow" > "$test_dir/wrong-environment.yml"
+sed 's/name: helm-ai-os-image-release/name: unprotected-release/' "$workflow" > "$test_dir/wrong-environment.yml"
 mutate_and_reject "$test_dir/wrong-environment.yml"
+
+sed 's/name: helm-ai-os-image-release/name: release-production/' \
+  "$workflow" > "$test_dir/tag-release-environment.yml"
+mutate_and_reject "$test_dir/tag-release-environment.yml"
+
+sed 's/!= "helm-ai-os-image-release"/!= "release-production"/g' \
+  "$workflow" > "$test_dir/tag-release-arming.yml"
+mutate_and_reject "$test_dir/tag-release-arming.yml"
+
+awk '
+  /^      - name: Generate verified release evidence$/ { in_evidence = 1 }
+  in_evidence && /^          RELEASE_ENVIRONMENT: helm-ai-os-image-release$/ {
+    print "          RELEASE_ENVIRONMENT: release-production"
+    next
+  }
+  in_evidence && /^      - name:/ && $0 !~ /Generate verified release evidence/ { in_evidence = 0 }
+  { print }
+' "$workflow" > "$test_dir/tag-release-evidence-environment.yml"
+mutate_and_reject "$test_dir/tag-release-evidence-environment.yml"
+
+awk '
+  /^      - name: Generate verified release evidence$/ { in_evidence = 1 }
+  in_evidence && /^          RELEASE_ENVIRONMENT: helm-ai-os-image-release$/ { next }
+  in_evidence && /^      - name:/ && $0 !~ /Generate verified release evidence/ { in_evidence = 0 }
+  { print }
+' "$workflow" > "$test_dir/missing-evidence-release-environment.yml"
+mutate_and_reject "$test_dir/missing-evidence-release-environment.yml"
 
 sed 's/if \[\[ "\${SOURCE_SHA}" != "\${WORKFLOW_SHA}" \]\]; then/if false; then/' \
   "$workflow" > "$test_dir/detached-dispatch-source.yml"

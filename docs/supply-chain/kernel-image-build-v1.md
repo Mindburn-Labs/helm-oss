@@ -72,13 +72,13 @@ predicate byte structure before promotion.
 ## Invocation and authority
 
 The only trigger is `workflow_dispatch` from `refs/heads/main`. The publish job
-uses the `release-production` environment and performs no checkout until all of
-these external owner-managed settings pass:
+uses the `helm-ai-os-image-release` environment and performs no checkout until
+all of these external owner-managed settings pass:
 
 1. The environment is protected by required human reviewers, self-review is
    disabled, and administrator bypass is disabled.
 2. Its environment variable `HELM_RELEASE_AUTHORITY_ARMED` equals
-   `release-production`.
+   `helm-ai-os-image-release`.
 3. Repository variable `HELM_AI_OS_IMAGE_RELEASE_ACTORS` is a JSON array of
    exact allowed GitHub logins, for example `["mindburnlabs","peycheff-com"]`.
    Both `github.actor` and `github.triggering_actor` must be present.
@@ -90,6 +90,10 @@ these external owner-managed settings pass:
    approval from one of those two human owners. Reruns are rejected, so the
    approval endpoint remains bound to this immutable run rather than treating
    a repository variable or another run's approval as reusable authority.
+
+This image-only environment is separate from the `release-production`
+environment used by the `v*` tag-release workflow. Keep that tag policy intact;
+it cannot satisfy the image publisher's exact `main` branch policy.
 
 Those settings are an owner blocker outside this source-only change. Until
 they are confirmed in GitHub, the workflow is intentionally not dispatchable.
@@ -117,7 +121,7 @@ The dispatch snapshot and the owner-token live readback both require the exact
 actor JSON `["mindburnlabs","peycheff-com"]`. Every policy, variable,
 membership, and current-main ref read uses `GH_TOKEN="${OWNER_READBACK_TOKEN}"`
 explicitly. The exact-run approvals response must contain an `approved` review
-targeting `release-production` from one of those owners while differing from
+targeting `helm-ai-os-image-release` from one of those owners while differing from
 both the request and triggering actors. Approval timestamps are not inferred
 from unsupported top-level fields; any nested environment metadata timestamp
 is informational only. The

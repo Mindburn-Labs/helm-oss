@@ -17,7 +17,7 @@ repository/ref/SHA, explicit producer workflow name/file/ref/SHA/identity/run,
 image repository, staging and final tags, index digest, both platform digests
 and SPDX files, exact OCI source/revision labels, entrypoint/default command,
 health and persistence contracts, the request and triggering GitHub actors, the
-`release-production` environment, the SLSA build type, Cosign verification
+`helm-ai-os-image-release` environment, the SLSA build type, Cosign verification
 state, and promotion status. The top-level object is closed: the interim form
 has exactly the declared fields and `promotion_status=staging-digest-verified`;
 the finalized form adds only `final_tag_digest` and uses the finalized promotion
